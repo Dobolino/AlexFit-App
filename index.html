@@ -12,7 +12,8 @@
 <style>
   :root{--bg:#080B10;--card:#0F1219;--cardElev:#151B27;--border:#1E2535;--blue:#2563EB;--green:#10B981;--amber:#F59E0B;--red:#EF4444;--tp:#F0F2F5;--tm:#5A6478;--ts:#8A95A8;--safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;}
-  html,body{height:100%;background:var(--bg);color:var(--tp);font-family:'Barlow',sans-serif;overscroll-behavior:none;overflow:hidden;position:fixed;width:100%;}
+  html{height:100%;overflow:hidden;background:var(--bg);}
+  body{height:100%;overflow:hidden;background:var(--bg);color:var(--tp);font-family:'Barlow',sans-serif;overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
   body{padding-top:env(safe-area-inset-top,0px);}
   input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
   input[type=number]{-moz-appearance:textfield;}
@@ -21,12 +22,12 @@
   ::-webkit-scrollbar{width:3px;}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
   .bc{font-family:'Barlow Condensed',sans-serif;}
-  #app{display:flex;flex-direction:column;height:100dvh;height:100vh;max-width:480px;margin:0 auto;overflow:hidden;}
-  #topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px 10px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;flex-shrink:0;}
-  #content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:16px 16px 0;overscroll-behavior-y:contain;}
-  #bottomnav{background:var(--card);border-top:1px solid var(--border);display:flex;padding:8px 0;padding-bottom:max(12px,calc(env(safe-area-inset-bottom,0px) + 8px));flex-shrink:0;}
-  .navbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;}
-  .navbtn .nicon{width:36px;height:28px;border-radius:10px;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+  #app{display:flex;flex-direction:column;height:100%;height:100dvh;max-width:480px;margin:0 auto;overflow:hidden;position:relative;}
+  #topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px 10px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+  #content{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:16px 16px 0;overscroll-behavior-y:contain;}
+  #bottomnav{background:var(--card);border-top:1px solid var(--border);display:flex;padding:8px 0;padding-bottom:max(16px,calc(env(safe-area-inset-bottom) + 10px));flex-shrink:0;}
+  .navbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0;}
+  .navbtn .nicon{width:40px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;transition:background .15s;}
   .navbtn.active .nicon{background:rgba(37,99,235,.2);}
   .navbtn .nlabel{font-size:9px;font-weight:500;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;}
   .navbtn.active .nlabel{color:var(--blue);font-weight:700;}
@@ -90,6 +91,9 @@
       <span id="weight-display" class="bc" style="font-size:14px;font-weight:700">95 kg</span>
       <span id="goal-weight-display" class="bc" style="font-size:10px;color:var(--tm)">→ 77 kg</span>
     </div>
+      <button onclick="switchTab('settings')" style="background:var(--card);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;margin-left:6px;flex-shrink:0" title="Einstellungen">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ts)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
   </div>
 
   <div id="content">
@@ -103,6 +107,10 @@
       </div>
       <div id="goal-banner"></div>
       <div id="stat-boxes" style="display:flex;gap:10px;margin-bottom:16px"></div>
+      <!-- Motivation Banner -->
+      <div id="motivation-banner" style="margin-bottom:16px"></div>
+      <!-- Progressions-Vorschläge -->
+      <div id="progression-hints" style="margin-bottom:4px"></div>
       <div class="slabel">Diese Woche</div>
       <div id="week-strip-wrap" style="margin-bottom:20px"></div>
       <div class="slabel">Training starten</div>
@@ -320,6 +328,87 @@
     </div>
   </div>
 
+    <!-- SETTINGS -->
+    <div id="screen-settings" class="screen">
+      <!-- Zurück-Button -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        <button onclick="switchTab('dashboard')" style="background:var(--card);border:1px solid var(--border);border-radius:10px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ts)" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="bc" style="font-size:20px;font-weight:800;color:var(--tp)">Einstellungen</div>
+      </div>
+      <div class="slabel">Programm</div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="margin-bottom:14px">
+          <div class="bc" style="font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Startgewicht (kg)</div>
+          <div class="weight-stepper">
+            <button onclick="stepSetting('startKg',-0.5)">−</button>
+            <input id="s-start-kg" type="number" inputmode="decimal" step="0.1">
+            <button onclick="stepSetting('startKg',+0.5)">+</button>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div class="bc" style="font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Zielgewicht (kg)</div>
+          <div class="weight-stepper">
+            <button onclick="stepSetting('goalKg',-0.5)">−</button>
+            <input id="s-goal-kg" type="number" inputmode="decimal" step="0.1">
+            <button onclick="stepSetting('goalKg',+0.5)">+</button>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div class="bc" style="font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Programm Startdatum</div>
+          <input id="s-prog-start" class="weight-inp" type="date" style="padding:14px 12px;font-size:16px;min-height:52px;width:100%;max-width:100%;">
+        </div>
+        <div style="margin-bottom:14px">
+          <div class="bc" style="font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Programmdauer (Wochen)</div>
+          <div class="weight-stepper">
+            <button onclick="stepSetting('weeks',-1)">−</button>
+            <input id="s-weeks" type="number" inputmode="numeric" step="1" min="4" max="52">
+            <button onclick="stepSetting('weeks',+1)">+</button>
+          </div>
+        </div>
+        <button onclick="saveSettingsForm()" style="width:100%;padding:16px;border-radius:12px;background:linear-gradient(135deg,var(--blue),#1D4ED8);color:#fff;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;box-shadow:0 4px 16px rgba(37,99,235,.35)">Speichern</button>
+      </div>
+      <!-- Darstellung -->
+      <div class="slabel">Darstellung</div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="bc" style="font-size:14px;font-weight:700;color:var(--tp)">Design-Modus</div>
+            <div style="font-size:12px;color:var(--tm);margin-top:2px">Hell oder Dunkel wählen</div>
+          </div>
+          <button id="theme-toggle-btn" onclick="toggleTheme()" style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;color:var(--tp)">🌙 Dunkel</button>
+        </div>
+      </div>
+
+      <!-- Daten -->
+      <div class="slabel">Daten</div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:10px">
+            <button onclick="exportAllData()" style="flex:1;padding:14px;background:var(--cardElev);border:1px solid var(--border);border-radius:10px;color:var(--ts);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+            <label style="flex:1;padding:14px;background:var(--cardElev);border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+              <input type="file" accept=".csv" onchange="importCSV(this.files[0])" style="display:none">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ts)" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span class="bc" style="font-size:13px;font-weight:700;color:var(--ts)">Import CSV</span>
+            </label>
+          </div>
+          <button onclick="exportAppleHealth()" style="width:100%;padding:14px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);border-radius:10px;color:var(--green);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M22 2L11 13"/><path d="M15 2h7v7"/></svg>
+            Apple Health Export (.xml)
+          </button>
+        </div>
+        <div style="margin-top:10px;padding:10px;background:var(--cardElev);border-radius:8px">
+          <div style="font-size:11px;color:var(--tm);line-height:1.5">
+            💡 <strong style="color:var(--ts)">Apple Health Import:</strong> Lade die XML-Datei herunter → Öffne Gesundheit-App → Profil → Gesundheitsdaten importieren
+          </div>
+        </div>
+      </div>
+    </div>
+
   <nav id="bottomnav">
     <button class="navbtn active" id="nav-dashboard" onclick="switchTab('dashboard')">
       <div class="nicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div>
@@ -463,7 +552,8 @@ function save(){localStorage.setItem('af_history',JSON.stringify(history));}
 function saveW(){localStorage.setItem('af_weights',JSON.stringify(weightLog));}
 function saveC(){localStorage.setItem('af_cardio',JSON.stringify(cardioLog));}
 function updateWeightDisplay(){
-  document.getElementById('weight-display').textContent=currentWeight+' kg';
+  initTheme();
+document.getElementById('weight-display').textContent=currentWeight+' kg';
   const goalEl=document.getElementById('goal-weight-display');
   if(goalEl)goalEl.textContent='→ '+settings.goalKg+' kg';
 }
@@ -555,6 +645,7 @@ function switchTab(tab){
   else if(tab==='weight'){renderWeight();showScreen('weight');}
   else if(tab==='cardio'){renderCardio();showScreen('cardio');}
   else if(tab==='stats'){renderStatsTab();showScreen('stats');}
+  else if(tab==='settings'){renderSettings();showScreen('settings');}
 }
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');}
 function setNavActive(tab){
@@ -574,21 +665,183 @@ function switchStatsTab(tab){
 function renderStatsTab(){switchStatsTab(activeStatsTab);}
 
 function renderDashboard(){
-  const start=parseISODateLocal(settings.programStart),end=parseISODateLocal(settings.programEnd),now=new Date();
-  const totalMs=end-start;
-  const pct=totalMs>0?Math.max(0,Math.min(100,Math.round(((now-start)/totalMs)*100))):0;
-  const weeksLeft=Math.max(0,Math.round((end-now)/604800000));
-  const dispW=weightLog.length?weightLog[weightLog.length-1].kg:settings.startKg;
-  document.getElementById('goal-banner').innerHTML=`<div style="background:linear-gradient(135deg,rgba(37,99,235,.2),var(--cardElev));border:1px solid rgba(37,99,235,.4);border-radius:14px;padding:16px;margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px"><div><div class="bc" style="font-size:11px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">${PROGRAM_WEEKS}-Wochen Body Rekomp</div><div class="bc" style="font-size:20px;font-weight:800;color:var(--tp)">${dispW} kg → ${settings.goalKg} kg</div></div><div style="text-align:right"><div class="bc" style="font-size:26px;font-weight:900;color:var(--tp)">${weeksLeft}</div><div class="bc" style="font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.06em">Wochen noch</div></div></div><div style="background:var(--border);border-radius:99px;height:4px;overflow:hidden"><div style="background:linear-gradient(90deg,var(--blue),#60A5FA);border-radius:99px;height:100%;width:${pct}%"></div></div><div style="display:flex;justify-content:space-between;margin-top:5px"><span class="bc" style="font-size:10px;color:var(--tm)">${fmtShortISO(settings.programStart)}</span><span class="bc" style="font-size:10px;color:var(--blue);font-weight:700">${pct}% abgeschlossen</span><span class="bc" style="font-size:10px;color:var(--tm)">${fmtShortISO(settings.programEnd)}</span></div></div>`;
-  const monday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
-  const thisWeek=history.filter(h=>parseISODateLocal(h.date)>=monday).length;const streak=computeStreak();
-  document.getElementById('stat-boxes').innerHTML=[{label:'Streak',val:streak>0?streak+'🔥':0,sub:'Tage in Folge'},{label:'Diese Woche',val:thisWeek,sub:'Workouts'},{label:'Gesamt',val:history.length,sub:'Workouts'}].map(s=>`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;flex:1;min-width:0"><div class="bc" style="font-size:10px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">${s.label}</div><div class="bc" style="font-size:26px;font-weight:800;color:var(--tp);line-height:1">${s.val}</div><div style="font-size:10px;color:var(--tm);margin-top:3px">${s.sub}</div></div>`).join('');
+  const now = new Date();
+  const start = parseISODateLocal(settings.programStart);
+  const end   = parseISODateLocal(settings.programEnd);
+  const totalMs = end - start;
+  const timeElapsedMs = now - start;
+
+  // Zeitfortschritt (für Anzeige der Daten)
+  const timePct = totalMs > 0
+    ? Math.max(0, Math.min(100, Math.round((timeElapsedMs / totalMs) * 100)))
+    : 0;
+  const weeksLeft = Math.max(0, Math.round((end - now) / 604800000));
+
+  // Gewichtsfortschritt — das ist der echte Fortschritt
+  const startKg   = settings.startKg;
+  const goalKg    = settings.goalKg;
+  const currentKg = weightLog.length ? weightLog[weightLog.length-1].kg : startKg;
+  const totalToLose = startKg - goalKg;
+
+  // Fortschritt = wieviel bereits abgenommen / gesamtes Ziel
+  let weightPct = 0;
+  if(totalToLose > 0){
+    const lost = startKg - currentKg;
+    weightPct = Math.max(0, Math.min(100, Math.round((lost / totalToLose) * 100)));
+  }
+
+  // Anzeige: Gewichts-Fortschritt als Hauptbalken, Zeit als Info
+  const dispW = currentKg;
+  const lostKg = (startKg - currentKg).toFixed(1);
+  const toGoKg = (currentKg - goalKg).toFixed(1);
+  const hasStarted = weightLog.length > 0;
+
+  document.getElementById('goal-banner').innerHTML=`
+    <div style="background:linear-gradient(135deg,rgba(37,99,235,.2),var(--cardElev));border:1px solid rgba(37,99,235,.4);border-radius:14px;padding:16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <div class="bc" style="font-size:11px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">${PROGRAM_WEEKS}-Wochen Body Rekomp</div>
+          <div class="bc" style="font-size:20px;font-weight:800;color:var(--tp)">${startKg} kg → ${goalKg} kg</div>
+        </div>
+        <div style="text-align:right">
+          <div class="bc" style="font-size:26px;font-weight:900;color:var(--tp)">${weeksLeft}</div>
+          <div class="bc" style="font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.06em">Wochen noch</div>
+        </div>
+      </div>
+
+      ${hasStarted ? `
+      <!-- Gewichtsfortschritt (Hauptbalken) -->
+      <div style="background:var(--border);border-radius:99px;height:6px;overflow:hidden;margin-bottom:5px">
+        <div style="background:linear-gradient(90deg,var(--green),#34D399);border-radius:99px;height:100%;width:${weightPct}%;transition:width .8s ease"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span class="bc" style="font-size:10px;color:var(--tm)">${startKg} kg Start</span>
+        <span class="bc" style="font-size:10px;color:var(--green);font-weight:700">${weightPct}% Ziel erreicht</span>
+        <span class="bc" style="font-size:10px;color:var(--tm)">Ziel ${goalKg} kg</span>
+      </div>
+      <!-- Aktuelle Stats -->
+      <div style="display:flex;gap:8px">
+        <div style="flex:1;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:8px;text-align:center">
+          <div class="bc" style="font-size:18px;font-weight:800;color:var(--green)">${dispW} kg</div>
+          <div class="bc" style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em">Aktuell</div>
+        </div>
+        <div style="flex:1;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:8px;text-align:center">
+          <div class="bc" style="font-size:18px;font-weight:800;color:var(--green)">${parseFloat(lostKg)>0?'-'+lostKg:'±0'} kg</div>
+          <div class="bc" style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em">Verloren</div>
+        </div>
+        <div style="flex:1;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:8px;text-align:center">
+          <div class="bc" style="font-size:18px;font-weight:800;color:var(--amber)">${parseFloat(toGoKg)>0?toGoKg:'✓'} ${parseFloat(toGoKg)>0?'kg':''}</div>
+          <div class="bc" style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em">Noch bis Ziel</div>
+        </div>
+      </div>
+      ` : `
+      <!-- Noch kein Gewicht eingetragen -->
+      <div style="background:var(--border);border-radius:99px;height:6px;overflow:hidden;margin-bottom:5px">
+        <div style="background:var(--border);border-radius:99px;height:100%;width:0%"></div>
+      </div>
+      <div style="text-align:center;padding:10px 0">
+        <div style="font-size:13px;color:var(--tm)">Trage dein erstes Gewicht ein um den Fortschritt zu sehen</div>
+        <button onclick="switchTab('weight')" style="margin-top:8px;padding:8px 16px;background:var(--blue);color:#fff;border-radius:8px;font-size:13px;font-weight:700">
+          Gewicht eintragen →
+        </button>
+      </div>
+      `}
+
+      <!-- Zeitfortschritt als sekundäre Info -->
+      ${timePct > 0 ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span class="bc" style="font-size:9px;color:var(--tm)">Programmzeit: ${fmtShortISO(settings.programStart)}</span>
+          <span class="bc" style="font-size:9px;color:var(--tm);font-weight:600">${timePct}% der Zeit</span>
+          <span class="bc" style="font-size:9px;color:var(--tm)">${fmtShortISO(settings.programEnd)}</span>
+        </div>
+        <div style="background:var(--border);border-radius:99px;height:2px;overflow:hidden">
+          <div style="background:var(--blue);opacity:.5;border-radius:99px;height:100%;width:${timePct}%"></div>
+        </div>
+      </div>` : ''}
+    </div>`;
+
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay()+6)%7));
+  const thisWeek = history.filter(h => parseISODateLocal(h.date) >= monday).length;
+  const streak = computeStreak();
+
+  document.getElementById('stat-boxes').innerHTML=[
+    {label:'Streak', val:streak>0?streak+'🔥':0, sub:'Tage in Folge'},
+    {label:'Diese Woche', val:thisWeek, sub:'Workouts'},
+    {label:'Gesamt', val:history.length, sub:'Workouts'},
+  ].map(s=>`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;flex:1;min-width:0">
+    <div class="bc" style="font-size:10px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">${s.label}</div>
+    <div class="bc" style="font-size:26px;font-weight:800;color:var(--tp);line-height:1">${s.val}</div>
+    <div style="font-size:10px;color:var(--tm);margin-top:3px">${s.sub}</div>
+  </div>`).join('');
+
   renderWeekStrip();
-  const todayDayId=PLAN_DOW[new Date().getDay()];
-  document.getElementById('quick-launch').innerHTML=['d1','d4','d2','d3','d5'].map(id=>{const d=WORKOUT_DAYS.find(x=>x.id===id);const isToday=d.id===todayDayId;return`<button onclick="startWorkout('${d.id}')" style="background:var(--card);border:1px solid ${isToday?d.color+'80':'var(--border)'};border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;text-align:left;width:100%;position:relative">${isToday?`<div style="position:absolute;top:8px;right:44px;background:${d.color};border-radius:4px;padding:1px 6px"><span class="bc" style="font-size:9px;font-weight:800;color:#fff;text-transform:uppercase">Heute</span></div>`:''}<div style="width:40px;height:40px;border-radius:10px;background:${d.color}20;border:1px solid ${d.color}40;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="bc" style="font-size:11px;font-weight:800;color:${d.color}">${d.tag}</span></div><div style="flex:1;min-width:0"><div class="bc" style="font-size:15px;font-weight:700;color:var(--tp)">${d.name}</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">${d.muscles.slice(0,3).map(m=>tagHTML(m)).join('')}</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>`;}).join('');
-  const prs=computePRs();const top3=getTopPRs(prs);
-  document.getElementById('pr-list').innerHTML=top3.length===0?`<div class="card" style="text-align:center;padding:20px"><span class="bc" style="font-size:14px;color:var(--tm)">Noch keine Bestleistungen — starte dein erstes Training!</span></div>`:top3.map(([name,pr])=>`<div style="background:var(--card);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="var(--amber)" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg><div style="flex:1;min-width:0"><div class="bc" style="font-size:14px;font-weight:700;color:var(--tp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div></div><div style="text-align:right"><div class="bc" style="font-size:18px;font-weight:800;color:var(--amber)">${pr.isBW?'BW':pr.weight+' kg'}</div><div class="bc" style="font-size:11px;color:var(--tm)">${pr.reps} Wdh</div></div></div>`).join('');
+
+  // Motivation-Nachricht
+  const motiv = getMotivationMessage();
+  const motivEl = document.getElementById('motivation-banner');
+  if(motivEl && motiv){
+    motivEl.innerHTML=`<div style="background:${motiv.color}18;border:1px solid ${motiv.color}40;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">${motiv.icon}</span>
+      <span style="font-size:13px;color:var(--tp);font-weight:500;line-height:1.4">${motiv.msg}</span>
+    </div>`;
+  }
+
+  // Progressions-Vorschläge
+  const suggestions = getProgressionSuggestions();
+  const progEl = document.getElementById('progression-hints');
+  if(progEl && suggestions.length > 0){
+    progEl.innerHTML=`<div style="margin-bottom:16px">
+      <div class="slabel" style="margin-bottom:8px">⬆️ Steigerungsvorschläge</div>
+      ${suggestions.map(s=>`<div style="background:var(--card);border:1px solid rgba(37,99,235,.4);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div class="bc" style="font-size:13px;font-weight:700;color:var(--tp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
+          <div class="bc" style="font-size:11px;color:var(--tm);margin-top:2px">${s.currentW} kg bisher</div>
+        </div>
+        <div style="text-align:right">
+          <div class="bc" style="font-size:18px;font-weight:800;color:var(--blue)">${s.suggestedW} kg</div>
+          <div class="bc" style="font-size:10px;color:var(--tm)">versuche es heute</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      </div>`).join('')}
+    </div>`;
+  } else if(progEl){
+    progEl.innerHTML='';
+  }
+
+  const todayDayId = PLAN_DOW[new Date().getDay()];
+  document.getElementById('quick-launch').innerHTML = ['d1','d4','d2','d3','d5'].map(id=>{
+    const d = WORKOUT_DAYS.find(x=>x.id===id);
+    const isToday = d.id === todayDayId;
+    return `<button onclick="startWorkout('${d.id}')" style="background:var(--card);border:1px solid ${isToday?d.color+'80':'var(--border)'};border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;text-align:left;width:100%;position:relative">
+      ${isToday?`<div style="position:absolute;top:8px;right:44px;background:${d.color};border-radius:4px;padding:1px 6px"><span class="bc" style="font-size:9px;font-weight:800;color:#fff;text-transform:uppercase">Heute</span></div>`:''}
+      <div style="width:40px;height:40px;border-radius:10px;background:${d.color}20;border:1px solid ${d.color}40;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span class="bc" style="font-size:11px;font-weight:800;color:${d.color}">${d.tag}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="bc" style="font-size:15px;font-weight:700;color:var(--tp)">${d.name}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">${d.muscles.slice(0,3).map(m=>tagHTML(m)).join('')}</div>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </button>`;
+  }).join('');
+
+  const prs = computePRs();
+  const top3 = getTopPRs(prs);
+  document.getElementById('pr-list').innerHTML = top3.length===0
+    ? `<div class="card" style="text-align:center;padding:20px"><span class="bc" style="font-size:14px;color:var(--tm)">Noch keine Bestleistungen — starte dein erstes Training!</span></div>`
+    : top3.map(([name,pr])=>`
+      <div style="background:var(--card);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--amber)" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>
+        <div style="flex:1;min-width:0">
+          <div class="bc" style="font-size:14px;font-weight:700;color:var(--tp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="bc" style="font-size:18px;font-weight:800;color:var(--amber)">${pr.isBW?'BW':pr.weight+' kg'}</div>
+          <div class="bc" style="font-size:11px;color:var(--tm)">${pr.reps} Wdh</div>
+        </div>
+      </div>`).join('');
 }
+
 function renderWeekStrip(){
   const now=new Date(),todayIso=todayISO();const trainedDates=new Set(history.map(h=>h.date));const dayIdByDate={};history.forEach(h=>{dayIdByDate[h.date]=h.dayId;});
   const monday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
@@ -1449,6 +1702,154 @@ function showExerciseInfo(name){
     </div>` : ''}`;
 
   overlay.classList.add('show');
+}
+
+
+// ── EINSTELLUNGEN ─────────────────────────────────────────────────────────────
+function renderSettings(){
+  const si=document.getElementById('s-start-kg');
+  const gi=document.getElementById('s-goal-kg');
+  const di=document.getElementById('s-prog-start');
+  const wi=document.getElementById('s-weeks');
+  if(si) si.value=settings.startKg||95;
+  if(gi) gi.value=settings.goalKg||77;
+  if(di) di.value=settings.programStart||dateToISO(new Date());
+  if(wi){
+    const s2=parseISODateLocal(settings.programStart||dateToISO(new Date()));
+    const e2=parseISODateLocal(settings.programEnd||addDaysISO(dateToISO(new Date()),84));
+    wi.value=Math.max(4,Math.round((e2-s2)/(7*24*3600*1000)))||12;
+  }
+  const modeBtn=document.getElementById('theme-toggle-btn');
+  if(modeBtn) modeBtn.textContent=document.documentElement.getAttribute('data-theme')==='light'?'☀️ Hell':'🌙 Dunkel';
+}
+function stepSetting(field,delta){
+  const idMap={startKg:'s-start-kg',goalKg:'s-goal-kg',weeks:'s-weeks'};
+  const inp=document.getElementById(idMap[field]);if(!inp)return;
+  const cur=parseFloat(inp.value)||0;const neu=Math.round((cur+delta)*10)/10;
+  if(field==='weeks'&&neu<1)return;
+  if((field==='startKg'||field==='goalKg')&&(neu<30||neu>300))return;
+  inp.value=neu;
+}
+function saveSettingsForm(){
+  const startKg=parseFloat(document.getElementById('s-start-kg')?.value);
+  const goalKg=parseFloat(document.getElementById('s-goal-kg')?.value);
+  const progStart=document.getElementById('s-prog-start')?.value;
+  const weeks=parseInt(document.getElementById('s-weeks')?.value)||12;
+  if(isNaN(startKg)||startKg<30||startKg>300){showToast('Ungültiges Startgewicht');return;}
+  if(isNaN(goalKg)||goalKg<30||goalKg>300){showToast('Ungültiges Zielgewicht');return;}
+  if(goalKg>=startKg){showToast('Ziel muss kleiner als Start sein');return;}
+  if(!progStart){showToast('Bitte Startdatum eingeben');return;}
+  settings.startKg=startKg;settings.goalKg=goalKg;
+  settings.programStart=progStart;settings.programEnd=addDaysISO(progStart,weeks*7);
+  saveSettings();
+  currentWeight=weightLog.length?weightLog[weightLog.length-1].kg:startKg;
+  updateWeightDisplay();showToast('Einstellungen gespeichert ✓');switchTab('dashboard');
+}
+function exportAllData(){exportCSV();}
+
+// ── DARK / LIGHT MODE ─────────────────────────────────────────────────────────
+function initTheme(){const saved=localStorage.getItem('af_theme')||'dark';applyTheme(saved);}
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme',theme);localStorage.setItem('af_theme',theme);
+  if(theme==='light'){
+    document.documentElement.style.setProperty('--bg','#F0F2F5');
+    document.documentElement.style.setProperty('--card','#FFFFFF');
+    document.documentElement.style.setProperty('--cardElev','#F8F9FB');
+    document.documentElement.style.setProperty('--border','#DDE2EA');
+    document.documentElement.style.setProperty('--tp','#0F1219');
+    document.documentElement.style.setProperty('--tm','#6B7280');
+    document.documentElement.style.setProperty('--ts','#9CA3AF');
+  } else {
+    document.documentElement.style.setProperty('--bg','#080B10');
+    document.documentElement.style.setProperty('--card','#0F1219');
+    document.documentElement.style.setProperty('--cardElev','#151B27');
+    document.documentElement.style.setProperty('--border','#1E2535');
+    document.documentElement.style.setProperty('--tp','#F0F2F5');
+    document.documentElement.style.setProperty('--tm','#5A6478');
+    document.documentElement.style.setProperty('--ts','#8A95A8');
+  }
+}
+function toggleTheme(){
+  const current=document.documentElement.getAttribute('data-theme')||'dark';
+  const next=current==='dark'?'light':'dark';applyTheme(next);
+  const btn=document.getElementById('theme-toggle-btn');if(btn)btn.textContent=next==='light'?'☀️ Hell':'🌙 Dunkel';
+  showToast(next==='light'?'Heller Modus ☀️':'Dunkler Modus 🌙');
+}
+
+// ── MOTIVATION-NACHRICHTEN ────────────────────────────────────────────────────
+function getMotivationMessage(){
+  const streak=computeStreak();const totalWorkouts=history.length;const now=new Date();
+  const monday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
+  const thisWeek=history.filter(h=>parseISODateLocal(h.date)>=monday).length;
+  const todayDow=now.getDay();const hasTodayWorkout=history.some(h=>h.date===dateToISO(now));
+  const plannedToday=PLAN_DOW[todayDow];
+  const currentKg=weightLog.length?weightLog[weightLog.length-1].kg:settings.startKg;
+  const lost=(settings.startKg-currentKg).toFixed(1);
+  if(parseFloat(lost)>=10)return{msg:`🔥 Unglaublich — schon ${lost} kg abgenommen!`,color:'var(--amber)',icon:'🏆'};
+  if(parseFloat(lost)>=5&&parseFloat(lost)<5.5)return{msg:`💪 ${lost} kg abgenommen! Weiter so!`,color:'var(--green)',icon:'🏆'};
+  if(streak>=7)return{msg:`${streak} Tage Streak! Du bist auf einem Lauf 🔥`,color:'var(--amber)',icon:'🔥'};
+  if(streak>=3)return{msg:`${streak} Tage in Folge — bleib dran! 💪`,color:'var(--blue)',icon:'⚡'};
+  if(thisWeek>=5)return{msg:'5 Trainings diese Woche — phänomenal! 🎉',color:'var(--green)',icon:'🎉'};
+  if(hasTodayWorkout)return{msg:'Training heute erledigt — gut gemacht! ✅',color:'var(--green)',icon:'✅'};
+  if(plannedToday&&!hasTodayWorkout){const d=WORKOUT_DAYS.find(x=>x.id===plannedToday);return{msg:`Heute ist ${d?.name||'Training'} geplant — du schaffst das!`,color:'var(--blue)',icon:'🎯'};}
+  if(totalWorkouts===0)return{msg:'Willkommen! Starte dein erstes Training 🚀',color:'var(--blue)',icon:'🚀'};
+  if(!plannedToday)return{msg:'Heute ist Ruhetag — erhol dich gut 💤',color:'var(--tm)',icon:'💤'};
+  const msgs=['Jeder Satz bringt dich näher ans Ziel!','Konsequenz schlägt Perfektion. Jeden Tag.','Du investierst in dich — das zählt! 💙'];
+  return{msg:msgs[totalWorkouts%msgs.length],color:'var(--ts)',icon:'💡'};
+}
+
+// ── PROGRESSIONSVORSCHLAG ─────────────────────────────────────────────────────
+function getProgressionSuggestions(){
+  const suggestions=[];
+  const exerciseNames=[...new Set(history.flatMap(h=>h.exercises.map(e=>e.name)))];
+  exerciseNames.forEach(name=>{
+    if(isBW(name))return;
+    const sessions=history.filter(h=>h.exercises.some(e=>e.name===name)).slice(-3);
+    if(sessions.length<2)return;
+    const last=sessions[sessions.length-1];const prev=sessions[sessions.length-2];
+    const lastEx=last.exercises.find(e=>e.name===name);const prevEx=prev.exercises.find(e=>e.name===name);
+    if(!lastEx||!prevEx)return;
+    const lastMaxW=Math.max(...lastEx.sets.map(s=>parseFloat(s.weight)||0));
+    const prevMaxW=Math.max(...prevEx.sets.map(s=>parseFloat(s.weight)||0));
+    const lastSetsCompleted=lastEx.sets.filter(s=>s.weight>0).length;
+    if(lastMaxW>0&&lastMaxW>=prevMaxW&&lastSetsCompleted>=2){
+      const bigEx=['Kurzhantel Bankdrücken','Kurzhantel Kniebeugen','Rumänisches Kreuzheben','Kurzhantel Rudern einarmig'];
+      const step=bigEx.includes(name)?2.5:1;
+      suggestions.push({name,currentW:lastMaxW,suggestedW:lastMaxW+step});
+    }
+  });
+  return suggestions.slice(0,3);
+}
+
+// ── APPLE HEALTH EXPORT ───────────────────────────────────────────────────────
+function exportAppleHealth(){
+  const now=new Date().toISOString();
+  let xml=`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HealthData [<!ELEMENT HealthData (ExportDate,Me,Record*,Workout*)><!ATTLIST HealthData locale CDATA #REQUIRED>]>
+<HealthData locale="de_CH">
+  <ExportDate value="${now}"/>
+  <Me HKCharacteristicTypeIdentifierDateOfBirth="" HKCharacteristicTypeIdentifierBiologicalSex="HKBiologicalSexMale"/>
+`;
+  weightLog.forEach(e=>{
+    const ds=e.date+'T08:00:00+01:00';
+    xml+=`  <Record type="HKQuantityTypeIdentifierBodyMass" sourceName="AlexFit" unit="kg" creationDate="${ds}" startDate="${ds}" endDate="${ds}" value="${e.kg}"/>
+`;
+    if(e.bf)xml+=`  <Record type="HKQuantityTypeIdentifierBodyFatPercentage" sourceName="AlexFit" unit="%" creationDate="${ds}" startDate="${ds}" endDate="${ds}" value="${(e.bf/100).toFixed(4)}"/>
+`;
+  });
+  history.forEach(h=>{
+    const ss=h.date+'T10:00:00+01:00';
+    const em=new Date(h.date+'T10:00:00').getTime()+(h.duration||30)*60000;
+    const es=new Date(em).toISOString().replace('Z','+01:00');
+    xml+=`  <Workout workoutActivityType="HKWorkoutActivityTypeTraditionalStrengthTraining" duration="${h.duration||30}" durationUnit="min" sourceName="AlexFit" startDate="${ss}" endDate="${es}"/>
+`;
+  });
+  xml+=`</HealthData>`;
+  const blob=new Blob([xml],{type:'application/xml;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download='AlexFit_Health_'+dateToISO(new Date())+'.xml';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('Apple Health XML exportiert ✓');
 }
 
 // INIT
