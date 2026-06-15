@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AlexFit">
@@ -184,6 +184,21 @@
   .screen.active{animation:screenIn .28s ease;}
   @keyframes screenIn{from{opacity:.6;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
   @media (prefers-reduced-motion:reduce){.screen.active{animation:none;}}
+  #rest-timer-bar{
+    position:sticky;
+    top:0;
+    z-index:35;
+    display:none;
+    margin:-6px -16px 12px;
+    padding:8px 16px 10px;
+    background:color-mix(in srgb,var(--bg) 88%,transparent);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    backdrop-filter:blur(20px) saturate(180%);
+    border-bottom:1px solid var(--glass-border);
+    box-shadow:0 4px 12px var(--glass-shadow);
+  }
+  #rest-timer-bar.active{display:block;}
+  .ex-video-badge{display:inline-flex;align-items:center;gap:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:4px;padding:1px 5px;vertical-align:middle;margin-left:4px;}
 </style>
 </head>
 <body>
@@ -245,6 +260,7 @@
 
     <!-- WORKOUT ACTIVE -->
     <div id="screen-workout-active" class="screen">
+      <div id="rest-timer-bar"></div>
       <div id="workout-header"></div>
       <div class="slabel">Aufwärmen — 5 Min</div>
       <div id="warmup-list" class="card" style="margin-bottom:16px"></div>
@@ -473,6 +489,20 @@
             <button onclick="stepSetting('weeks',-1)">−</button>
             <input id="s-weeks" type="number" inputmode="numeric" step="1" min="4" max="52">
             <button onclick="stepSetting('weeks',+1)">+</button>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div class="bc" style="font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Standard-Pausenzeit (Sek.)</div>
+          <div class="weight-stepper">
+            <button onclick="stepSetting('defaultRestTime',-15)">−</button>
+            <input id="s-rest-time" type="number" inputmode="numeric" step="15" min="15" max="300">
+            <button onclick="stepSetting('defaultRestTime',+15)">+</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button onclick="document.getElementById('s-rest-time').value=45;settings.defaultRestTime=45;saveSettings()" style="flex:1;padding:8px;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:12px;font-weight:700">45s</button>
+            <button onclick="document.getElementById('s-rest-time').value=60;settings.defaultRestTime=60;saveSettings()" style="flex:1;padding:8px;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:12px;font-weight:700">60s</button>
+            <button onclick="document.getElementById('s-rest-time').value=90;settings.defaultRestTime=90;saveSettings()" style="flex:1;padding:8px;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:12px;font-weight:700">90s</button>
+            <button onclick="document.getElementById('s-rest-time').value=120;settings.defaultRestTime=120;saveSettings()" style="flex:1;padding:8px;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:12px;font-weight:700">2min</button>
           </div>
         </div>
         <div style="margin-bottom:14px">
@@ -904,6 +934,7 @@ function loadSettings(){
       goalKg:GOAL_KG,
       startKg:weights.length?weights[0].kg:95,
       weekGoal:4,
+      defaultRestTime:90,
       streakPaused:false,
       streakFrozenAt:0,
     };
@@ -916,6 +947,7 @@ function loadSettings(){
     if(!meta.startKg)  meta.startKg=weights.length?weights[0].kg:95;
     if(!meta.activePhase) meta.activePhase='p1';
     if(!meta.weekGoal) meta.weekGoal=4;
+    if(!meta.defaultRestTime) meta.defaultRestTime=90;
     // Fix old programEnd if clearly wrong
     if(!meta.programEnd||meta.programEnd==='2025-08-24'){
       meta.programEnd=addDaysISO(meta.programStart||today,6*7);
