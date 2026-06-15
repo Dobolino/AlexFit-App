@@ -185,17 +185,15 @@
   @keyframes screenIn{from{opacity:.6;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
   @media (prefers-reduced-motion:reduce){.screen.active{animation:none;}}
   #rest-timer-bar{
-    position:sticky;
-    top:0;
-    z-index:35;
     display:none;
-    margin:-6px -16px 12px;
+    flex-shrink:0;
     padding:8px 16px 10px;
-    background:color-mix(in srgb,var(--bg) 88%,transparent);
+    background:color-mix(in srgb,var(--bg) 90%,transparent);
     -webkit-backdrop-filter:blur(20px) saturate(180%);
     backdrop-filter:blur(20px) saturate(180%);
     border-bottom:1px solid var(--glass-border);
-    box-shadow:0 4px 12px var(--glass-shadow);
+    box-shadow:0 4px 16px var(--glass-shadow);
+    z-index:49;
   }
   #rest-timer-bar.active{display:block;}
   .ex-video-badge{display:inline-flex;align-items:center;gap:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:4px;padding:1px 5px;vertical-align:middle;margin-left:4px;}
@@ -222,6 +220,7 @@
       </button>
     </div>
   </div>
+  <div id="rest-timer-bar"></div>
 
   <div id="content">
     <!-- DASHBOARD -->
@@ -260,7 +259,6 @@
 
     <!-- WORKOUT ACTIVE -->
     <div id="screen-workout-active" class="screen">
-      <div id="rest-timer-bar"></div>
       <div id="workout-header"></div>
       <div class="slabel">Aufwärmen — 5 Min</div>
       <div id="warmup-list" class="card" style="margin-bottom:16px"></div>
@@ -1674,11 +1672,13 @@ function renderExerciseList(){
             ${ex.bw?`<div style="display:flex;align-items:center;justify-content:center"><span class="bc" style="font-size:11px;color:var(--tm);background:var(--cardElev);border:1px solid var(--border);border-radius:6px;padding:4px;width:100%;text-align:center">BW</span></div>`
               :`<input type="number" inputmode="decimal" value="${s.weight}" placeholder="0" onchange="setVal(${ei},${si},'weight',this.value)">`}
             <input type="number" inputmode="numeric" value="${s.reps}" placeholder="${ex.reps||'0'}" onchange="setVal(${ei},${si},'reps',this.value)">
-            <div id="1rm-${ei}-${si}" style="display:none;position:absolute;bottom:-16px;right:36px;pointer-events:none"></div>
             <button class="check-btn${s.done?' done':''}" id="cb-${ei}-${si}" onclick="toggleSet(${ei},${si})">
               ${s.done?`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`:''}
             </button>
           </div>`).join('')}
+        <div id="ex-1rm-${ei}" style="display:none;padding:5px 10px 4px;border-top:1px dashed var(--border);text-align:right">
+          <span class="bc" style="font-size:10px;color:var(--blue)">Bestes 1RM ≈ <strong id="ex-1rm-val-${ei}">—</strong> kg</span>
+        </div>
         <button class="add-set-btn" onclick="addSet(${ei})">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Satz hinzufügen
         </button>
@@ -1721,8 +1721,7 @@ function swapExercise(ei,newName){
 
 function setVal(ei,si,field,val){
   workoutExercises[ei].setData[si][field]=val;saveSession();
-  const s=workoutExercises[ei].setData[si];
-  update1RM(ei,si,s.weight,s.reps);
+  update1RM(ei);
 }
 
 // ── HAPTIC FEEDBACK ───────────────────────────────────────────────────────────
@@ -1743,17 +1742,20 @@ function calc1RM(weight,reps){
   if(reps===1)return weight;
   return Math.round(weight*(1+reps/30)*10)/10;
 }
-function update1RM(ei,si,weight,reps){
-  const el=document.getElementById(`1rm-${ei}-${si}`);
-  if(!el)return;
-  const w=parseFloat(weight),r=parseInt(reps);
-  const rm=calc1RM(w,r);
-  if(rm&&r>1&&r<=12){
-    el.innerHTML=`<span class="bc" style="font-size:9px;color:var(--blue);background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);border-radius:4px;padding:1px 5px">1RM≈${rm}kg</span>`;
-    el.style.display='flex';
-  }else{
-    el.style.display='none';
-  }
+function update1RM(ei){
+  const ex=workoutExercises[ei];
+  if(!ex||ex.bw)return;
+  const box=document.getElementById(`ex-1rm-${ei}`);
+  const val=document.getElementById(`ex-1rm-val-${ei}`);
+  if(!box||!val)return;
+  let best=null;
+  ex.setData.forEach(s=>{
+    const w=parseFloat(s.weight),r=parseInt(s.reps);
+    const rm=calc1RM(w,r);
+    if(rm&&r>1&&r<=12&&(!best||rm>best))best=rm;
+  });
+  if(best){val.textContent=best;box.style.display='block';}
+  else{box.style.display='none';}
 }
 
 function toggleSet(ei,si){
@@ -3035,13 +3037,10 @@ const EXERCISE_INFO={
   "WalkingPad Aufwärmen":{primary:["Ausdauer"],secondary:[],tip:"Lockeres Tempo, Puls auf 100–120 bringen"},
   "Rudern Intervalle":{primary:["Rücken","Beine"],secondary:["Arme","Core"],tip:"Beine drücken zuerst, dann Rücken, dann Arme"},
   "Rudern Steadystate":{primary:["Ausdauer","Rücken"],secondary:["Beine","Core"],tip:"Gleichmäßiges Tempo, Atemrhythmus finden"},
-  "Bulgarian Split Squat":{primary:["Quadrizeps","Gesäß"],secondary:["Hintershenkel","Waden"],tip:"Hinterer Fuß auf Bank, Knie des vorderen Beins über Zehen, tief absenken"},
-  "Concentration Curls":{primary:["Bizeps"],secondary:["Unterarm"],tip:"Ellbogen am Innenschenkel abstützen, langsam und kontrolliert"},
-  "Dips an der Bank":{primary:["Trizeps"],secondary:["Brust","Vordere Schulter"],tip:"Hände schulterbreit, Ellbogen nah am Körper, volle Streckung"},
-  "Dips an der Bank":{primary:["Trizeps"],secondary:["Brust","Vordere Schulter"],tip:"Hände schulterbreit, Ellbogen nah am Körper, volle Streckung"},
-  "Concentration Curls":{primary:["Bizeps"],secondary:["Unterarm"],tip:"Ellbogen am Innenschenkel abstützen, langsam und kontrolliert"},
-  "Farmer's Walk (Kurzhanteln)":{primary:["Trapez"],secondary:["Unterarm","Schultern","Core"],tip:"Aufrechte Haltung, Schultern leicht zurückgezogen, gleichmäßige Schritte"},
   "Bulgarian Split Squat":{primary:["Quadrizeps","Gesäß"],secondary:["Hinterschenkel","Waden"],tip:"Hinterer Fuß auf Bank, Knie des vorderen Beins über Zehen, tief absenken"},
+  "Concentration Curls":{primary:["Bizeps"],secondary:["Unterarm"],tip:"Ellbogen am Innenschenkel abstützen, langsam und kontrolliert"},
+  "Dips an der Bank":{primary:["Trizeps"],secondary:["Brust","Vordere Schulter"],tip:"Hände schulterbreit, Ellbogen nah am Körper, volle Streckung"},
+  "Farmer's Walk (Kurzhanteln)":{primary:["Trapez"],secondary:["Unterarm","Schultern","Core"],tip:"Aufrechte Haltung, Schultern leicht zurückgezogen, gleichmäßige Schritte"},
 };
 
 const MUSCLES={CHEST:'chest',TRICEP:'tricep',SHOULDER_FRONT:'shoulder_front',SHOULDER_MID:'shoulder_mid',SHOULDER_REAR:'shoulder_rear',BICEP:'bicep',FOREARM:'forearm',BACK_LAT:'back_lat',BACK_MID:'back_mid',BACK_LOW:'back_low',TRAP:'trap',ABS:'abs',OBLIQUE:'oblique',HIP_FLEXOR:'hip_flexor',QUAD:'quad',HAMSTRING:'hamstring',GLUTE:'glute',CALF:'calf',CARDIO:'cardio'};
@@ -3561,13 +3560,15 @@ function renderSettings(){
   }
 }
 function stepSetting(field,delta){
-  const idMap={startKg:'s-start-kg',goalKg:'s-goal-kg',weeks:'s-weeks',weekGoal:'s-week-goal'};
+  const idMap={startKg:'s-start-kg',goalKg:'s-goal-kg',weeks:'s-weeks',weekGoal:'s-week-goal',defaultRestTime:'s-rest-time'};
   const inp=document.getElementById(idMap[field]);if(!inp)return;
   const cur=parseFloat(inp.value)||0;const neu=Math.round((cur+delta)*10)/10;
   if(field==='weeks'&&neu<1)return;
   if(field==='weekGoal'&&(neu<1||neu>7))return;
   if((field==='startKg'||field==='goalKg')&&(neu<30||neu>300))return;
+  if(field==='defaultRestTime'&&(neu<15||neu>300))return;
   inp.value=neu;
+  if(field==='defaultRestTime'){settings.defaultRestTime=neu;saveSettings();}
 }
 function saveSettingsForm(){
   const startKg=parseFloat(document.getElementById('s-start-kg')?.value);const goalKg=parseFloat(document.getElementById('s-goal-kg')?.value);const progStart=document.getElementById('s-prog-start')?.value;const weeks=parseInt(document.getElementById('s-weeks')?.value)||12;
