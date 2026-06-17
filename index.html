@@ -152,6 +152,7 @@
   #cardio-detail-overlay.show{display:flex!important;}
   #recovery-overlay.show{display:flex!important;}
   #workout-detail-overlay.show{display:flex!important;}
+  #workout-summary-overlay.show{display:flex!important;}
   #cal-day-overlay.show{display:flex!important;}
   #phase-picker-overlay.show{display:flex!important;}
   #ex-info-sheet{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--blue);border-radius:20px 20px 16px 16px;width:calc(100% - 32px);max-width:440px;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;}
@@ -234,7 +235,8 @@
         <button onclick="dismissInstallBanner()" style="color:var(--tm);font-size:20px;line-height:1;flex-shrink:0;padding:0 4px">×</button>
       </div>
       <div id="goal-banner"></div>
-      <div id="stat-boxes" style="display:flex;gap:10px;margin-bottom:16px"></div>
+      <div id="stat-boxes" style="display:flex;gap:10px;margin-bottom:12px"></div>
+      <div id="home-weight-graph" style="margin-bottom:16px"></div>
       <!-- Motivation Banner -->
       <div id="recovery-banner" style="margin-bottom:16px"></div>
       <div id="motivation-banner" style="margin-bottom:16px"></div>
@@ -276,6 +278,9 @@
           style="font-size:15px;font-weight:500;">
       </div>
       <div style="display:flex;gap:10px;padding-bottom:8px">
+        <button onclick="saveCurrentAsTemplate()" style="padding:14px 10px;border-radius:12px;border:1px solid rgba(37,99,235,.4);color:var(--blue);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">
+          💾 Template
+        </button>
         <button onclick="discardWorkout()" style="flex:1;padding:14px;border-radius:12px;border:1px solid var(--border);color:var(--tm);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Verwerfen</button>
         <button onclick="finishWorkout()" style="flex:2;padding:14px;border-radius:12px;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;box-shadow:0 4px 20px rgba(37,99,235,.4)">Abschliessen</button>
       </div>
@@ -517,6 +522,29 @@
         </div>
         <button onclick="saveSettingsForm()" style="width:100%;padding:16px;border-radius:12px;background:linear-gradient(135deg,var(--blue),#1D4ED8);color:#fff;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;box-shadow:0 4px 16px rgba(37,99,235,.35)">Speichern</button>
       </div>
+      <!-- Benachrichtigungen -->
+      <div class="slabel">Benachrichtigungen</div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div>
+              <div class="bc" style="font-size:14px;font-weight:700;color:var(--tp)">Trainings-Erinnerung</div>
+              <div id="notif-status" style="font-size:12px;color:var(--tm);margin-top:2px">Wird geladen…</div>
+            </div>
+            <button id="notif-enable-btn" onclick="requestNotificationPermission()" style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--tp)">Aktivieren</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div class="bc" style="font-size:12px;color:var(--tm);white-space:nowrap">Uhrzeit:</div>
+          <input id="s-reminder-time" type="time" value="18:00"
+            style="background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--tp);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;padding:8px 12px;flex:1;">
+          <button onclick="saveReminderTime()" style="background:var(--blue);border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;flex-shrink:0">Setzen</button>
+        </div>
+        <div style="padding:10px;background:var(--cardElev);border-radius:8px">
+          <div class="bc" style="font-size:10px;font-weight:700;color:var(--amber);margin-bottom:4px">⚠️ iOS Hinweis</div>
+          <div style="font-size:11px;color:var(--tm);line-height:1.5">Benachrichtigungen funktionieren nur wenn AlexFit als Home-Screen App installiert ist (ab iOS 16.4). Die App muss mindestens einmal täglich geöffnet werden damit der Timer läuft.</div>
+        </div>
+      </div>
       <!-- Darstellung -->
       <div class="slabel">Darstellung</div>
       <div class="card" style="margin-bottom:16px">
@@ -529,6 +557,15 @@
         </div>
       </div>
 
+      <!-- Templates -->
+      <div class="slabel">Trainings-Templates</div>
+      <div class="card" style="margin-bottom:16px">
+        <div id="settings-templates" style="margin-bottom:10px"></div>
+        <button onclick="saveCurrentAsTemplate()" style="width:100%;padding:12px;background:var(--cardElev);border:1px dashed rgba(37,99,235,.5);border-radius:10px;color:var(--blue);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Aktuelles Training als Template speichern
+        </button>
+      </div>
       <!-- Daten -->
       <div class="slabel">Daten</div>
       <div class="card" style="margin-bottom:16px">
@@ -639,6 +676,17 @@
     <div id="cal-day-header" style="flex-shrink:0;padding:16px;border-bottom:1px solid var(--border);background:var(--card);"></div>
     <div id="cal-day-scroll" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;">
       <div id="cal-day-body"></div>
+    </div>
+  </div>
+</div>
+<div id="workout-summary-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9991;display:none;align-items:flex-end;justify-content:center;padding-bottom:calc(16px + var(--safe-bot));">
+  <div style="background:var(--card);border:1px solid var(--border);border-top:3px solid var(--green);border-radius:20px 20px 16px 16px;width:calc(100% - 32px);max-width:440px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;" id="workout-summary-sheet">
+    <div style="flex-shrink:0;padding:16px;border-bottom:1px solid var(--border);" id="workout-summary-header"></div>
+    <div style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;" id="workout-summary-scroll">
+      <div id="workout-summary-body"></div>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;">
+      <button onclick="closeSummaryAndGoToHistory()" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--blue),#1D4ED8);color:#fff;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.06em">Zum Verlauf →</button>
     </div>
   </div>
 </div>
@@ -1184,6 +1232,126 @@ function checkBackupWarning(){
   return null;
 }
 
+
+// ── ÜBUNGS-BIBLIOTHEK ─────────────────────────────────────────────────────────
+// Alle Übungen die man hinzufügen kann — Plan-Übungen + Core + Alternativen
+const EXERCISE_LIBRARY = [
+  // Brust
+  {id:'lib_b1',name:'Kurzhantel Bankdrücken',     muscle:'Brust',    sets:3,reps:'10–12'},
+  {id:'lib_b2',name:'Kurzhantel Fliegende',        muscle:'Brust',    sets:3,reps:'12–15'},
+  {id:'lib_b3',name:'Liegestütz (Reebok Deck)',    muscle:'Brust',    sets:3,reps:'10–12',bw:true},
+  {id:'lib_b4',name:'Dips an der Bank',            muscle:'Trizeps',  sets:3,reps:'10–15',bw:true},
+  // Rücken
+  {id:'lib_r1',name:'Kurzhantel Rudern einarmig (Lat-Fokus)',  muscle:'Rücken',   sets:3,reps:'10–12'},
+  {id:'lib_r2',name:'Kurzhantel Rudern beidarmig (oberer Rücken)', muscle:'Rücken',   sets:3,reps:'10–12'},
+  {id:'lib_r3',name:'Klimmzüge / Negativklimmzüge',muscle:'Rücken',   sets:3,reps:'6–8',bw:true},
+  // Schultern
+  {id:'lib_s1',name:'Kurzhantel Schulterdrücken',  muscle:'Schultern',sets:3,reps:'10–12'},
+  {id:'lib_s2',name:'Seitheben',                   muscle:'Schultern',sets:3,reps:'12–15'},
+  {id:'lib_s3',name:'Frontheben',                  muscle:'Schultern',sets:2,reps:'12–15'},
+  {id:'lib_s4',name:'Arnold Press',                muscle:'Schultern',sets:3,reps:'10–12'},
+  {id:'lib_s5',name:'Reverse Flyes (Kurzhanteln)', muscle:'Schultern',sets:3,reps:'12–15'},
+  // Bizeps / Trizeps
+  {id:'lib_bi1',name:'Kurzhantel Curls',           muscle:'Bizeps',   sets:3,reps:'10–12'},
+  {id:'lib_bi2',name:'Hammercurls',                muscle:'Bizeps',   sets:3,reps:'12–15'},
+  {id:'lib_bi3',name:'Concentration Curls',        muscle:'Bizeps',   sets:3,reps:'10–12'},
+  {id:'lib_tr1',name:'Overhead Trizepsstrecken',   muscle:'Trizeps',  sets:3,reps:'12–15'},
+  {id:'lib_tr2',name:'Kurzhantel Kickbacks',       muscle:'Trizeps',  sets:3,reps:'12–15'},
+  // Core — alle Varianten
+  {id:'lib_c1', name:'Plank',                      muscle:'Core',     sets:3,reps:'30–45s',bw:true},
+  {id:'lib_c2', name:'Ab Wheel Rollouts',          muscle:'Core',     sets:3,reps:'8–10',bw:true},
+  {id:'lib_c3', name:'Dead Bug',                   muscle:'Core',     sets:3,reps:'8 je Seite',bw:true},
+  {id:'lib_c4', name:'Schrägbauchcrunch',          muscle:'Core',     sets:3,reps:'15–20',bw:true},
+  {id:'lib_c5', name:'Kurzhantel Russian Twist',   muscle:'Core',     sets:3,reps:'15 je Seite'},
+  {id:'lib_c6', name:'Kurzhantel Crunch',          muscle:'Core',     sets:3,reps:'15–20'},
+  {id:'lib_c7', name:'Kurzhantel Side Bend',       muscle:'Core',     sets:3,reps:'15 je Seite'},
+  {id:'lib_c8', name:'Mountain Climbers',          muscle:'Core',     sets:3,reps:'20 je Seite',bw:true},
+  {id:'lib_c9', name:'Bicycle Crunches',           muscle:'Core',     sets:3,reps:'15 je Seite',bw:true},
+  {id:'lib_c10',name:'Bird Dog',                   muscle:'Core',     sets:3,reps:'10 je Seite',bw:true},
+  {id:'lib_c11',name:'Russian Twist',              muscle:'Core',     sets:3,reps:'15 je Seite',bw:true},
+  {id:'lib_c12',name:'Suitcase Carry',             muscle:'Core',     sets:3,reps:'30s je Seite'},
+  {id:'lib_c13',name:'Weighted Plank',             muscle:'Core',     sets:3,reps:'30–45s'},
+  {id:'lib_c14',name:'Side Plank',                 muscle:'Core',     sets:3,reps:'30s je Seite',bw:true},
+  // Beine
+  {id:'lib_l1', name:'Kurzhantel Kniebeugen',      muscle:'Quadrizeps',sets:3,reps:'12–15'},
+  {id:'lib_l2', name:'Bulgarian Split Squat',      muscle:'Quadrizeps',sets:3,reps:'8 je Seite'},
+  {id:'lib_l3', name:'Kurzhantel Ausfallschritte', muscle:'Quadrizeps',sets:3,reps:'10 je Seite'},
+  {id:'lib_l4', name:'Goblet Squat',               muscle:'Quadrizeps',sets:3,reps:'12–15'},
+  {id:'lib_l5', name:'Step-ups (Reebok Deck)',     muscle:'Quadrizeps',sets:3,reps:'10 je Seite'},
+  {id:'lib_l6', name:'Reverse Lunges',             muscle:'Quadrizeps',sets:3,reps:'10 je Seite'},
+  {id:'lib_l7', name:'Rumänisches Kreuzheben',     muscle:'Hintershenkel',sets:3,reps:'10–12'},
+  {id:'lib_l8', name:'Hüftheben (Glute Bridge)',   muscle:'Gesäß',     sets:3,reps:'15–20',bw:true},
+  {id:'lib_l9', name:'Hip Thrust',                 muscle:'Gesäß',     sets:3,reps:'12–15'},
+  {id:'lib_l10',name:'Wadenheben stehend',         muscle:'Waden',     sets:3,reps:'15–20',bw:true},
+  {id:'lib_l11',name:'Single-Leg Wadenheben',      muscle:'Waden',     sets:3,reps:'12 je Seite',bw:true},
+];
+
+// Muskelgruppen-Kategorien für Filter
+const MUSCLE_GROUPS = [
+  {key:'alle',    label:'Alle',       color:'var(--blue)'},
+  {key:'Brust',   label:'Brust',      color:'#3B82F6'},
+  {key:'Rücken',  label:'Rücken',     color:'#8B5CF6'},
+  {key:'Schultern',label:'Schultern', color:'#EC4899'},
+  {key:'Bizeps',  label:'Bizeps',     color:'#A78BFA'},
+  {key:'Trizeps', label:'Trizeps',    color:'#60A5FA'},
+  {key:'Core',    label:'Core',       color:'#EF4444'},
+  {key:'Quadrizeps',label:'Beine',    color:'#F59E0B'},
+  {key:'Hintershenkel',label:'Hinterschenkel',color:'#FBBF24'},
+  {key:'Gesäß',   label:'Gesäß',      color:'#FCD34D'},
+  {key:'Waden',   label:'Waden',      color:'#D97706'},
+];
+
+let addExFilter='alle';
+
+
+
+
+function removeAddedExercise(ei){
+  const ex=workoutExercises[ei];
+  if(!ex._added){showToast('Plan-Übungen können nicht entfernt werden');return;}
+  showConfirm('"'+ex.name+'" entfernen?',()=>{
+    workoutExercises.splice(ei,1);
+    saveSession();renderExerciseList();updateProgress();
+    showToast('Übung entfernt');
+  },'Entfernen','var(--red)');
+}
+
+// ── RPE (RATING OF PERCEIVED EXERTION 1–10) ──────────────────────────────────
+function cycleRPE(ei,si){
+  const s=workoutExercises[ei].setData[si];
+  if(!s.rpe)s.rpe=6;
+  else{s.rpe=s.rpe>=10?1:s.rpe+1;}
+  const btn=document.getElementById('rpe-'+ei+'-'+si);
+  if(btn){btn.textContent=s.rpe;btn.style.background=getRPEColor(s.rpe);btn.style.color='#fff';}
+  saveSession();
+}
+function getRPEColor(rpe){
+  if(!rpe)return'var(--cardElev)';
+  if(rpe<=5)return'#10B981';
+  if(rpe<=7)return'#F59E0B';
+  if(rpe<=8)return'#F97316';
+  return'#EF4444';
+}
+
+// ── GEWICHTSVORSCHLAG ─────────────────────────────────────────────────────────
+function suggestWeight(exName, lastWeight){
+  if(!lastWeight||lastWeight<=0)return null;
+  let consecCount=0;
+  const sessions=[...history].reverse();
+  for(const h of sessions){
+    const ex=h.exercises.find(e=>e.name===exName);
+    if(!ex)break;
+    const maxW=Math.max(...ex.sets.map(s=>parseFloat(s.weight)||0));
+    if(Math.abs(maxW-lastWeight)<0.5)consecCount++;
+    else break;
+  }
+  if(consecCount>=2){
+    const bigEx=['Kurzhantel Bankdrücken','Kurzhantel Kniebeugen','Rumänisches Kreuzheben','Kurzhantel Rudern einarmig (Lat-Fokus)'];
+    return lastWeight+(bigEx.includes(exName)?2.5:1);
+  }
+  return lastWeight;
+}
+
 // ── PHASEN-MANAGEMENT ─────────────────────────────────────────────────────────
 function switchPhase(phaseId){
   if(!WORKOUT_PLANS[phaseId]){showToast('Phase nicht gefunden');return;}
@@ -1398,6 +1566,49 @@ function renderDashboard(){
       <div class="bc" style="font-size:26px;font-weight:800;color:var(--tp);line-height:1">${s.val}</div>
       <div style="font-size:10px;color:var(--tm);margin-top:3px">${s.sub}</div>
     </div>`).join('')}`;
+
+  // Körpergewicht Mini-Graph
+  const wgEl=document.getElementById('home-weight-graph');
+  if(wgEl&&weightLog.length>=2){
+    const recent=weightLog.slice(-14); // letzte 14 Einträge
+    const W=320,H=60,PL=32,PR=8,PT=6,PB=18,cW=W-PL-PR,cH=H-PT-PB;
+    const vals=recent.map(e=>e.kg);
+    const minV=Math.min(...vals,settings.goalKg)-0.5;
+    const maxV=Math.max(...vals)+0.5;
+    const toX=i=>PL+(i/(Math.max(recent.length-1,1)))*cW;
+    const toY=v=>PT+cH-(v-minV)/(maxV-minV)*cH;
+    const pts=recent.map((e,i)=>({x:toX(i),y:toY(e.kg)}));
+    const pathD=pts.map((p,i)=>(i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+    const areaD=pathD+` L${pts[pts.length-1].x.toFixed(1)},${H-PB} L${PL},${H-PB} Z`;
+    const goalY=toY(settings.goalKg);
+    const trend=vals[vals.length-1]-vals[vals.length-2];
+    const trendColor=trend<0?'var(--green)':trend>0?'var(--red)':'var(--tm)';
+    const trendArrow=trend<0?'↓':trend>0?'↑':'→';
+    const curr=vals[vals.length-1];
+    wgEl.innerHTML=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;cursor:pointer" onclick="switchTab('weight')">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div class="bc" style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.08em">Gewichtsverlauf</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="bc" style="font-size:16px;font-weight:900;color:var(--blue)">${curr} kg</span>
+          <span class="bc" style="font-size:13px;font-weight:700;color:${trendColor}">${trendArrow} ${Math.abs(trend).toFixed(1)}</span>
+        </div>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;overflow:visible">
+        <defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563EB" stop-opacity=".2"/><stop offset="100%" stop-color="#2563EB" stop-opacity="0"/></linearGradient></defs>
+        <line x1="${PL}" y1="${goalY.toFixed(1)}" x2="${W-PR}" y2="${goalY.toFixed(1)}" stroke="#10B981" stroke-width="1" stroke-dasharray="4,3"/>
+        <path d="${areaD}" fill="url(#hg)"/>
+        <path d="${pathD}" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="${pts[pts.length-1].x.toFixed(1)}" cy="${pts[pts.length-1].y.toFixed(1)}" r="4" fill="#2563EB" stroke="var(--card)" stroke-width="2"/>
+        <text x="${PL-2}" y="${(PT+4)}" text-anchor="end" font-family="Barlow Condensed,sans-serif" font-size="9" fill="#5A6478">${maxV.toFixed(0)}</text>
+        <text x="${PL-2}" y="${(H-PB+2)}" text-anchor="end" font-family="Barlow Condensed,sans-serif" font-size="9" fill="#5A6478">${minV.toFixed(0)}</text>
+        <text x="${pts[0].x.toFixed(1)}" y="${H-2}" text-anchor="middle" font-family="Barlow Condensed,sans-serif" font-size="9" fill="#5A6478">${recent[0].date.slice(5)}</text>
+        <text x="${pts[pts.length-1].x.toFixed(1)}" y="${H-2}" text-anchor="middle" font-family="Barlow Condensed,sans-serif" font-size="9" fill="#5A6478">Heute</text>
+        <text x="${(toX(recent.length-1)-8).toFixed(1)}" y="${(goalY-3).toFixed(1)}" font-family="Barlow Condensed,sans-serif" font-size="8" fill="#10B981">Ziel ${settings.goalKg}</text>
+      </svg>
+    </div>`;
+  } else if(wgEl){
+    wgEl.innerHTML='';
+  }
 
   renderWeekStrip();
 
@@ -1615,6 +1826,7 @@ function renderWorkoutActive(){
         <div style="text-align:right">
           <div id="workout-timer" class="bc timer-glow" style="font-size:28px;font-weight:900;color:var(--blue);letter-spacing:.05em">${fmt(workoutElapsed)}</div>
           <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:4px">
+            <button onclick="volumeKeyEnabled=!volumeKeyEnabled;showToast(volumeKeyEnabled?'Lautstärke-Tasten: AN 🔊':'Lautstärke-Tasten: AUS')" title="Lautstärke-Taste für Satz-Häkchen" style="background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);border-radius:7px;color:var(--blue);padding:5px 7px;display:flex;align-items:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700">🔊</button>
             <button id="timer-toggle-btn" onclick="toggleTimer()" style="background:rgba(37,99,235,.2);border:1px solid rgba(37,99,235,.4);border-radius:7px;color:var(--blue);padding:5px 8px;display:flex;align-items:center;justify-content:center">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
             </button>
@@ -1657,21 +1869,23 @@ function renderExerciseList(){
         ${ex.note&&ex.note.toLowerCase().includes('superset')?`<span style="background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);border-radius:5px;padding:1px 6px;flex-shrink:0"><span class="bc" style="font-size:9px;font-weight:800;color:var(--amber);text-transform:uppercase">Superset</span></span>`:''}
         ${ex.note&&ex.note.toLowerCase().includes('dropset')?`<span style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);border-radius:5px;padding:1px 6px;flex-shrink:0"><span class="bc" style="font-size:9px;font-weight:800;color:var(--red);text-transform:uppercase">Dropset</span></span>`:''}
         ${tagHTML(ex.muscle)}
+        ${ex._added?`<button onclick="removeAddedExercise(${ei})" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:2px 8px;flex-shrink:0"><span class="bc" style="font-size:10px;font-weight:700;color:var(--red)">✕ entfernen</span></button>`:''}
       </div>
       ${ex.note?`<div style="margin:-4px 0 8px 12px;padding:5px 10px;background:rgba(245,158,11,.08);border-left:2px solid var(--amber);border-radius:0 6px 6px 0"><span style="font-size:11px;color:var(--amber)">${ex.note}</span></div>`:''}
       <div class="set-table">
-        <div class="set-head">
+        <div class="set-head" style="grid-template-columns:22px 1fr 1fr 1fr 32px 34px">
           <span>#</span><span>${ex.bw?'VORH.(Wdh)':'VORH.(kg×Wdh)'}</span>
           <span style="text-align:center">${ex.bw?'—':'KG'}</span>
-          <span style="text-align:center">WDH</span><span style="text-align:center">✓</span>
+          <span style="text-align:center">WDH</span><span style="text-align:center;font-size:8px">RPE</span><span style="text-align:center">✓</span>
         </div>
         ${ex.setData.map((s,si)=>`
-          <div class="set-row${s.done?' done':''}" id="sr-${ei}-${si}" style="position:relative;">
+          <div class="set-row${s.done?' done':''}" id="sr-${ei}-${si}" style="position:relative;grid-template-columns:22px 1fr 1fr 1fr 32px 34px;">
             <span class="bc" style="font-size:13px;font-weight:700;color:var(--tm)">${si+1}</span>
             ${(()=>{const lp=getLastPerf(ex.name);if(lp&&ex.bw&&(parseInt(lp.reps)||0)>0)return `<span class="bc" style="font-size:11px;color:var(--ts)">${lp.reps} Wdh</span>`;if(lp&&!ex.bw&&lp.weight>0)return `<span class="bc" style="font-size:11px;color:var(--ts)">${lp.weight}kg×${lp.reps}</span>`;return `<span class="bc" style="font-size:11px;color:var(--tm)">—</span>`;})()}
             ${ex.bw?`<div style="display:flex;align-items:center;justify-content:center"><span class="bc" style="font-size:11px;color:var(--tm);background:var(--cardElev);border:1px solid var(--border);border-radius:6px;padding:4px;width:100%;text-align:center">BW</span></div>`
-              :`<input type="number" inputmode="decimal" value="${s.weight}" placeholder="0" onchange="setVal(${ei},${si},'weight',this.value)">`}
+              :`<input type="number" inputmode="decimal" value="${s.weight}" onchange="setVal(${ei},${si},'weight',this.value)" placeholder="${!s.weight&&!ex.bw?((lp=>{return lp&&lp.weight>0?(suggestWeight(ex.name,lp.weight)||lp.weight)+'':'';})(getLastPerf(ex.name))):'0'}">`}
             <input type="number" inputmode="numeric" value="${s.reps}" placeholder="${ex.reps||'0'}" onchange="setVal(${ei},${si},'reps',this.value)">
+            <button onclick="cycleRPE(${ei},${si})" id="rpe-${ei}-${si}" title="RPE (Anstrengung 1–10)" style="width:30px;height:30px;border-radius:7px;background:${getRPEColor(s.rpe)};border:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;color:${s.rpe?'#fff':'var(--tm)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${s.rpe||'·'}</button>
             <button class="check-btn${s.done?' done':''}" id="cb-${ei}-${si}" onclick="toggleSet(${ei},${si})">
               ${s.done?`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`:''}
             </button>
@@ -1771,12 +1985,74 @@ function addSet(ei){workoutExercises[ei].setData.push({weight:'',reps:'',done:fa
 function removeSet(ei){if(workoutExercises[ei].setData.length<=1)return;workoutExercises[ei].setData.pop();saveSession();renderExerciseList();updateProgress();}
 function toggleAddEx(){
   const p=document.getElementById('add-ex-panel');
-  if(p.style.display==='none'){
-    const used=workoutExercises.map(e=>e.id);
-    const extras=WORKOUT_DAYS.flatMap(d=>d.exercises).filter(e=>!used.includes(e.id)).slice(0,10);
-    p.innerHTML=`<div class="card"><div class="bc slabel" style="margin-bottom:8px">Übung auswählen</div>${extras.map(ex=>`<button onclick="addExercise('${ex.id}')" style="width:100%;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;color:var(--tp);font-size:13px;font-weight:600;text-align:left;display:flex;align-items:center;justify-content:space-between;font-family:'Barlow Condensed',sans-serif"><span>${ex.name}</span>${tagHTML(ex.muscle)}</button>`).join('')}</div>`;
-    p.style.display='block';
-  } else p.style.display='none';
+  if(p.style.display!=='none'){p.style.display='none';return;}
+  renderAddExPanel();
+  p.style.display='block';
+}
+
+function renderAddExPanel(){
+  const p=document.getElementById('add-ex-panel');
+  const usedNames=new Set(workoutExercises.map(e=>e.name));
+
+  // Filter-Buttons
+  const filterHtml=`<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x mandatory">
+    ${MUSCLE_GROUPS.map(g=>`<button onclick="setAddExFilter('${g.key}')" style="flex:0 0 auto;padding:5px 12px;border-radius:20px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;transition:all .2s;
+      ${addExFilter===g.key?`background:${g.color};color:#fff;border:1px solid ${g.color}`:'background:var(--cardElev);color:var(--tm);border:1px solid var(--border)'}">${g.label}</button>`).join('')}
+  </div>`;
+
+  // Gefilterte Übungen
+  const filtered=EXERCISE_LIBRARY.filter(ex=>{
+    if(usedNames.has(ex.name))return false;
+    if(addExFilter==='alle')return true;
+    return ex.muscle===addExFilter||ex.muscle.includes(addExFilter);
+  });
+
+  const listHtml=filtered.length===0
+    ? `<div style="text-align:center;padding:16px"><span class="bc" style="font-size:13px;color:var(--tm)">Alle ${addExFilter==='alle'?'Übungen':'Übungen dieser Gruppe'} bereits im Training</span></div>`
+    : filtered.map(ex=>`<button onclick="addExerciseFromLib('${ex.id}')" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;text-align:left">
+        <div style="min-width:0">
+          <div class="bc" style="font-size:13px;font-weight:700;color:var(--tp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ex.name}</div>
+          <div class="bc" style="font-size:10px;color:var(--tm)">${ex.sets} Sätze · ${ex.reps}</div>
+        </div>
+        ${tagHTML(ex.muscle)}
+      </button>`).join('');
+
+  p.innerHTML=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="bc slabel" style="margin-bottom:0">Übung hinzufügen</div>
+      <button onclick="toggleAddEx()" style="color:var(--tm);font-size:20px;padding:0 4px;line-height:1">×</button>
+    </div>
+    ${filterHtml}
+    <div style="max-height:280px;overflow-y:auto;margin-top:8px;-webkit-overflow-scrolling:touch">${listHtml}</div>
+  </div>`;
+}
+
+function setAddExFilter(key){
+  addExFilter=key;
+  renderAddExPanel();
+}
+
+function addExerciseFromLib(libId){
+  const ex=EXERCISE_LIBRARY.find(e=>e.id===libId);
+  if(!ex)return;
+  workoutExercises.push({
+    ...ex,
+    _added:true,  // markiert als manuell hinzugefügt → Lösch-Button
+    setData:Array.from({length:ex.sets},()=>({weight:'',reps:'',done:false}))
+  });
+  document.getElementById('add-ex-panel').style.display='none';
+  saveSession();renderExerciseList();updateProgress();
+  showToast(`${ex.name} hinzugefügt`);
+}
+
+function removeAddedExercise(ei){
+  const ex=workoutExercises[ei];
+  if(!ex._added){showToast('Plan-Übungen können nicht entfernt werden');return;}
+  showConfirm(`"${ex.name}" entfernen?`,()=>{
+    workoutExercises.splice(ei,1);
+    saveSession();renderExerciseList();updateProgress();
+    showToast('Übung entfernt');
+  },'Entfernen','var(--red)');
 }
 function addExercise(id){
   const ex=WORKOUT_DAYS.flatMap(d=>d.exercises).find(e=>e.id===id);
@@ -1796,7 +2072,8 @@ function doFinishWorkout(){
     }).filter(ex=>ex.sets.length>0),
   };
   history.push(entry);save();workoutExercises=[];activeWorkoutDay=null;timerRunning=false;clearSession();
-  haptic('done'); showToast('Training gespeichert! 💪');switchTab('stats');switchStatsTab('history');
+  haptic('done'); showToast('Training gespeichert! 💪');
+  if(!showWorkoutSummary(entry)){switchTab('stats');switchStatsTab('history');}
 }
 function finishWorkout(){
   const doneSets=workoutExercises.reduce((a,ex)=>a+ex.setData.filter(s=>s.done).length,0);
@@ -1841,7 +2118,7 @@ function updateRestTimerUI(){
   bar.classList.add('active');
   const pct=Math.max(0,(restTimerSec/restTimerMax)*100);
   const col=restTimerSec>45?'var(--green)':restTimerSec>15?'var(--amber)':'var(--red)';
-  const defSec=settings.defaultRestTime||getActivePlan().restTimer||90;
+  const defSec=settings.defaultRestTime||getActivePlan().restTimer||120;
   bar.innerHTML=`<div style="display:flex;align-items:center;gap:8px">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
     <div style="flex:1">
@@ -3027,6 +3304,40 @@ const EXERCISE_INFO={
   "Frontheben":{primary:["Schulter (vorderer Deltoid)"],secondary:["Trapez"],tip:"Nicht schwingen, kontrollierte Bewegung"},
   "Ab Wheel Rollouts":{primary:["Core"],secondary:["Latissimus","Schultern"],tip:"Hohlkreuz vermeiden — Bauch aktiv halten"},
   "Plank":{primary:["Core"],secondary:["Schultern","Gesäß"],tip:"Hüfte nicht heben/senken, gleichmäßig atmen"},
+  // ── FEHLENDE ALT-ÜBUNGEN ─────────────────────────────────────────────────
+  "Bicycle Crunches":           {primary:["Core (schräge Bauchmuskeln)"],secondary:["Core"],tip:"Elbow zur gegenüberliegenden Schulter, NICHT zum Knie — Schulterblatt verlässt den Boden, Hals bleibt entspannt. Häufigster Fehler: am Nacken ziehen und zu schnell machen."},
+  "Bird Dog":                   {primary:["Core"],secondary:["Gesäß","Rücken"],tip:"Vierfüßler, gegenüber. Arm/Bein gleichzeitig strecken — Hüfte darf nicht kippen. Häufigster Fehler: Hohlkreuz bilden oder Körper verdrehen. Langsam und kontrolliert."},
+  "Donkey Kicks":               {primary:["Gesäß"],secondary:["Hintershenkel"],tip:"Vierfüßler, Bein 90° gebeugt nach hinten-oben heben — Hüfte absolut stabil halten. Häufigster Fehler: Hüfte mitdrehen um höher zu kommen."},
+  "Good Mornings (Kurzhantel)": {primary:["Hintershenkel"],secondary:["Rücken (Erector spinae)","Gesäß"],tip:"KH hinter dem Kopf, Knie leicht gebeugt, Oberkörper bis 45° vorneigen — Rücken IMMER gerade. Häufigster Fehler: Rundrücken. Lieber weniger Tiefe als krummer Rücken."},
+  "Hip Thrust":                 {primary:["Gesäß"],secondary:["Hintershenkel","Core"],tip:"Schultern auf Reebok Deck, KH auf Hüftknochen, Hüfte bis zur Waagrechten heben — oben Gesäß aktiv anspannen und 2s halten. Häufigster Fehler: zu kurze Bewegung oder Lendenwirbel überstrecken."},
+  "Reverse Lunges":             {primary:["Quadrizeps","Gesäß"],secondary:["Hintershenkel"],tip:"Schritt nach HINTEN statt vorne — deutlich knieschonender. Knie des vorderen Beins bleibt über dem Fuss. Häufigster Fehler: zu kleiner Schritt, Oberkörper fällt nach vorne."},
+  "Russian Twist":              {primary:["Core (schräge Bauchmuskeln)"],secondary:[],tip:"Oberkörper 45° zurück, Beine leicht angewinkelt oder erhöht, KH mit beiden Händen, kontrollierte Rotation. Häufigster Fehler: zu schnell schwingen statt Muskeln zu nutzen."},
+  "Seated Calf Raises":         {primary:["Waden (Soleus)"],secondary:[],tip:"Sitzend, KH auf den Knien, Fersen vollständig absenken und vollständig heben. Trainiert den Soleus (unter dem Gastrocnemius) stärker als stehend. Volle Range of Motion entscheidend."},
+  "Single-Leg Wadenheben":      {primary:["Waden"],secondary:[],tip:"Auf einem Bein, freies Bein leicht angebeugt — volle Streckung oben, volle Dehnung unten. Häufigster Fehler: Bewegungsumfang reduzieren. Wenn nötig an Wand abstützen."},
+  "Farmer's Walk (Kurzhanteln)":{primary:["Trapez","Schultern"],secondary:["Unterarm","Core","Rücken"],tip:"Schulterbreiter Stand, KH seitlich, aufrechte Haltung — Schultern leicht zurückgezogen, Blick geradeaus, gleichmäßige Schritte. Häufigster Fehler: Oberkörper zur Seite neigen oder Schultern nach vorne fallen lassen."},
+  "Kurzhantel Crunch":          {primary:["Core (gerade Bauchmuskulatur)"],secondary:[],tip:"Kurzhantel an die Brust halten, nur Schulterblätter abheben — keine Sit-up Bewegung. Häufigster Fehler: Nacken ziehen, zu weit hochkommen."},
+  "Kurzhantel Russian Twist":   {primary:["Core (schräge Bauchmuskeln)"],secondary:[],tip:"KH mit beiden Händen, Beine angewinkelt oder erhöht. Kontrollierte Rotation, keine Schwungbewegung."},
+  "Weighted Plank":             {primary:["Core (Transversus abdominis)"],secondary:["Schultern"],tip:"KH auf dem Rücken ablegen lassen (Trainingspartner) oder Rucksack — normaler Plank mit Zusatzlast. Häufigster Fehler: Hüfte hebt sich unter Last."},
+  "Kurzhantel Side Bend":       {primary:["Core (seitliche Rumpfmuskulatur)"],secondary:["Obliques"],tip:"KH in einer Hand, seitlich absenken und aufrichten — nur Lateralflexion, kein Vorneigen. Gleichmäßig beidseitig."},
+  "Pallof Press (isometrisch)": {primary:["Core (Transversus abdominis)"],secondary:["Schultern"],tip:"Ohne Band: KH mit beiden Händen vor Brust, seitlich hinhalten und halten — Rumpf verhindert Rotation. Sehr effektiv für Rumpfstabilität."},
+  "Kurzhantel Windmill":        {primary:["Core (schräge Bauchmuskeln)"],secondary:["Schultern","Gesäß"],tip:"KH hoch halten, andere Hand an Bein entlanggleiten — Blick zur KH oben. Eher fortgeschritten, erst ohne Gewicht üben."},
+  "Suitcase Carry":             {primary:["Core (Anti-Lateralflexion)"],secondary:["Trapez","Unterarm"],tip:"Wie Farmer's Walk aber nur eine KH — Rumpf verhindert Seitneigung. Einer der funktionellsten Core-Moves."},
+  "L-Sit Hold":                 {primary:["Core"],secondary:["Trizeps","Hüftbeuger"],tip:"Auf zwei Stühlen oder Boden stützen, Beine waagrecht halten. Extrem schwer — mit angewinkelten Beinen beginnen."},
+
+
+  // ── ERWEITERTE TIPPS FÜR BESTEHENDE ÜBUNGEN (Coach-gerecht) ────────────
+  "Kurzhantel Bankdrücken":     {primary:["Brust (Pectoralis)"],secondary:["Trizeps","Vordere Schulter"],tip:"Ellbogen 45–75° vom Körper (nicht 90°!), KH über Brustlinie absenken, unten kurz Dehnung spüren. Häufigste Fehler: Ellbogen zu weit ausgestellt (Schulter), zu schnelles Absenken, Rücken abheben."},
+  "Kurzhantel Fliegende":       {primary:["Brust (Pectoralis)"],secondary:["Vordere Schulter"],tip:"Leichte Beugung im Ellbogen die konstant bleibt, Bewegung aus der Schulter (nicht Ellbogen beugen!). Oben Brust zusammenkneifen und 1s halten. Häufigster Fehler: zu schwer → zur Presse wird."},
+  "Liegestütz (Reebok Deck)":   {primary:["Brust (Pectoralis)"],secondary:["Trizeps","Vordere Schulter","Core"],tip:"Körper von Kopf bis Ferse gerade wie ein Brett. Ellbogen 45° vom Körper. Häufigste Fehler: Hüfte hängt durch (Hohlkreuz), Hüfte zu hoch, Ellbogen zu weit außen."},
+  "Klimmzüge / Negativklimmzüge":{primary:["Rücken (Latissimus)"],secondary:["Bizeps","Hintere Schulter"],tip:"Schulterblätter erst zusammenziehen/absenken (Scapular Depression) DANN ziehen. Negativen langsam 3–5s. Häufigster Fehler: Schultern hochziehen, Schwung benutzen."},
+  "Kurzhantel Kniebeugen":      {primary:["Quadrizeps","Gesäß"],secondary:["Hintershenkel","Waden","Core"],tip:"Knie in Zehen-Richtung, Gewicht in den Fersen, Oberkörper aufrecht. Mindestens bis Oberschenkel parallel. Häufigste Fehler: Knie nach innen kippen (→ Knieprobleme), auf Zehenspitzen, Rücken rund."},
+  "Rumänisches Kreuzheben":     {primary:["Hintershenkel"],secondary:["Gesäß","Rücken (Erector spinae)"],tip:"Hüfte nach hinten schieben (nicht Knie beugen!), Rücken gerade, KH nah am Körper entlang. Häufigste Fehler: Knie beugen → wird zur normalen Kniebeuge, Rundrücken, zu weit nach unten gehen."},
+  "Ab Wheel Rollouts":          {primary:["Core (gerade Bauchmuskulatur)"],secondary:["Latissimus","Schultern"],tip:"Knie auf dem Boden zu Beginn. Bauch aktiv nach innen ziehen, langsam ausrollen bis Körper fast waagrecht, zurückziehen. Häufigster Fehler: Hohlkreuz — wenn das passiert, Bewegungsumfang reduzieren."},
+  "Plank":                      {primary:["Core (Transversus abdominis)"],secondary:["Schultern","Gesäß"],tip:"Hüfte weder heben noch senken — sie soll waagrecht sein. Gesäß leicht anspannen, Bauchkneifen. Häufigste Fehler: Hüfte hängt durch (→ Lendenwirbel), Hüfte zu hoch (→ keine Belastung), Atem anhalten."},
+  "Bulgarian Split Squat":      {primary:["Quadrizeps","Gesäß"],secondary:["Hintershenkel","Waden"],tip:"Hinterer Fuss locker auf der Bank (nur Spann, nicht drücken), Schritt weit genug nach vorne. Knie des Standbeins bleibt über dem Fuss. Häufigste Fehler: zu kleiner Schritt → Knie geht weit über Zehen, vorderes Knie kippt nach innen."},
+  "Seitheben":                   {primary:["Schulter (mittlerer Deltoid)"],secondary:["Trapez"],tip:"Arme leicht gebeugt und konstant so, Daumen leicht nach unten (Pronation). NUR bis Schulterhöhe — darüber übernimmt Trapez. Häufigste Fehler: Schwung benutzen, zu schwer, Schultern hochziehen."},
+  "Kurzhantel Schulterdrücken": {primary:["Schulter (Deltoid)"],secondary:["Trizeps","Trapez"],tip:"Neutral-Position: Ellbogen 90°, auf Schulterhöhe oder leicht darunter starten. Oben NICHT komplett strecken (Ellbogen blockieren). Häufigste Fehler: Lendenwirbel überstrecken durch zu schweres Gewicht, Ellbogen zu weit vorne."},
+
   "Schrägbauchcrunch":{primary:["Core (schräge Bauchmuskeln)"],secondary:[],tip:"Schulterblatt heben — nicht Nacken"},
   "Kurzhantel Kniebeugen":{primary:["Quadrizeps","Gesäß"],secondary:["Hinterschenkel","Waden"],tip:"Knie über Zehen, Rücken aufrecht"},
   "Kurzhantel Ausfallschritte":{primary:["Quadrizeps","Gesäß"],secondary:["Hinterschenkel","Waden"],tip:"Hinteres Knie fast auf Boden, Oberkörper aufrecht"},
@@ -3050,40 +3361,80 @@ const BODY_MUSCLES_MAP={[M.CHEST]:['chest-upper-left','chest-upper-right','chest
 const EXERCISE_VIDEOS={"Liegestütz (Reebok Deck)":"IODxDxX7oi4","Kurzhantel Bankdrücken":"VmB1G1K7v94","Kurzhantel Fliegende":"eozdVDA78K0","Enges Bankdrücken (Trizeps)":"nEF0bv2FW54","Kurzhantel Kickbacks":"6SS6K3lAwZ8","Overhead Trizepsstrecken":"YbX7Wd8jQ-Q","Klimmzüge / Negativklimmzüge":"eGo4IYlbE5g","Kurzhantel Rudern einarmig (Lat-Fokus)":"roCP83qQRBs","Kurzhantel Rudern beidarmig (oberer Rücken)":"FWJR5Ve8bnQ","Face Pulls (Widerstandsband)":"rep-qVOkqgk","Kurzhantel Curls":"ykJmrZ5v0Oo","Hammercurls":"zC3nLlEvin4","Kurzhantel Schulterdrücken":"HzIiNhHhhtA","Seitheben":"3VcKaXpzqRo","Frontheben":"gkfFI3_nfZc","Ab Wheel Rollouts":"p7j02V1fIzU","Plank":"ASdvN_XEl_c","Schrägbauchcrunch":"HLKBS57WCo0","Kurzhantel Kniebeugen":"U3HlEF_whyg","Kurzhantel Ausfallschritte":"D7KaRcUTQeE","Rumänisches Kreuzheben":"JCXUYuzwNrM","Hüftheben (Glute Bridge)":"wPM8icPu6H8","Wadenheben stehend":"gwLzBMbchRk","Dead Bug":"4XLEnwUr1d8"};
 
 const EXERCISE_ALTERNATIVES={
-  'Kurzhantel Bankdrücken':['Liegestütz (Reebok Deck)','Kurzhantel Fliegende','Dips an der Bank'],
-  'Liegestütz (Reebok Deck)':['Kurzhantel Bankdrücken','Kurzhantel Fliegende'],
-  'Kurzhantel Fliegende':['Kurzhantel Bankdrücken','Liegestütz (Reebok Deck)'],
-  'Enges Bankdrücken (Trizeps)':['Overhead Trizepsstrecken','Kurzhantel Kickbacks','Dips an der Bank'],
-  'Kurzhantel Kickbacks':['Overhead Trizepsstrecken','Enges Bankdrücken (Trizeps)','Dips an der Bank'],
-  'Overhead Trizepsstrecken':['Kurzhantel Kickbacks','Enges Bankdrücken (Trizeps)','Dips an der Bank'],
-  'Dips an der Bank':['Enges Bankdrücken (Trizeps)','Overhead Trizepsstrecken','Kurzhantel Kickbacks'],
-  'Klimmzüge / Negativklimmzüge':['Kurzhantel Rudern einarmig (Lat-Fokus)','Kurzhantel Rudern beidarmig (oberer Rücken)'],
-  'Kurzhantel Rudern einarmig (Lat-Fokus)':['Klimmzüge / Negativklimmzüge','Kurzhantel Rudern beidarmig (oberer Rücken)'],
-  'Kurzhantel Rudern beidarmig (oberer Rücken)':['Klimmzüge / Negativklimmzüge','Kurzhantel Rudern einarmig (Lat-Fokus)'],
-  'Face Pulls (Widerstandsband)':['Reverse Flyes (Kurzhanteln)'],
-  'Reverse Flyes (Kurzhanteln)':['Face Pulls (Widerstandsband)'],
-  'Kurzhantel Curls':['Hammercurls','Concentration Curls'],
-  'Hammercurls':['Kurzhantel Curls','Concentration Curls'],
-  'Concentration Curls':['Kurzhantel Curls','Hammercurls'],
-  'Kurzhantel Schulterdrücken':['Seitheben','Frontheben'],
-  'Seitheben':['Kurzhantel Schulterdrücken','Frontheben'],
-  'Frontheben':['Kurzhantel Schulterdrücken','Seitheben'],
-  'Ab Wheel Rollouts':['Plank','Dead Bug','Schrägbauchcrunch'],
-  'Plank':['Ab Wheel Rollouts','Dead Bug'],
-  'Dead Bug':['Plank','Ab Wheel Rollouts','Schrägbauchcrunch'],
-  'Schrägbauchcrunch':['Dead Bug','Plank'],
-  'Kurzhantel Kniebeugen':['Kurzhantel Ausfallschritte','Bulgarian Split Squat'],
-  'Kurzhantel Ausfallschritte':['Kurzhantel Kniebeugen','Bulgarian Split Squat'],
-  'Bulgarian Split Squat':['Kurzhantel Kniebeugen','Kurzhantel Ausfallschritte'],
-  'Rumänisches Kreuzheben':['Hüftheben (Glute Bridge)','Kurzhantel Kniebeugen'],
-  'Hüftheben (Glute Bridge)':['Rumänisches Kreuzheben','Kurzhantel Ausfallschritte'],
+  // ── BRUST ────────────────────────────────────────────────────────────────
+  'Kurzhantel Bankdrücken':         ['Liegestütz (Reebok Deck)','Kurzhantel Fliegende','Dips an der Bank','Schrägbankdrücken (Reebok Deck)','Kurzhantel Pullover'],
+  'Kurzhantel Fliegende':           ['Kurzhantel Bankdrücken','Liegestütz (Reebok Deck)','Dips an der Bank','Kurzhantel Pullover'],
+  'Liegestütz (Reebok Deck)':       ['Kurzhantel Bankdrücken','Kurzhantel Fliegende','Dips an der Bank','Schrägbankdrücken (Reebok Deck)'],
+  'Schrägbankdrücken (Reebok Deck)':['Kurzhantel Bankdrücken','Liegestütz (Reebok Deck)','Kurzhantel Fliegende'],
+  'Kurzhantel Pullover':            ['Kurzhantel Fliegende','Kurzhantel Bankdrücken'],
+
+  // ── TRIZEPS ──────────────────────────────────────────────────────────────
+  'Enges Bankdrücken (Trizeps)':    ['Dips an der Bank','Overhead Trizepsstrecken','Kurzhantel Kickbacks','Trizeps-Dips (Boden)'],
+  'Overhead Trizepsstrecken':       ['Kurzhantel Kickbacks','Enges Bankdrücken (Trizeps)','Dips an der Bank','Trizeps-Dips (Boden)'],
+  'Kurzhantel Kickbacks':           ['Overhead Trizepsstrecken','Enges Bankdrücken (Trizeps)','Dips an der Bank'],
+  'Dips an der Bank':               ['Enges Bankdrücken (Trizeps)','Overhead Trizepsstrecken','Kurzhantel Kickbacks','Trizeps-Dips (Boden)'],
+  'Trizeps-Dips (Boden)':           ['Dips an der Bank','Overhead Trizepsstrecken','Kurzhantel Kickbacks'],
+
+  // ── RÜCKEN ───────────────────────────────────────────────────────────────
+  'Klimmzüge / Negativklimmzüge':   ['Kurzhantel Rudern einarmig (Lat-Fokus)','Kurzhantel Rudern beidarmig (oberer Rücken)','Straight-Arm Pullover','Reverse Flyes (Kurzhanteln)'],
+  'Kurzhantel Rudern einarmig (Lat-Fokus)':     ['Klimmzüge / Negativklimmzüge','Kurzhantel Rudern beidarmig (oberer Rücken)','Straight-Arm Pullover'],
+  'Kurzhantel Rudern beidarmig (oberer Rücken)':    ['Klimmzüge / Negativklimmzüge','Kurzhantel Rudern einarmig (Lat-Fokus)','Straight-Arm Pullover'],
+  'Straight-Arm Pullover':          ['Kurzhantel Rudern einarmig (Lat-Fokus)','Klimmzüge / Negativklimmzüge'],
+  'Reverse Flyes (Kurzhanteln)':    ['Kurzhantel Rudern beidarmig (oberer Rücken)','Kurzhantel Schulterdrücken','Seitheben'],
+
+  // ── BIZEPS ───────────────────────────────────────────────────────────────
+  'Kurzhantel Curls':               ['Hammercurls','Concentration Curls','Zottman Curls','Incline Curls (Reebok Deck)'],
+  'Hammercurls':                    ['Kurzhantel Curls','Concentration Curls','Zottman Curls'],
+  'Concentration Curls':            ['Kurzhantel Curls','Hammercurls','Incline Curls (Reebok Deck)'],
+  'Zottman Curls':                  ['Kurzhantel Curls','Hammercurls','Concentration Curls'],
+  'Incline Curls (Reebok Deck)':    ['Kurzhantel Curls','Concentration Curls','Hammercurls'],
+
+  // ── SCHULTER ─────────────────────────────────────────────────────────────
+  'Kurzhantel Schulterdrücken':     ['Seitheben','Frontheben','Arnold Press','Upright Row (Kurzhantel)','Pike Push-ups'],
+  'Seitheben':                      ['Kurzhantel Schulterdrücken','Frontheben','Upright Row (Kurzhantel)','Arnold Press'],
+  'Frontheben':                     ['Seitheben','Kurzhantel Schulterdrücken','Arnold Press'],
+  'Arnold Press':                   ['Kurzhantel Schulterdrücken','Seitheben','Frontheben'],
+  'Upright Row (Kurzhantel)':       ['Seitheben','Kurzhantel Schulterdrücken','Arnold Press'],
+  'Pike Push-ups':                  ['Kurzhantel Schulterdrücken','Arnold Press'],
+
+  // ── CORE ─────────────────────────────────────────────────────────────────
+  'Ab Wheel Rollouts':              ['Plank','Dead Bug','Schrägbauchcrunch','Hollow Body Hold','Mountain Climbers'],
+  'Plank':                          ['Ab Wheel Rollouts','Dead Bug','Side Plank','Hollow Body Hold'],
+  'Dead Bug':                       ['Plank','Ab Wheel Rollouts','Schrägbauchcrunch','Bird Dog'],
+  'Schrägbauchcrunch':              ['Dead Bug','Plank','Russian Twist','Bicycle Crunches'],
+  'Hollow Body Hold':               ['Plank','Dead Bug','Ab Wheel Rollouts'],
+  'Side Plank':                     ['Plank','Schrägbauchcrunch'],
+  'Mountain Climbers':              ['Ab Wheel Rollouts','Plank','Dead Bug'],
+  "Farmer's Walk (Kurzhanteln)":    ['Plank','Side Plank','Upright Row (Kurzhantel)','Kurzhantel Schulterdrücken'],
+
+  // ── BEINE ────────────────────────────────────────────────────────────────
+  'Kurzhantel Kniebeugen':          ['Kurzhantel Ausfallschritte','Bulgarian Split Squat','Goblet Squat','Sumo Squat (Kurzhantel)','Step-ups (Reebok Deck)'],
+  'Kurzhantel Ausfallschritte':     ['Kurzhantel Kniebeugen','Bulgarian Split Squat','Step-ups (Reebok Deck)','Reverse Lunges'],
+  'Bulgarian Split Squat':          ['Kurzhantel Kniebeugen','Kurzhantel Ausfallschritte','Step-ups (Reebok Deck)','Reverse Lunges'],
+  'Rumänisches Kreuzheben':         ['Hüftheben (Glute Bridge)','Good Mornings (Kurzhantel)','Kurzhantel Kniebeugen','Single-Leg RDL'],
+  'Hüftheben (Glute Bridge)':       ['Rumänisches Kreuzheben','Single-Leg Glute Bridge','Donkey Kicks','Hip Thrust'],
+  'Wadenheben stehend':             ['Seated Calf Raises','Single-Leg Wadenheben','Step-ups (Reebok Deck)'],
+  'Goblet Squat':                   ['Kurzhantel Kniebeugen','Sumo Squat (Kurzhantel)','Bulgarian Split Squat'],
+  'Sumo Squat (Kurzhantel)':        ['Goblet Squat','Kurzhantel Kniebeugen','Hüftheben (Glute Bridge)'],
+  'Step-ups (Reebok Deck)':         ['Kurzhantel Ausfallschritte','Bulgarian Split Squat','Kurzhantel Kniebeugen'],
+  'Single-Leg RDL':                 ['Rumänisches Kreuzheben','Hüftheben (Glute Bridge)'],
+  'Single-Leg Glute Bridge':        ['Hüftheben (Glute Bridge)','Rumänisches Kreuzheben'],
 };
+
 
 const EXERCISE_MUSCLES={"Liegestütz (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},"Kurzhantel Bankdrücken":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},"Kurzhantel Fliegende":{pri:[M.CHEST],sec:[M.SHOULDER_FRONT]},"Enges Bankdrücken (Trizeps)":{pri:[M.TRICEP],sec:[M.CHEST,M.SHOULDER_FRONT]},"Kurzhantel Kickbacks":{pri:[M.TRICEP],sec:[]},"Overhead Trizepsstrecken":{pri:[M.TRICEP],sec:[]},"Klimmzüge / Negativklimmzüge":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},"Kurzhantel Rudern einarmig (Lat-Fokus)":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},"Kurzhantel Rudern beidarmig (oberer Rücken)":{pri:[M.BACK_MID],sec:[M.BICEP,M.SHOULDER_REAR,M.TRAP]},"Face Pulls (Widerstandsband)":{pri:[M.SHOULDER_REAR],sec:[M.TRAP,M.BACK_MID]},
 "Reverse Flyes (Kurzhanteln)":{pri:[M.SHOULDER_REAR],sec:[M.TRAP,M.BACK_MID]},"Kurzhantel Curls":{pri:[M.BICEP],sec:[M.FOREARM]},"Hammercurls":{pri:[M.BICEP],sec:[M.FOREARM]},"Kurzhantel Schulterdrücken":{pri:[M.SHOULDER_MID],sec:[M.TRICEP,M.TRAP]},"Seitheben":{pri:[M.SHOULDER_MID],sec:[M.TRAP]},"Frontheben":{pri:[M.SHOULDER_FRONT],sec:[M.TRAP,M.CHEST]},"Ab Wheel Rollouts":{pri:[M.ABS],sec:[M.BACK_LAT,M.SHOULDER_FRONT]},"Plank":{pri:[M.ABS],sec:[M.SHOULDER_MID,M.GLUTE]},"Schrägbauchcrunch":{pri:[M.OBLIQUE],sec:[M.ABS]},"Kurzhantel Kniebeugen":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF,M.ABS]},"Kurzhantel Ausfallschritte":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},"Rumänisches Kreuzheben":{pri:[M.HAMSTRING],sec:[M.GLUTE,M.BACK_LOW]},"Hüftheben (Glute Bridge)":{pri:[M.GLUTE],sec:[M.HAMSTRING,M.ABS]},"Wadenheben stehend":{pri:[M.CALF],sec:[]},"Dead Bug":{pri:[M.ABS],sec:[M.HIP_FLEXOR,M.BACK_LOW]},"WalkingPad Aufwärmen":{pri:[M.CARDIO],sec:[M.QUAD,M.CALF]},"Rudern Intervalle":{pri:[M.BACK_LAT,M.CARDIO],sec:[M.QUAD,M.BICEP,M.ABS]},"Rudern Steadystate":{pri:[M.BACK_LAT,M.CARDIO],sec:[M.QUAD,M.HAMSTRING]},
 "Bulgarian Split Squat":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},
 "Concentration Curls":{pri:[M.BICEP],sec:[M.FOREARM]},
-"Dips an der Bank":{pri:[M.TRICEP],sec:[M.CHEST,M.SHOULDER_FRONT]}};
+"Dips an der Bank":{pri:[M.TRICEP],sec:[M.CHEST,M.SHOULDER_FRONT]},
+"Kurzhantel Crunch":        {pri:[M.ABS],sec:[]},
+"Kurzhantel Russian Twist": {pri:[M.OBLIQUE],sec:[M.ABS]},
+"Weighted Plank":           {pri:[M.ABS],sec:[M.SHOULDER_MID]},
+"Kurzhantel Side Bend":     {pri:[M.OBLIQUE],sec:[M.ABS]},
+"Pallof Press (isometrisch)":{pri:[M.ABS],sec:[M.SHOULDER_MID]},
+"Kurzhantel Windmill":      {pri:[M.OBLIQUE],sec:[M.SHOULDER_MID,M.GLUTE]},
+"Suitcase Carry":           {pri:[M.ABS],sec:[M.TRAP,M.FOREARM]},
+"L-Sit Hold":               {pri:[M.ABS],sec:[M.TRICEP,M.HIP_FLEXOR]}};
 
 const MUSCLE_LABELS={[M.CHEST]:'Brust',[M.TRICEP]:'Trizeps',[M.SHOULDER_FRONT]:'Vordere Schulter',[M.SHOULDER_MID]:'Mittlere Schulter',[M.SHOULDER_REAR]:'Hintere Schulter',[M.BICEP]:'Bizeps',[M.FOREARM]:'Unterarm',[M.BACK_LAT]:'Latissimus',[M.BACK_MID]:'Mittlerer Rücken',[M.BACK_LOW]:'Unterer Rücken',[M.TRAP]:'Trapezmuskel',[M.ABS]:'Bauch',[M.OBLIQUE]:'Schräge Bauch',[M.HIP_FLEXOR]:'Hüftbeuger',[M.QUAD]:'Quadrizeps',[M.HAMSTRING]:'Hamstrings',[M.GLUTE]:'Gesäß',[M.CALF]:'Waden',[M.CARDIO]:'Ausdauer'};
 
@@ -3326,6 +3677,93 @@ function openPhotoViewer(id){
   v.style.display='block';
 }
 
+
+// ── WORKOUT-ZUSAMMENFASSUNG ───────────────────────────────────────────────────
+function showWorkoutSummary(entry){
+  const overlay=document.getElementById('workout-summary-overlay');
+  if(!overlay)return false;
+  const dd=WORKOUT_DAYS.find(d=>d.id===entry.dayId);
+  const col=dd?.color||'var(--blue)';
+  document.getElementById('workout-summary-sheet').style.borderTopColor=col;
+
+  const prExercises=entry.exercises.filter(e=>e.isPR);
+  const totalVol=entry.exercises.reduce((a,ex)=>a+ex.sets.filter(s=>s.weight>0).reduce((b,s)=>b+(s.weight||0)*(s.reps||1),0),0);
+  const avgRPE=(()=>{const rpeVals=entry.exercises.flatMap(ex=>ex.sets.map(s=>s.rpe||0)).filter(r=>r>0);return rpeVals.length?Math.round(rpeVals.reduce((a,b)=>a+b)/rpeVals.length*10)/10:null;})();
+
+  document.getElementById('workout-summary-header').innerHTML=`
+    <div style="text-align:center">
+      <div style="font-size:40px;margin-bottom:4px">🎉</div>
+      <div class="bc" style="font-size:22px;font-weight:900;color:var(--tp)">Training abgeschlossen!</div>
+      <div class="bc" style="font-size:13px;color:${col};margin-top:3px">${entry.name}</div>
+    </div>`;
+
+  document.getElementById('workout-summary-body').innerHTML=`
+    <!-- Kennzahlen -->
+    <div style="display:grid;grid-template-columns:1fr 1fr ${totalVol>0?'1fr':''} ${avgRPE?'1fr':''};gap:8px;margin-bottom:16px">
+      <div style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div class="bc" style="font-size:24px;font-weight:900;color:${col}">${entry.duration}'</div>
+        <div class="bc" style="font-size:9px;color:var(--tm);text-transform:uppercase">Minuten</div>
+      </div>
+      <div style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div class="bc" style="font-size:24px;font-weight:900;color:${col}">${entry.sets}</div>
+        <div class="bc" style="font-size:9px;color:var(--tm);text-transform:uppercase">Sätze</div>
+      </div>
+      ${totalVol>0?`<div style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div class="bc" style="font-size:24px;font-weight:900;color:${col}">${Math.round(totalVol)}</div>
+        <div class="bc" style="font-size:9px;color:var(--tm);text-transform:uppercase">kg·Wdh</div>
+      </div>`:''}
+      ${avgRPE?`<div style="background:${getRPEColor(Math.round(avgRPE))}25;border:1px solid ${getRPEColor(Math.round(avgRPE))}50;border-radius:10px;padding:12px;text-align:center">
+        <div class="bc" style="font-size:24px;font-weight:900;color:${getRPEColor(Math.round(avgRPE))}">${avgRPE}</div>
+        <div class="bc" style="font-size:9px;color:var(--tm);text-transform:uppercase">Ø RPE</div>
+      </div>`:''}
+    </div>
+
+    <!-- PRs -->
+    ${prExercises.length?`<div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:12px;margin-bottom:14px">
+      <div class="bc" style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">🏆 Neue Bestleistungen (${prExercises.length})</div>
+      ${prExercises.map(ex=>{
+        const maxW=Math.max(...ex.sets.map(s=>s.weight||0));
+        const maxR=Math.max(...ex.sets.map(s=>s.reps||0));
+        const rm=maxW>0?calc1RM(maxW,maxR):null;
+        return`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(245,158,11,.2)">
+          <span class="bc" style="font-size:13px;font-weight:700;color:var(--tp)">${ex.name}</span>
+          <div style="text-align:right">
+            <span class="bc" style="font-size:13px;font-weight:800;color:var(--amber)">${maxW>0?maxW+' kg':'BW'} × ${maxR}</span>
+            ${rm?`<div class="bc" style="font-size:10px;color:var(--blue)">1RM≈${rm}kg</div>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`:''}
+
+    <!-- Übersicht Übungen -->
+    <div class="bc slabel" style="margin-bottom:8px">Übungen</div>
+    ${entry.exercises.map(ex=>{
+      const bw=isBW(ex.name);
+      const best=bw?Math.max(...ex.sets.map(s=>s.reps||0)):Math.max(...ex.sets.map(s=>s.weight||0));
+      return`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;min-width:0">
+          <div class="bc" style="font-size:13px;font-weight:700;color:var(--tp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ex.name}</div>
+          <div class="bc" style="font-size:10px;color:var(--tm)">${ex.sets.length} Sätze</div>
+        </div>
+        <div class="bc" style="font-size:14px;font-weight:800;color:${ex.isPR?'var(--amber)':col};flex-shrink:0">${bw?best+' Wdh':best+' kg'}${ex.isPR?' 🏆':''}</div>
+      </div>`;
+    }).join('')}
+
+    ${entry.note?`<div style="margin-top:12px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:8px;padding:10px">
+      <div class="bc" style="font-size:10px;color:var(--blue);font-weight:700;margin-bottom:3px">NOTIZ</div>
+      <div style="font-size:13px;color:var(--ts);font-style:italic">"${entry.note}"</div>
+    </div>`:''}`;
+
+  overlay.classList.add('show');
+  document.getElementById('workout-summary-scroll').scrollTop=0;
+  return true;
+}
+
+function closeSummaryAndGoToHistory(){
+  document.getElementById('workout-summary-overlay')?.classList.remove('show');
+  switchTab('stats');switchStatsTab('history');
+}
+
 // ── WORKOUT DETAIL MODAL ───────────────────────────────────────────────────────
 function openWorkoutDetail(historyId){
   const h=history.find(e=>e.id===historyId);if(!h)return;
@@ -3498,6 +3936,72 @@ function submitRecovery(){
 
 function closeRecoveryModal(){document.getElementById('recovery-overlay').classList.remove('show');}
 
+
+
+// ── BENACHRICHTIGUNGEN ───────────────────────────────────────────────────────
+function requestNotificationPermission(){
+  if(!('Notification' in window)){showToast('Browser unterstützt keine Benachrichtigungen');return;}
+  if(Notification.permission==='granted'){sendNotification('Test 💪','AlexFit Benachrichtigungen aktiv!');return;}
+  if(Notification.permission==='denied'){showToast('Bitte in Safari-Einstellungen erlauben');return;}
+  Notification.requestPermission().then(perm=>{
+    if(perm==='granted'){showToast('Benachrichtigungen aktiviert ✓');renderSettings();}
+    else showToast('Berechtigung verweigert');
+  });
+}
+
+function sendNotification(title,body,tag='alexfit'){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  try{new Notification(title,{body,tag,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💪</text></svg>'});}
+  catch(e){}
+}
+
+function getNotificationStatus(){
+  if(!('Notification' in window))return{supported:false,label:'Nicht verfügbar',color:'var(--tm)'};
+  if(Notification.permission==='granted')return{supported:true,label:'Aktiviert ✓',color:'var(--green)'};
+  if(Notification.permission==='denied')return{supported:true,label:'Blockiert — in Safari-Einstellungen freigeben',color:'var(--red)'};
+  return{supported:true,label:'Noch nicht aktiviert',color:'var(--amber)'};
+}
+
+function scheduleTrainingReminder(){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const rTime=settings.reminderTime||'18:00';
+  const [h,m]=rTime.split(':').map(Number);
+  const now=new Date();
+  let target=new Date(now.getFullYear(),now.getMonth(),now.getDate(),h,m,0);
+  if(target<=now)target.setDate(target.getDate()+1);
+  const msUntil=target-now;
+  if(settings._reminderTimeout)clearTimeout(settings._reminderTimeout);
+  settings._reminderTimeout=setTimeout(()=>{
+    const todayDow=new Date().getDay();
+    const dayId=PLAN_DOW[todayDow];
+    const day=dayId?WORKOUT_DAYS.find(d=>d.id===dayId):null;
+    sendNotification('💪 AlexFit — Training!',
+      day?`Heute: ${day.name} · Los geht\'s!`:'Ruhetag — Cardio wäre top!','training-reminder');
+    // Täglich wiederholen
+    setTimeout(scheduleTrainingReminder,60000);
+  },msUntil);
+}
+
+function saveReminderTime(){
+  const t=document.getElementById('s-reminder-time')?.value;
+  if(!t){showToast('Bitte Zeit eingeben');return;}
+  settings.reminderTime=t;saveSettings();
+  if(Notification.permission==='granted'){scheduleTrainingReminder();showToast(`Erinnerung gesetzt für ${t} ✓`);}
+  else requestNotificationPermission();
+}
+
+function saveReminderTime(){
+  const t=document.getElementById('s-reminder-time')?.value;
+  if(!t){showToast('Bitte Zeit eingeben');return;}
+  settings.reminderTime=t;
+  saveSettings();
+  if(Notification.permission==='granted'){
+    scheduleTrainingReminder();
+  }else{
+    requestNotificationPermission();
+  }
+}
+
 function renderSettings(){
   const si=document.getElementById('s-start-kg');const gi=document.getElementById('s-goal-kg');const di=document.getElementById('s-prog-start');const wi=document.getElementById('s-weeks');
   if(si)si.value=settings.startKg||95;if(gi)gi.value=settings.goalKg||77;if(di)di.value=settings.programStart||dateToISO(new Date());
@@ -3543,7 +4047,20 @@ function renderSettings(){
       backupInfoEl.innerHTML=`⚠️ <strong style="color:var(--amber)">Noch kein Backup</strong> · ${totalEntries} Einträge nicht gesichert`;
     }
   }
-    const wgInp=document.getElementById('s-week-goal');if(wgInp)wgInp.value=settings.weekGoal||4;
+    // Notification Status
+  const ns=getNotificationStatus();
+  const nsEl=document.getElementById('notif-status');
+  if(nsEl)nsEl.innerHTML=`<span style="color:${ns.color}">${ns.label}</span>${!ns.supported?' (Browser nicht unterstützt)':''}`;
+  const nBtn=document.getElementById('notif-enable-btn');
+  if(nBtn){
+    if(Notification.permission==='granted'){nBtn.textContent='Test senden';nBtn.onclick=()=>sendNotification('Test 💪','AlexFit Benachrichtigungen funktionieren!');}
+    else if(Notification.permission==='denied'){nBtn.textContent='Blockiert';nBtn.style.opacity='.5';}
+    else{nBtn.textContent='Aktivieren';nBtn.onclick=requestNotificationPermission;}
+  }
+  const rtInp=document.getElementById('s-reminder-time');
+  if(rtInp&&settings.reminderTime)rtInp.value=settings.reminderTime;
+    renderTemplatesInSettings();
+  const wgInp=document.getElementById('s-week-goal');if(wgInp)wgInp.value=settings.weekGoal||4;
   const modeBtn=document.getElementById('theme-toggle-btn');if(modeBtn)modeBtn.textContent=document.documentElement.getAttribute('data-theme')==='light'?'☀️ Hell':'🌙 Dunkel';
   // Streak pause buttons
   const kBtn=document.getElementById('streak-pause-krank');const uBtn=document.getElementById('streak-pause-urlaub');const pStatus=document.getElementById('streak-pause-status');
@@ -3643,6 +4160,122 @@ function exportAppleHealth(){
   markBackupDone();
   showToast('Apple Health XML exportiert ✓');
 }
+
+
+
+// ── TRAINING-TEMPLATES ────────────────────────────────────────────────────────
+function getTemplates(){ return safeParse('af_templates',[]); }
+function saveTemplates(t){ localStorage.setItem('af_templates',JSON.stringify(t)); }
+
+function saveCurrentAsTemplate(){
+  if(!workoutExercises.length){showToast('Kein aktives Training');return;}
+  const name=prompt('Template-Name:',activeWorkoutDay?.name+' (Custom)');
+  if(!name)return;
+  const templates=getTemplates();
+  const tmpl={
+    id:'t'+Date.now(),
+    name,
+    createdAt:todayISO(),
+    dayName:activeWorkoutDay?.name||'Custom',
+    exercises:workoutExercises.map(ex=>({
+      name:ex.name,muscle:ex.muscle,sets:ex.sets||ex.setData.length,
+      reps:ex.reps,bw:ex.bw||false,_added:ex._added||false
+    }))
+  };
+  templates.push(tmpl);
+  saveTemplates(templates);
+  showToast('Template "'+name+'" gespeichert ✓');
+}
+
+function loadTemplate(id){
+  const templates=getTemplates();
+  const tmpl=templates.find(t=>t.id===id);
+  if(!tmpl)return;
+  showConfirm('Template "'+tmpl.name+'" laden? Aktives Training wird ersetzt.',()=>{
+    workoutExercises=tmpl.exercises.map(ex=>({
+      ...ex,
+      id:'lib_'+ex.name.replace(/\s/g,''),
+      setData:Array.from({length:ex.sets||3},()=>({weight:'',reps:'',done:false}))
+    }));
+    if(!activeWorkoutDay){
+      activeWorkoutDay={id:'custom',name:tmpl.dayName,color:'var(--blue)',tag:'C',muscles:[]};
+    }
+    workoutElapsed=0;timerRunning=true;
+    startWorkoutTimer();saveSession();
+    renderWorkoutActive();setNavActive('workout');showScreen('workout-active');
+    showToast('Template geladen: '+tmpl.name);
+  },'Laden','var(--blue)');
+}
+
+function deleteTemplate(id){
+  showConfirm('Template löschen?',()=>{
+    const t=getTemplates().filter(t=>t.id!==id);
+    saveTemplates(t);showToast('Template gelöscht');renderTemplatesInSettings();
+  });
+}
+
+function renderTemplatesInSettings(){
+  const el=document.getElementById('settings-templates');
+  if(!el)return;
+  const templates=getTemplates();
+  if(!templates.length){
+    el.innerHTML='<div style="text-align:center;padding:12px"><span class="bc" style="font-size:13px;color:var(--tm)">Noch keine Templates — speichere ein Training als Template</span></div>';
+    return;
+  }
+  el.innerHTML=templates.map(t=>`
+    <div style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div class="bc" style="font-size:13px;font-weight:700;color:var(--tp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</div>
+        <div class="bc" style="font-size:10px;color:var(--tm)">${t.exercises.length} Übungen · ${t.createdAt}</div>
+      </div>
+      <button onclick="loadTemplate('${t.id}')" style="background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);border-radius:7px;padding:6px 10px">
+        <span class="bc" style="font-size:11px;font-weight:700;color:var(--blue)">Laden</span>
+      </button>
+      <button onclick="deleteTemplate('${t.id}')" style="background:var(--cardElev);border:1px solid var(--border);border-radius:7px;padding:6px 8px;color:var(--red);font-size:14px">×</button>
+    </div>`).join('');
+}
+
+// ── LAUTSTÄRKE-TASTEN für Satz-Häkchen ───────────────────────────────────────
+// iPhone Volume-Up = nächster offener Satz ✓ / Volume-Down = letzten rückgängig
+// Funktioniert wenn App offen + Screen sichtbar (PWA-Modus)
+let volumeKeyEnabled = true;
+
+document.addEventListener('keydown', (e)=>{
+  if(!volumeKeyEnabled)return;
+  if(!workoutExercises.length)return;
+
+  if(e.key==='AudioVolumeUp'||e.code==='AudioVolumeUp'){
+    e.preventDefault();
+    // Nächsten nicht erledigten Satz finden
+    for(let ei=0;ei<workoutExercises.length;ei++){
+      for(let si=0;si<workoutExercises[ei].setData.length;si++){
+        if(!workoutExercises[ei].setData[si].done){
+          toggleSet(ei,si);
+          haptic('medium');
+          showToast(`${workoutExercises[ei].name} Satz ${si+1} ✓`);
+          return;
+        }
+      }
+    }
+    showToast('Alle Sätze erledigt! 🎉');
+    return;
+  }
+
+  if(e.key==='AudioVolumeDown'||e.code==='AudioVolumeDown'){
+    e.preventDefault();
+    // Letzten erledigten Satz rückgängig
+    for(let ei=workoutExercises.length-1;ei>=0;ei--){
+      for(let si=workoutExercises[ei].setData.length-1;si>=0;si--){
+        if(workoutExercises[ei].setData[si].done){
+          toggleSet(ei,si);
+          haptic('light');
+          showToast(`${workoutExercises[ei].name} Satz ${si+1} rückgängig`);
+          return;
+        }
+      }
+    }
+  }
+}, {passive:false});
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 initTheme();
