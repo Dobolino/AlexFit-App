@@ -2088,16 +2088,25 @@ function finishWorkout(){
 function discardWorkout(){showConfirm('Training verwerfen?',()=>{clearInterval(workoutTimer);workoutExercises=[];activeWorkoutDay=null;timerRunning=false;clearSession();updateWorkoutBadge();switchTab('dashboard');});}
 function getLastPerf(name){
   const bw=isBW(name);
+  const bestSet=sets=>{
+    if(bw)return sets.reduce((a,s)=>(parseInt(s.reps)||0)>(parseInt(a.reps)||0)?s:a,sets[0]);
+    return sets.reduce((a,s)=>{
+      const aw=parseFloat(a.weight)||0,sw=parseFloat(s.weight)||0;
+      if(sw>aw)return s;
+      if(sw===aw&&(parseInt(s.reps)||0)>(parseInt(a.reps)||0))return s;
+      return a;
+    },sets[0]);
+  };
   for(let i=history.length-1;i>=0;i--){
     const ex=history[i].exercises.find(e=>e.name===name);
-    if(ex&&ex.sets.length>0){
-      if(bw)return ex.sets.reduce((a,s)=>(parseInt(s.reps)||0)>(parseInt(a.reps)||0)?s:a,ex.sets[0]);
-      return ex.sets.reduce((a,s)=>{
-        const aw=parseFloat(a.weight)||0,sw=parseFloat(s.weight)||0;
-        if(sw>aw)return s;
-        if(sw===aw&&(parseInt(s.reps)||0)>(parseInt(a.reps)||0))return s;
-        return a;
-      },ex.sets[0]);
+    if(ex&&ex.sets.length>0)return bestSet(ex.sets);
+  }
+  // Fallback: Verlaufsdaten von Alternativübungen als Richtwert verwenden
+  const alts=EXERCISE_ALTERNATIVES[name]||[];
+  for(let i=history.length-1;i>=0;i--){
+    for(const alt of alts){
+      const ex=history[i].exercises.find(e=>e.name===alt);
+      if(ex&&ex.sets.length>0)return bestSet(ex.sets);
     }
   }
   return null;
@@ -2113,7 +2122,7 @@ function startRestTimer(sec){
   restTimerInterval=setInterval(()=>{
     restTimerSec=Math.max(0,restTimerMax-Math.round((Date.now()-_restTimerStartTS)/1000));
     updateRestTimerUI();
-    if(restTimerSec<=0){clearInterval(restTimerInterval);restTimerInterval=null;haptic('success');showToast('Pause vorbei — nächster Satz! 💪');}
+    if(restTimerSec<=0){clearInterval(restTimerInterval);restTimerInterval=null;haptic('success');showToast('Pause vorbei — nächster Satz! 💪');sendNotification('Pause vorbei! 💪','Weiter — nächster Satz wartet!');}
   },500);
 }
 function dismissRestTimer(){clearInterval(restTimerInterval);restTimerInterval=null;restTimerSec=0;const bar=document.getElementById('rest-timer-bar');if(bar)bar.classList.remove('active');}
@@ -3318,6 +3327,8 @@ const EXERCISE_INFO={
   "Kurzhantel Schulterdrücken":{primary:["Schulter (Deltoid)"],secondary:["Trizeps","Trapez"],tip:"Neutral-Position: Ellbogen 90°, auf Schulterhöhe oder leicht darunter starten. Oben NICHT komplett strecken (Ellbogen blockieren). Häufigste Fehler: Lendenwirbel überstrecken durch zu schweres Gewicht, Ellbogen zu weit vorne."},
   "Seitheben":{primary:["Schulter (mittlerer Deltoid)"],secondary:["Trapez"],tip:"Arme leicht gebeugt und konstant so, Daumen leicht nach unten (Pronation). NUR bis Schulterhöhe — darüber übernimmt Trapez. Häufigste Fehler: Schwung benutzen, zu schwer, Schultern hochziehen."},
   "Frontheben":{primary:["Schulter (vorderer Deltoid)"],secondary:["Trapez"],tip:"Nicht schwingen, kontrollierte Bewegung"},
+  "Arnold Press":{primary:["Schulter (Deltoid, alle Köpfe)"],secondary:["Trizeps","Trapez"],tip:"Von Bizeps-Curl-Position mit Handflächen zu dir starten, beim Drücken nach außen rotieren (Pronation). Alle drei Schulterköpfe aktiviert. Häufigster Fehler: zu schnell rotieren ohne vollen Bewegungsumfang."},
+  "Zottman Curls":{primary:["Bizeps"],secondary:["Unterarm (Brachioradialis)"],tip:"Heben mit Supination (Handfläche oben), senken mit Pronation (Handfläche unten) — trainiert Unterarm sehr effektiv in der exzentrischen Phase. Absenkphase bewusst langsam (3s)."},
   // ── CORE ─────────────────────────────────────────────────────────────────
   "Ab Wheel Rollouts":{primary:["Core (gerade Bauchmuskulatur)"],secondary:["Latissimus","Schultern"],tip:"Knie auf dem Boden zu Beginn. Bauch aktiv nach innen ziehen, langsam ausrollen bis Körper fast waagrecht, zurückziehen. Häufigster Fehler: Hohlkreuz — wenn das passiert, Bewegungsumfang reduzieren."},
   "Plank":{primary:["Core (Transversus abdominis)"],secondary:["Schultern","Gesäß"],tip:"Hüfte weder heben noch senken — sie soll waagrecht sein. Gesäß leicht anspannen, Bauchkneifen. Häufigste Fehler: Hüfte hängt durch (→ Lendenwirbel), Hüfte zu hoch (→ keine Belastung), Atem anhalten."},
@@ -3444,7 +3455,9 @@ const EXERCISE_MUSCLES={"Liegestütz (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP
 "Superman Hold":            {pri:[M.BACK_LOW],sec:[M.GLUTE,M.HAMSTRING]},
 "Reverse Snow Angels":      {pri:[M.BACK_MID,M.SHOULDER_REAR],sec:[M.BACK_LOW,M.TRAP]},
 "Seal Row (Reebok Deck)":   {pri:[M.BACK_LAT,M.BACK_MID],sec:[M.BICEP,M.SHOULDER_REAR]},
-"Kurzhantel Pullover":      {pri:[M.BACK_LAT,M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]}};
+"Kurzhantel Pullover":      {pri:[M.BACK_LAT,M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
+"Arnold Press":             {pri:[M.SHOULDER_FRONT,M.SHOULDER_MID,M.SHOULDER_REAR],sec:[M.TRICEP,M.TRAP]},
+"Zottman Curls":            {pri:[M.BICEP],sec:[M.FOREARM]}};
 
 const MUSCLE_LABELS={[M.CHEST]:'Brust',[M.TRICEP]:'Trizeps',[M.SHOULDER_FRONT]:'Vordere Schulter',[M.SHOULDER_MID]:'Mittlere Schulter',[M.SHOULDER_REAR]:'Hintere Schulter',[M.BICEP]:'Bizeps',[M.FOREARM]:'Unterarm',[M.BACK_LAT]:'Latissimus',[M.BACK_MID]:'Mittlerer Rücken',[M.BACK_LOW]:'Unterer Rücken',[M.TRAP]:'Trapezmuskel',[M.ABS]:'Bauch',[M.OBLIQUE]:'Schräge Bauch',[M.HIP_FLEXOR]:'Hüftbeuger',[M.QUAD]:'Quadrizeps',[M.HAMSTRING]:'Hamstrings',[M.GLUTE]:'Gesäß',[M.CALF]:'Waden',[M.CARDIO]:'Ausdauer'};
 
