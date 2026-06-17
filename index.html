@@ -682,7 +682,7 @@ const WORKOUT_PLANS = {
     label: 'Phase 1',
     subtitle: 'Technik & Grundlagen',
     weeks: 6,
-    restTimer: 90,
+    restTimer: 120,
     color: '#2563EB',
     schedule: {1:'d1', 2:'d4', 3:'d2', 5:'d3', 6:'d5'},
     days: [
@@ -716,8 +716,8 @@ const WORKOUT_PLANS = {
       {id:'d2',label:'Tag 3',name:'Rücken / Bizeps',tag:'MI',color:'#8B5CF6',
        muscles:['Rücken','Bizeps','Hintere Schulter'],exercises:[
         {id:'e7', name:'Klimmzüge / Negativklimmzüge', muscle:'Rücken',          sets:3,reps:'6–8',bw:true},
-        {id:'e8', name:'Kurzhantel Rudern einarmig',    muscle:'Rücken',          sets:3,reps:'10–12'},
-        {id:'e9', name:'Kurzhantel Rudern beidarmig',   muscle:'Rücken',          sets:3,reps:'10–12'},
+        {id:'e8', name:'Kurzhantel Rudern einarmig (Lat-Fokus)',    muscle:'Rücken',          sets:3,reps:'10–12'},
+        {id:'e9', name:'Kurzhantel Rudern beidarmig (oberer Rücken)',   muscle:'Rücken',          sets:3,reps:'10–12'},
         {id:'e11',name:'Kurzhantel Curls',              muscle:'Bizeps',          sets:3,reps:'10–12'},
         {id:'e12',name:'Hammercurls',                   muscle:'Bizeps',          sets:2,reps:'12–15'},
         {id:'e10',name:'Reverse Flyes (Kurzhanteln)',   muscle:'Hintere Schulter',sets:3,reps:'12–15'},
@@ -785,8 +785,8 @@ const WORKOUT_PLANS = {
       {id:'d2',label:'Tag 3',name:'Rücken / Bizeps',tag:'MI',color:'#8B5CF6',
        muscles:['Rücken','Bizeps','Hintere Schulter'],exercises:[
         {id:'p2e7', name:'Klimmzüge / Negativklimmzüge',muscle:'Rücken',          sets:4,reps:'6–10',bw:true},
-        {id:'p2e8', name:'Kurzhantel Rudern einarmig',  muscle:'Rücken',          sets:4,reps:'10–12'},
-        {id:'p2e9', name:'Kurzhantel Rudern beidarmig', muscle:'Rücken',          sets:3,reps:'10–12'},
+        {id:'p2e8', name:'Kurzhantel Rudern einarmig (Lat-Fokus)',  muscle:'Rücken',          sets:4,reps:'10–12'},
+        {id:'p2e9', name:'Kurzhantel Rudern beidarmig (oberer Rücken)', muscle:'Rücken',          sets:3,reps:'10–12'},
         {id:'p2e10',name:'Kurzhantel Curls',            muscle:'Bizeps',          sets:4,reps:'10–12'},
         {id:'p2e11',name:'Concentration Curls',         muscle:'Bizeps',          sets:3,reps:'10–12'},
         {id:'p2e12',name:'Reverse Flyes (Kurzhanteln)', muscle:'Hintere Schulter',sets:3,reps:'12–15'},
@@ -848,8 +848,8 @@ const WORKOUT_PLANS = {
       {id:'d2',label:'Tag 3',name:'Rücken / Bizeps',tag:'MI',color:'#8B5CF6',
        muscles:['Rücken','Bizeps','Hintere Schulter'],exercises:[
         {id:'p3e7', name:'Klimmzüge / Negativklimmzüge',muscle:'Rücken',          sets:4,reps:'Max',  bw:true},
-        {id:'p3e8', name:'Kurzhantel Rudern einarmig',  muscle:'Rücken',          sets:4,reps:'8–12', note:'Dropset letzter Satz'},
-        {id:'p3e9', name:'Kurzhantel Rudern beidarmig', muscle:'Rücken',          sets:3,reps:'10–12'},
+        {id:'p3e8', name:'Kurzhantel Rudern einarmig (Lat-Fokus)',  muscle:'Rücken',          sets:4,reps:'8–12', note:'Dropset letzter Satz'},
+        {id:'p3e9', name:'Kurzhantel Rudern beidarmig (oberer Rücken)', muscle:'Rücken',          sets:3,reps:'10–12'},
         {id:'p3e10',name:'Kurzhantel Curls',            muscle:'Bizeps',          sets:4,reps:'8–12', note:'Superset mit Concentration'},
         {id:'p3e11',name:'Concentration Curls',         muscle:'Bizeps',          sets:4,reps:'10–15',note:'Superset mit Curls'},
         {id:'p3e12',name:'Reverse Flyes (Kurzhanteln)', muscle:'Hintere Schulter',sets:4,reps:'12–15'},
@@ -932,7 +932,7 @@ function loadSettings(){
       goalKg:GOAL_KG,
       startKg:weights.length?weights[0].kg:95,
       weekGoal:4,
-      defaultRestTime:90,
+      defaultRestTime:120,
       streakPaused:false,
       streakFrozenAt:0,
     };
@@ -945,7 +945,7 @@ function loadSettings(){
     if(!meta.startKg)  meta.startKg=weights.length?weights[0].kg:95;
     if(!meta.activePhase) meta.activePhase='p1';
     if(!meta.weekGoal) meta.weekGoal=4;
-    if(!meta.defaultRestTime) meta.defaultRestTime=90;
+    if(!meta.defaultRestTime||meta.defaultRestTime===90) meta.defaultRestTime=120;
     // Fix old programEnd if clearly wrong
     if(!meta.programEnd||meta.programEnd==='2025-08-24'){
       meta.programEnd=addDaysISO(meta.programStart||today,6*7);
@@ -1764,7 +1764,7 @@ function toggleSet(ei,si){
   const row=document.getElementById(`sr-${ei}-${si}`);const btn=document.getElementById(`cb-${ei}-${si}`);
   if(row)row.classList.toggle('done',done);
   if(btn){btn.classList.toggle('done',done);btn.innerHTML=done?`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`:'';}
-  if(done){ haptic('medium'); startRestTimer(workoutExercises[ei].restTimer||settings.defaultRestTime||getActivePlan().restTimer||90); } else { haptic('light'); }
+  if(done){ haptic('medium'); startRestTimer(workoutExercises[ei].restTimer||settings.defaultRestTime||getActivePlan().restTimer||120); } else { haptic('light'); }
   saveSession();updateProgress();
 }
 function addSet(ei){workoutExercises[ei].setData.push({weight:'',reps:'',done:false});saveSession();renderExerciseList();updateProgress();}
@@ -1824,7 +1824,7 @@ function getLastPerf(name){
 let restTimerInterval=null,restTimerSec=0,restTimerMax=120,_restTimerStartTS=0;
 function startRestTimer(sec){
   clearInterval(restTimerInterval);
-  restTimerSec=sec||(settings.defaultRestTime||getActivePlan().restTimer||90);
+  restTimerSec=sec||(settings.defaultRestTime||getActivePlan().restTimer||120);
   restTimerMax=restTimerSec;
   _restTimerStartTS=Date.now();
   updateRestTimerUI();
@@ -3016,8 +3016,8 @@ const EXERCISE_INFO={
   "Kurzhantel Kickbacks":{primary:["Trizeps"],secondary:[],tip:"Oberarm parallel zum Boden, nur Unterarm bewegt sich"},
   "Overhead Trizepsstrecken":{primary:["Trizeps (langer Kopf)"],secondary:[],tip:"Ellbogen zeigen nach oben, langsam senken"},
   "Klimmzüge / Negativklimmzüge":{primary:["Rücken (Latissimus)"],secondary:["Bizeps","Hintere Schulter"],tip:"Schulterblätter erst zusammenziehen, dann ziehen"},
-  "Kurzhantel Rudern einarmig":{primary:["Rücken (Latissimus)"],secondary:["Bizeps","Hintere Schulter"],tip:"Ellbogen zur Decke ziehen, nicht rotieren"},
-  "Kurzhantel Rudern beidarmig":{primary:["Rücken (Rhomboids)"],secondary:["Bizeps","Hintere Schulter","Trapez"],tip:"Brustbein auf Knie stützen für Stabilität"},
+  "Kurzhantel Rudern einarmig (Lat-Fokus)":{primary:["Rücken (Latissimus)"],secondary:["Bizeps","Hintere Schulter"],tip:"Auf Bank gestützt, Ellbogen eng am Körper, Zug zur Hüfte — aktiviert breiten Rückenmuskel"},
+  "Kurzhantel Rudern beidarmig (oberer Rücken)":{primary:["Rücken (Rhomboids)"],secondary:["Bizeps","Hintere Schulter","Trapez"],tip:"Auf Bank gestützt, Ellbogen abgespreizt, Zug zur Brust — aktiviert Schulterblätter und oberen Rücken"},
   "Face Pulls (Widerstandsband)":{primary:["Hintere Schulter"],secondary:["Trapez"],tip:"Auf Schulterhöhe ziehen, Hände neben Ohren"},
   "Reverse Flyes (Kurzhanteln)":{primary:["Hintere Schulter","Rotatorenmanschette"],secondary:["Trapez"],tip:"Oberkörper 45° vorgebeugt, Arme seitlich bis Schulterhöhe — langsam und kontrolliert. Auf Reebok Deck leicht schräg für bessere Isolation"},
   "Kurzhantel Curls":{primary:["Bizeps"],secondary:["Unterarm"],tip:"Ellbogen fixiert, volle Streckung am Ende"},
@@ -3047,7 +3047,7 @@ const MUSCLES={CHEST:'chest',TRICEP:'tricep',SHOULDER_FRONT:'shoulder_front',SHO
 const M=MUSCLES;
 const BODY_MUSCLES_MAP={[M.CHEST]:['chest-upper-left','chest-upper-right','chest-lower-left','chest-lower-right'],[M.TRICEP]:['triceps-long-left','triceps-lateral-left','triceps-long-right','triceps-lateral-right'],[M.SHOULDER_FRONT]:['shoulder-front-left','shoulder-front-right'],[M.SHOULDER_MID]:['shoulder-side-left','shoulder-side-right','shoulder-front-left','shoulder-front-right','deltoid-rear-left','deltoid-rear-right'],[M.SHOULDER_REAR]:['deltoid-rear-left','deltoid-rear-right'],[M.BICEP]:['biceps-left','biceps-right'],[M.FOREARM]:['forearm-left','forearm-right','forearm-flexors-left','forearm-extensors-left','forearm-flexors-right','forearm-extensors-right'],[M.BACK_LAT]:['lats-upper-left','lats-mid-left','lats-lower-left','lats-upper-right','lats-mid-right','lats-lower-right'],[M.BACK_MID]:['traps-mid-left','traps-mid-right','lower-back-ql-left','lower-back-ql-right'],[M.BACK_LOW]:['lower-back-erectors-left','lower-back-erectors-right','spine'],[M.TRAP]:['traps-upper-left','traps-mid-left','traps-lower-left','traps-upper-right','traps-mid-right','traps-lower-right'],[M.ABS]:['abs-upper-left','abs-upper-right','abs-lower-left','abs-lower-right'],[M.OBLIQUE]:['obliques-left','obliques-right'],[M.HIP_FLEXOR]:['hip-flexor-left','hip-flexor-right'],[M.QUAD]:['quads-left','quads-right'],[M.HAMSTRING]:['hamstrings-medial-left','hamstrings-lateral-left','hamstrings-medial-right','hamstrings-lateral-right'],[M.GLUTE]:['gluteus-medius-left','gluteus-maximus-left','gluteus-medius-right','gluteus-maximus-right'],[M.CALF]:['calves-gastroc-medial-left','calves-gastroc-lateral-left','calves-soleus-left','calves-gastroc-medial-right','calves-gastroc-lateral-right','calves-soleus-right','tibialis-anterior-left','tibialis-anterior-right'],[M.CARDIO]:[]};
 
-const EXERCISE_VIDEOS={"Liegestütz (Reebok Deck)":"IODxDxX7oi4","Kurzhantel Bankdrücken":"VmB1G1K7v94","Kurzhantel Fliegende":"eozdVDA78K0","Enges Bankdrücken (Trizeps)":"nEF0bv2FW54","Kurzhantel Kickbacks":"6SS6K3lAwZ8","Overhead Trizepsstrecken":"YbX7Wd8jQ-Q","Klimmzüge / Negativklimmzüge":"eGo4IYlbE5g","Kurzhantel Rudern einarmig":"roCP83qQRBs","Kurzhantel Rudern beidarmig":"FWJR5Ve8bnQ","Face Pulls (Widerstandsband)":"rep-qVOkqgk","Kurzhantel Curls":"ykJmrZ5v0Oo","Hammercurls":"zC3nLlEvin4","Kurzhantel Schulterdrücken":"HzIiNhHhhtA","Seitheben":"3VcKaXpzqRo","Frontheben":"gkfFI3_nfZc","Ab Wheel Rollouts":"p7j02V1fIzU","Plank":"ASdvN_XEl_c","Schrägbauchcrunch":"HLKBS57WCo0","Kurzhantel Kniebeugen":"U3HlEF_whyg","Kurzhantel Ausfallschritte":"D7KaRcUTQeE","Rumänisches Kreuzheben":"JCXUYuzwNrM","Hüftheben (Glute Bridge)":"wPM8icPu6H8","Wadenheben stehend":"gwLzBMbchRk","Dead Bug":"4XLEnwUr1d8"};
+const EXERCISE_VIDEOS={"Liegestütz (Reebok Deck)":"IODxDxX7oi4","Kurzhantel Bankdrücken":"VmB1G1K7v94","Kurzhantel Fliegende":"eozdVDA78K0","Enges Bankdrücken (Trizeps)":"nEF0bv2FW54","Kurzhantel Kickbacks":"6SS6K3lAwZ8","Overhead Trizepsstrecken":"YbX7Wd8jQ-Q","Klimmzüge / Negativklimmzüge":"eGo4IYlbE5g","Kurzhantel Rudern einarmig (Lat-Fokus)":"roCP83qQRBs","Kurzhantel Rudern beidarmig (oberer Rücken)":"FWJR5Ve8bnQ","Face Pulls (Widerstandsband)":"rep-qVOkqgk","Kurzhantel Curls":"ykJmrZ5v0Oo","Hammercurls":"zC3nLlEvin4","Kurzhantel Schulterdrücken":"HzIiNhHhhtA","Seitheben":"3VcKaXpzqRo","Frontheben":"gkfFI3_nfZc","Ab Wheel Rollouts":"p7j02V1fIzU","Plank":"ASdvN_XEl_c","Schrägbauchcrunch":"HLKBS57WCo0","Kurzhantel Kniebeugen":"U3HlEF_whyg","Kurzhantel Ausfallschritte":"D7KaRcUTQeE","Rumänisches Kreuzheben":"JCXUYuzwNrM","Hüftheben (Glute Bridge)":"wPM8icPu6H8","Wadenheben stehend":"gwLzBMbchRk","Dead Bug":"4XLEnwUr1d8"};
 
 const EXERCISE_ALTERNATIVES={
   'Kurzhantel Bankdrücken':['Liegestütz (Reebok Deck)','Kurzhantel Fliegende','Dips an der Bank'],
@@ -3057,9 +3057,9 @@ const EXERCISE_ALTERNATIVES={
   'Kurzhantel Kickbacks':['Overhead Trizepsstrecken','Enges Bankdrücken (Trizeps)','Dips an der Bank'],
   'Overhead Trizepsstrecken':['Kurzhantel Kickbacks','Enges Bankdrücken (Trizeps)','Dips an der Bank'],
   'Dips an der Bank':['Enges Bankdrücken (Trizeps)','Overhead Trizepsstrecken','Kurzhantel Kickbacks'],
-  'Klimmzüge / Negativklimmzüge':['Kurzhantel Rudern einarmig','Kurzhantel Rudern beidarmig'],
-  'Kurzhantel Rudern einarmig':['Klimmzüge / Negativklimmzüge','Kurzhantel Rudern beidarmig'],
-  'Kurzhantel Rudern beidarmig':['Klimmzüge / Negativklimmzüge','Kurzhantel Rudern einarmig'],
+  'Klimmzüge / Negativklimmzüge':['Kurzhantel Rudern einarmig (Lat-Fokus)','Kurzhantel Rudern beidarmig (oberer Rücken)'],
+  'Kurzhantel Rudern einarmig (Lat-Fokus)':['Klimmzüge / Negativklimmzüge','Kurzhantel Rudern beidarmig (oberer Rücken)'],
+  'Kurzhantel Rudern beidarmig (oberer Rücken)':['Klimmzüge / Negativklimmzüge','Kurzhantel Rudern einarmig (Lat-Fokus)'],
   'Face Pulls (Widerstandsband)':['Reverse Flyes (Kurzhanteln)'],
   'Reverse Flyes (Kurzhanteln)':['Face Pulls (Widerstandsband)'],
   'Kurzhantel Curls':['Hammercurls','Concentration Curls'],
@@ -3079,7 +3079,7 @@ const EXERCISE_ALTERNATIVES={
   'Hüftheben (Glute Bridge)':['Rumänisches Kreuzheben','Kurzhantel Ausfallschritte'],
 };
 
-const EXERCISE_MUSCLES={"Liegestütz (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},"Kurzhantel Bankdrücken":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},"Kurzhantel Fliegende":{pri:[M.CHEST],sec:[M.SHOULDER_FRONT]},"Enges Bankdrücken (Trizeps)":{pri:[M.TRICEP],sec:[M.CHEST,M.SHOULDER_FRONT]},"Kurzhantel Kickbacks":{pri:[M.TRICEP],sec:[]},"Overhead Trizepsstrecken":{pri:[M.TRICEP],sec:[]},"Klimmzüge / Negativklimmzüge":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},"Kurzhantel Rudern einarmig":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},"Kurzhantel Rudern beidarmig":{pri:[M.BACK_MID],sec:[M.BICEP,M.SHOULDER_REAR,M.TRAP]},"Face Pulls (Widerstandsband)":{pri:[M.SHOULDER_REAR],sec:[M.TRAP,M.BACK_MID]},
+const EXERCISE_MUSCLES={"Liegestütz (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},"Kurzhantel Bankdrücken":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},"Kurzhantel Fliegende":{pri:[M.CHEST],sec:[M.SHOULDER_FRONT]},"Enges Bankdrücken (Trizeps)":{pri:[M.TRICEP],sec:[M.CHEST,M.SHOULDER_FRONT]},"Kurzhantel Kickbacks":{pri:[M.TRICEP],sec:[]},"Overhead Trizepsstrecken":{pri:[M.TRICEP],sec:[]},"Klimmzüge / Negativklimmzüge":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},"Kurzhantel Rudern einarmig (Lat-Fokus)":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},"Kurzhantel Rudern beidarmig (oberer Rücken)":{pri:[M.BACK_MID],sec:[M.BICEP,M.SHOULDER_REAR,M.TRAP]},"Face Pulls (Widerstandsband)":{pri:[M.SHOULDER_REAR],sec:[M.TRAP,M.BACK_MID]},
 "Reverse Flyes (Kurzhanteln)":{pri:[M.SHOULDER_REAR],sec:[M.TRAP,M.BACK_MID]},"Kurzhantel Curls":{pri:[M.BICEP],sec:[M.FOREARM]},"Hammercurls":{pri:[M.BICEP],sec:[M.FOREARM]},"Kurzhantel Schulterdrücken":{pri:[M.SHOULDER_MID],sec:[M.TRICEP,M.TRAP]},"Seitheben":{pri:[M.SHOULDER_MID],sec:[M.TRAP]},"Frontheben":{pri:[M.SHOULDER_FRONT],sec:[M.TRAP,M.CHEST]},"Ab Wheel Rollouts":{pri:[M.ABS],sec:[M.BACK_LAT,M.SHOULDER_FRONT]},"Plank":{pri:[M.ABS],sec:[M.SHOULDER_MID,M.GLUTE]},"Schrägbauchcrunch":{pri:[M.OBLIQUE],sec:[M.ABS]},"Kurzhantel Kniebeugen":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF,M.ABS]},"Kurzhantel Ausfallschritte":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},"Rumänisches Kreuzheben":{pri:[M.HAMSTRING],sec:[M.GLUTE,M.BACK_LOW]},"Hüftheben (Glute Bridge)":{pri:[M.GLUTE],sec:[M.HAMSTRING,M.ABS]},"Wadenheben stehend":{pri:[M.CALF],sec:[]},"Dead Bug":{pri:[M.ABS],sec:[M.HIP_FLEXOR,M.BACK_LOW]},"WalkingPad Aufwärmen":{pri:[M.CARDIO],sec:[M.QUAD,M.CALF]},"Rudern Intervalle":{pri:[M.BACK_LAT,M.CARDIO],sec:[M.QUAD,M.BICEP,M.ABS]},"Rudern Steadystate":{pri:[M.BACK_LAT,M.CARDIO],sec:[M.QUAD,M.HAMSTRING]},
 "Bulgarian Split Squat":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},
 "Concentration Curls":{pri:[M.BICEP],sec:[M.FOREARM]},
@@ -3502,7 +3502,7 @@ function renderSettings(){
   const si=document.getElementById('s-start-kg');const gi=document.getElementById('s-goal-kg');const di=document.getElementById('s-prog-start');const wi=document.getElementById('s-weeks');
   if(si)si.value=settings.startKg||95;if(gi)gi.value=settings.goalKg||77;if(di)di.value=settings.programStart||dateToISO(new Date());
   if(wi){const s2=parseISODateLocal(settings.programStart||dateToISO(new Date()));const e2=parseISODateLocal(settings.programEnd||addDaysISO(dateToISO(new Date()),84));wi.value=Math.max(4,Math.round((e2-s2)/(7*24*3600*1000)))||12;}
-  const ri=document.getElementById('s-rest-time');if(ri)ri.value=settings.defaultRestTime||90;
+  const ri=document.getElementById('s-rest-time');if(ri)ri.value=settings.defaultRestTime||120;
   // Phase-Info Block
   const phaseInfoEl=document.getElementById('settings-phase-info');
   if(phaseInfoEl){
@@ -3577,7 +3577,7 @@ function saveSettingsForm(){
   if(goalKg>=startKg){showToast('Ziel muss kleiner als Start sein');return;}
   if(!progStart){showToast('Bitte Startdatum eingeben');return;}
   settings.weekGoal=parseInt(document.getElementById('s-week-goal')?.value)||4;
-  settings.defaultRestTime=parseInt(document.getElementById('s-rest-time')?.value)||90;
+  settings.defaultRestTime=parseInt(document.getElementById('s-rest-time')?.value)||120;
   settings.startKg=startKg;settings.goalKg=goalKg;settings.programStart=progStart;settings.programEnd=addDaysISO(progStart,weeks*7);
   saveSettings();currentWeight=weightLog.length?weightLog[weightLog.length-1].kg:startKg;updateWeightDisplay();showToast('Einstellungen gespeichert ✓');switchTab('dashboard');
 }
@@ -3621,7 +3621,7 @@ function getProgressionSuggestions(){
     if(isBW(name))return;const sessions=history.filter(h=>h.exercises.some(e=>e.name===name)).slice(-3);if(sessions.length<2)return;
     const last=sessions[sessions.length-1];const prev=sessions[sessions.length-2];const lastEx=last.exercises.find(e=>e.name===name);const prevEx=prev.exercises.find(e=>e.name===name);if(!lastEx||!prevEx)return;
     const lastMaxW=Math.max(...lastEx.sets.map(s=>parseFloat(s.weight)||0));const prevMaxW=Math.max(...prevEx.sets.map(s=>parseFloat(s.weight)||0));const lastSetsCompleted=lastEx.sets.filter(s=>s.weight>0).length;
-    if(lastMaxW>0&&lastMaxW>=prevMaxW&&lastSetsCompleted>=2){const bigEx=['Kurzhantel Bankdrücken','Kurzhantel Kniebeugen','Rumänisches Kreuzheben','Kurzhantel Rudern einarmig'];const step=bigEx.includes(name)?2.5:1;suggestions.push({name,currentW:lastMaxW,suggestedW:lastMaxW+step});}
+    if(lastMaxW>0&&lastMaxW>=prevMaxW&&lastSetsCompleted>=2){const bigEx=['Kurzhantel Bankdrücken','Kurzhantel Kniebeugen','Rumänisches Kreuzheben','Kurzhantel Rudern einarmig (Lat-Fokus)'];const step=bigEx.includes(name)?2.5:1;suggestions.push({name,currentW:lastMaxW,suggestedW:lastMaxW+step});}
   });
   return suggestions.slice(0,3);
 }
