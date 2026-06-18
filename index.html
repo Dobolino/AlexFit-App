@@ -1237,9 +1237,14 @@ function checkBackupWarning(){
 // Alle Übungen die man hinzufügen kann — Plan-Übungen + Core + Alternativen
 const EXERCISE_LIBRARY = [
   // Brust
-  {id:'lib_b1',name:'Dumbbell Bench Press',     muscle:'Brust',    sets:3,reps:'10–12'},
-  {id:'lib_b2',name:'Dumbbell Flyes',        muscle:'Brust',    sets:3,reps:'12–15'},
-  {id:'lib_b3',name:'Push-ups (Reebok Deck)',    muscle:'Brust',    sets:3,reps:'10–12',bw:true},
+  {id:'lib_b1',name:'Dumbbell Bench Press',                  muscle:'Brust', sets:3,reps:'10–12'},
+  {id:'lib_b2',name:'Dumbbell Flyes',                       muscle:'Brust', sets:3,reps:'12–15'},
+  {id:'lib_b3',name:'Push-ups (Reebok Deck)',               muscle:'Brust', sets:3,reps:'10–12',bw:true},
+  {id:'lib_b5',name:'Incline Dumbbell Press (Reebok Deck)', muscle:'Brust', sets:3,reps:'10–12'},
+  {id:'lib_b6',name:'Decline Push-ups (Reebok Deck)',       muscle:'Brust', sets:3,reps:'10–15',bw:true},
+  {id:'lib_b7',name:'Dumbbell Squeeze Press',               muscle:'Brust', sets:3,reps:'10–12'},
+  {id:'lib_b8',name:'Single-Arm Dumbbell Press',            muscle:'Brust', sets:3,reps:'10 je Seite'},
+  {id:'lib_b9',name:'Dumbbell Around the World',            muscle:'Brust', sets:3,reps:'12–15'},
   {id:'lib_b4',name:'Bench Dips',            muscle:'Trizeps',  sets:3,reps:'10–15',bw:true},
   // Rücken
   {id:'lib_r1',name:'Single-Arm Dumbbell Row',  muscle:'Rücken',   sets:3,reps:'10–12'},
@@ -1997,44 +2002,53 @@ function toggleAddEx(){
 
 function renderAddExPanel(){
   const p=document.getElementById('add-ex-panel');
-  const usedNames=new Set(workoutExercises.map(e=>e.name));
-
-  // Filter-Buttons
-  const filterHtml=`<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x mandatory">
-    ${MUSCLE_GROUPS.map(g=>`<button onclick="setAddExFilter('${g.key}')" style="flex:0 0 auto;padding:5px 12px;border-radius:20px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;transition:all .2s;
-      ${addExFilter===g.key?`background:${g.color};color:#fff;border:1px solid ${g.color}`:'background:var(--cardElev);color:var(--tm);border:1px solid var(--border)'}">${g.label}</button>`).join('')}
+  p.innerHTML=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="bc slabel" style="margin-bottom:0">Übung hinzufügen</div>
+      <button onclick="toggleAddEx()" style="color:var(--tm);font-size:20px;padding:0 4px;line-height:1">×</button>
+    </div>
+    <input id="add-ex-search" type="search" placeholder="Suchen…" oninput="updateAddExList()"
+      style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--cardElev);color:var(--tp);font-family:'Barlow Condensed',sans-serif;font-size:13px;margin-bottom:8px;box-sizing:border-box;outline:none">
+    <div id="add-ex-filters" style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x mandatory">
+      ${MUSCLE_GROUPS.map(g=>`<button id="aef-${g.key}" onclick="setAddExFilter('${g.key}')" style="flex:0 0 auto;padding:5px 12px;border-radius:20px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;transition:all .2s;
+        ${addExFilter===g.key?`background:${g.color};color:#fff;border:1px solid ${g.color}`:'background:var(--cardElev);color:var(--tm);border:1px solid var(--border)'}">${g.label}</button>`).join('')}
+    </div>
+    <div id="add-ex-list" style="max-height:280px;overflow-y:auto;margin-top:8px;-webkit-overflow-scrolling:touch"></div>
   </div>`;
+  updateAddExList();
+}
 
-  // Gefilterte Übungen
+function updateAddExList(){
+  const listEl=document.getElementById('add-ex-list');
+  if(!listEl)return;
+  const search=(document.getElementById('add-ex-search')?.value||'').toLowerCase().trim();
+  const usedNames=new Set(workoutExercises.map(e=>e.name));
   const filtered=EXERCISE_LIBRARY.filter(ex=>{
     if(usedNames.has(ex.name))return false;
-    if(addExFilter==='alle')return true;
-    return ex.muscle===addExFilter||ex.muscle.includes(addExFilter);
+    if(addExFilter!=='alle'&&ex.muscle!==addExFilter&&!ex.muscle.includes(addExFilter))return false;
+    if(search&&!ex.name.toLowerCase().includes(search))return false;
+    return true;
   });
-
-  const listHtml=filtered.length===0
-    ? `<div style="text-align:center;padding:16px"><span class="bc" style="font-size:13px;color:var(--tm)">Alle ${addExFilter==='alle'?'Übungen':'Übungen dieser Gruppe'} bereits im Training</span></div>`
-    : filtered.map(ex=>`<button onclick="addExerciseFromLib('${ex.id}')" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;text-align:left">
+  listEl.innerHTML=filtered.length===0
+    ?`<div style="text-align:center;padding:16px"><span class="bc" style="font-size:13px;color:var(--tm)">Keine Übungen gefunden</span></div>`
+    :filtered.map(ex=>`<button onclick="addExerciseFromLib('${ex.id}')" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;text-align:left">
         <div style="min-width:0">
           <div class="bc" style="font-size:13px;font-weight:700;color:var(--tp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ex.name}</div>
           <div class="bc" style="font-size:10px;color:var(--tm)">${ex.sets} Sätze · ${ex.reps}</div>
         </div>
         ${tagHTML(ex.muscle)}
       </button>`).join('');
-
-  p.innerHTML=`<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div class="bc slabel" style="margin-bottom:0">Übung hinzufügen</div>
-      <button onclick="toggleAddEx()" style="color:var(--tm);font-size:20px;padding:0 4px;line-height:1">×</button>
-    </div>
-    ${filterHtml}
-    <div style="max-height:280px;overflow-y:auto;margin-top:8px;-webkit-overflow-scrolling:touch">${listHtml}</div>
-  </div>`;
 }
 
 function setAddExFilter(key){
   addExFilter=key;
-  renderAddExPanel();
+  MUSCLE_GROUPS.forEach(g=>{
+    const btn=document.getElementById(`aef-${g.key}`);
+    if(!btn)return;
+    if(addExFilter===g.key){btn.style.background=g.color;btn.style.color='#fff';btn.style.border=`1px solid ${g.color}`;}
+    else{btn.style.background='var(--cardElev)';btn.style.color='var(--tm)';btn.style.border='1px solid var(--border)';}
+  });
+  updateAddExList();
 }
 
 function addExerciseFromLib(libId){
@@ -3317,7 +3331,6 @@ const EXERCISE_INFO={
   "Close-Grip Bench Press":{primary:["Trizeps"],secondary:["Brust","Vordere Schulter"],tip:"Ellbogen nah am Körper, kontrollierte Bewegung"},
   "Dumbbell Kickbacks":{primary:["Trizeps"],secondary:[],tip:"Oberarm parallel zum Boden, nur Unterarm bewegt sich"},
   "Overhead Triceps Extension":{primary:["Trizeps (langer Kopf)"],secondary:[],tip:"Ellbogen zeigen nach oben, langsam senken"},
-  "Pull-ups / Negative Pull-ups":{primary:["Rücken (Latissimus)"],secondary:["Bizeps","Hintere Schulter"],tip:"Schulterblätter erst zusammenziehen, dann ziehen"},
   "Single-Arm Dumbbell Row":{primary:["Rücken (Latissimus)"],secondary:["Bizeps","Hintere Schulter"],tip:"Ellbogen zur Decke ziehen, nicht rotieren"},
   "Double-Arm Dumbbell Row":{primary:["Rücken (Rhomboids)"],secondary:["Bizeps","Hintere Schulter","Trapez"],tip:"Brustbein auf Knie stützen für Stabilität"},
   "Face Pulls (Resistance Band)":{primary:["Hintere Schulter"],secondary:["Trapez"],tip:"Auf Schulterhöhe ziehen, Hände neben Ohren"},
@@ -3376,25 +3389,32 @@ const EXERCISE_INFO={
   "Bulgarian Split Squat":{primary:["Quadrizeps","Gesäß"],secondary:["Hinterschenkel","Waden"],tip:"Hinterer Fuß auf Bank, Knie des vorderen Beins über Zehen, tief absenken"},
   "Concentration Curls":{primary:["Bizeps"],secondary:["Unterarm"],tip:"Ellbogen am Innenschenkel abstützen, langsam und kontrolliert"},
   "Bench Dips":{primary:["Trizeps"],secondary:["Brust","Vordere Schulter"],tip:"Hände schulterbreit, Ellbogen nah am Körper, volle Streckung"},
-  "Farmer's Walk (Dumbbells)":{primary:["Trapez"],secondary:["Unterarm","Schultern","Core"],tip:"Aufrechte Haltung, Schultern leicht zurückgezogen, gleichmäßige Schritte"},
   "Renegade Row":{primary:["Rücken (Latissimus)","Core"],secondary:["Bizeps","Schultern"],tip:"Liegestütz-Position, KH auf Boden, abwechselnd eine KH zur Hüfte ziehen — Körper absolut stabil halten. Häufigster Fehler: Hüfte dreht mit oder hebt sich. Breite Beinposition hilft."},
   "Superman Hold":{primary:["Rücken (Erector spinae)"],secondary:["Gesäß","Hamstrings"],tip:"Bauchlage, Arme vor dem Kopf — Arme, Brust und Beine gleichzeitig heben, oben 2s halten. Häufigster Fehler: nur Beine oder nur Arme heben. Perfekt als Ergänzung zur Sitzhaltung."},
   "Reverse Snow Angels":{primary:["Rücken (Rhomboids, Trapez)","Hintere Schulter"],secondary:["Rücken (Erector spinae)"],tip:"Bauchlage, Arme gestreckt seitlich — in Schneeengel-Bewegung führen. Langsam und bewusst. Sehr gut für Haltungskorrektur (Büroschulter). Häufigster Fehler: Ellbogen beugen."},
   "Seal Row (Reebok Deck)":{primary:["Rücken (Latissimus, Rhomboids)"],secondary:["Bizeps","Hintere Schulter"],tip:"Auf hohem Reebok Deck bäuchlings liegen, Brust aufgelegt, KH beidseitig hochziehen — kein Schwung möglich. Häufigster Fehler: Kopf abheben, zu schwer wählen."},
+  "Decline Push-ups (Reebok Deck)":{primary:["Brust (unterer Pectoralis)"],secondary:["Trizeps","Vordere Schulter"],tip:"Füsse auf Deck, Hände schulterbreit am Boden — Körper gerade, Ellbogen 45° einwinkeln. Untere Brust wird stärker betont als beim normalen Push-up. Häufigster Fehler: Hüfte durchhängen lassen."},
+  "Dumbbell Squeeze Press":{primary:["Brust (innerer Pectoralis)"],secondary:["Trizeps"],tip:"KH aktiv zusammendrücken (Squeeze) und diese Spannung während der gesamten Bewegung halten — kein Abstand zwischen den KH. Maximale Brust-Kontraktion in der Mitte. Häufigster Fehler: KH trennen sich beim Absenken."},
+  "Single-Arm Dumbbell Press":{primary:["Brust"],secondary:["Trizeps","Core (Anti-Rotation)"],tip:"Eine KH pressen, andere Hand gesichert oder am Körper — Körper aktiv stabilisieren, nicht rotieren. Deckt muskuläre Asymmetrien zwischen links/rechts auf. Häufigster Fehler: Hüfte dreht mit zur arbeitenden Seite."},
+  "Dumbbell Around the World":{primary:["Brust (Pectoralis)"],secondary:["Vordere Schulter","Serratus anterior"],tip:"Flach liegen, KH von Hüfte in großem Bogen über Boden bis über den Kopf führen — immer leicht gebeugte Ellbogen. Langsam und mit Kontrolle, keine schweren Gewichte. Häufigster Fehler: Ellbogen stark beugen oder Rücken abheben."},
 };
 
 const MUSCLES={CHEST:'chest',TRICEP:'tricep',SHOULDER_FRONT:'shoulder_front',SHOULDER_MID:'shoulder_mid',SHOULDER_REAR:'shoulder_rear',BICEP:'bicep',FOREARM:'forearm',BACK_LAT:'back_lat',BACK_MID:'back_mid',BACK_LOW:'back_low',TRAP:'trap',ABS:'abs',OBLIQUE:'oblique',HIP_FLEXOR:'hip_flexor',QUAD:'quad',HAMSTRING:'hamstring',GLUTE:'glute',CALF:'calf',CARDIO:'cardio'};
 const M=MUSCLES;
 const BODY_MUSCLES_MAP={[M.CHEST]:['chest-upper-left','chest-upper-right','chest-lower-left','chest-lower-right'],[M.TRICEP]:['triceps-long-left','triceps-lateral-left','triceps-long-right','triceps-lateral-right'],[M.SHOULDER_FRONT]:['shoulder-front-left','shoulder-front-right'],[M.SHOULDER_MID]:['shoulder-side-left','shoulder-side-right','shoulder-front-left','shoulder-front-right','deltoid-rear-left','deltoid-rear-right'],[M.SHOULDER_REAR]:['deltoid-rear-left','deltoid-rear-right'],[M.BICEP]:['biceps-left','biceps-right'],[M.FOREARM]:['forearm-left','forearm-right','forearm-flexors-left','forearm-extensors-left','forearm-flexors-right','forearm-extensors-right'],[M.BACK_LAT]:['lats-upper-left','lats-mid-left','lats-lower-left','lats-upper-right','lats-mid-right','lats-lower-right'],[M.BACK_MID]:['traps-mid-left','traps-mid-right','lower-back-ql-left','lower-back-ql-right'],[M.BACK_LOW]:['lower-back-erectors-left','lower-back-erectors-right','spine'],[M.TRAP]:['traps-upper-left','traps-mid-left','traps-lower-left','traps-upper-right','traps-mid-right','traps-lower-right'],[M.ABS]:['abs-upper-left','abs-upper-right','abs-lower-left','abs-lower-right'],[M.OBLIQUE]:['obliques-left','obliques-right'],[M.HIP_FLEXOR]:['hip-flexor-left','hip-flexor-right'],[M.QUAD]:['quads-left','quads-right'],[M.HAMSTRING]:['hamstrings-medial-left','hamstrings-lateral-left','hamstrings-medial-right','hamstrings-lateral-right'],[M.GLUTE]:['gluteus-medius-left','gluteus-maximus-left','gluteus-medius-right','gluteus-maximus-right'],[M.CALF]:['calves-gastroc-medial-left','calves-gastroc-lateral-left','calves-soleus-left','calves-gastroc-medial-right','calves-gastroc-lateral-right','calves-soleus-right','tibialis-anterior-left','tibialis-anterior-right'],[M.CARDIO]:[]};
 
-const EXERCISE_VIDEOS={"Floor Dips":"2z8JmcrW-As","Hollow Body Hold":"4i9PR-9Bd8c","Incline Curls (Reebok Deck)":"soxrZlIl35U","Incline Dumbbell Press (Reebok Deck)":"8iPEnn-ltC8","Pike Push-ups":"K2bZ7CtIcv0","Single-Leg Glute Bridge":"2pLT-olgUJs","Single-Leg RDL":"31B2XPVgRR8","Straight-Arm Pullover":"ouFkyHbk2yI","Sumo Squat (Dumbbell)":"qpHseyhe1KQ","Upright Row (Dumbbell)":"AwTAlSpDOHk","Goblet Squat":"MeIiIdhvXT4","Mountain Climbers":"nmwgirgXLYM","Side Plank":"K2VljzCC16g","Step-ups (Reebok Deck)":"dQqApCGd5Ss","Push-ups (Reebok Deck)":"4Bc1tPaYkOo","Dumbbell Bench Press":"mTaiQemkEpU","Dumbbell Flyes":"rk8YayRoTRQ","Dumbbell Pullover":"raU5C9bWo9U","Close-Grip Bench Press":"EvjftwN-nSY","Dumbbell Kickbacks":"WhBxKbe1-NU","Overhead Triceps Extension":"b_r_LW4HEcM","Bench Dips":"4ua3MzaU0QU","Pull-ups / Negative Pull-ups":"eDP_OOhMTZ4","Single-Arm Dumbbell Row":"yHqqGd0tXcw","Double-Arm Dumbbell Row":"f8r7gA3nyb8","Face Pulls (Resistance Band)":"IeOqdw9WI90","Reverse Flyes (Dumbbells)":"LsT-bR_zxLo","Dumbbell Shoulder Press":"k6tzKisR3NY","Lateral Raises":"dybxZJaWxCY","Front Raises":"h9xfpTrAvkE","Dumbbell Curls":"oLyP6sORFOc","Hammer Curls":"kl_jpIYbKo4","Concentration Curls":"EjUnEEfTSEY","Zottman Curls":"5Go_uOTnFl0","Ab Wheel Rollouts":"XWJmFD_AdbM","Plank":"xe2MXatLTUw","Oblique Crunch":"Hh9DTupf1vc","Dead Bug":"DqLL45uk2Tk","Bicycle Crunches":"NWzlS1Lp1e8","Bird Dog":"YO9bbyrgJkI","Russian Twist":"aRUMRbl7KS4","Dumbbell Crunch":"Yg6GsyZoqK0","Dumbbell Russian Twist":"aRUMRbl7KS4","Weighted Plank":"xe2MXatLTUw","Dumbbell Side Bend":"44DazvtgpGE","Pallof Press (Isometric)":"VAyk2hvwPd0","Dumbbell Windmill":"BUCD9aHk9nU","Suitcase Carry":"v8O0kNuvp_k","L-Sit Hold":"a4qGW79QtrE","Dumbbell Squats":"OTyb4YUDYYY","Dumbbell Lunges":"mJilHWIBWO8","Bulgarian Split Squat":"or1frhkjBDc","Romanian Deadlift":"Wou9zVQrAfs","Glute Bridge":"X_IGw8U_e38","Standing Calf Raises":"a-x_NR-ibos","Donkey Kicks":"JsDRMr1T7Is","Good Mornings (Dumbbell)":"QHsZAXdalGQ","Hip Thrust":"CvuVYMFd11g","Reverse Lunges":"J9MpoAQCjos","Seated Calf Raises":"ar8nav0jGoE","Single-Leg Calf Raises":"E1mG5L9rpFc","Farmer's Walk (Dumbbells)":"1uOs1hP3u4A","Renegade Row":"qmZJhocQVlM","Superman Hold":"eKB5rv5c7FQ","Reverse Snow Angels":"R7jH-CNUb_c","Seal Row (Reebok Deck)":"udXpPqWESq0","Arnold Press":"pQDrcNoDNVM"};
+const EXERCISE_VIDEOS={"Floor Dips":"2z8JmcrW-As","Hollow Body Hold":"4i9PR-9Bd8c","Incline Curls (Reebok Deck)":"soxrZlIl35U","Incline Dumbbell Press (Reebok Deck)":"8fXfwG4ftaQ","Pike Push-ups":"K2bZ7CtIcv0","Single-Leg Glute Bridge":"2pLT-olgUJs","Single-Leg RDL":"31B2XPVgRR8","Straight-Arm Pullover":"ouFkyHbk2yI","Sumo Squat (Dumbbell)":"qpHseyhe1KQ","Upright Row (Dumbbell)":"AwTAlSpDOHk","Goblet Squat":"MeIiIdhvXT4","Mountain Climbers":"nmwgirgXLYM","Side Plank":"K2VljzCC16g","Step-ups (Reebok Deck)":"dQqApCGd5Ss","Push-ups (Reebok Deck)":"4Bc1tPaYkOo","Dumbbell Bench Press":"mTaiQemkEpU","Dumbbell Flyes":"rk8YayRoTRQ","Dumbbell Pullover":"raU5C9bWo9U","Close-Grip Bench Press":"EvjftwN-nSY","Dumbbell Kickbacks":"WhBxKbe1-NU","Overhead Triceps Extension":"b_r_LW4HEcM","Bench Dips":"4ua3MzaU0QU","Pull-ups / Negative Pull-ups":"eDP_OOhMTZ4","Single-Arm Dumbbell Row":"yHqqGd0tXcw","Double-Arm Dumbbell Row":"f8r7gA3nyb8","Face Pulls (Resistance Band)":"IeOqdw9WI90","Reverse Flyes (Dumbbells)":"LsT-bR_zxLo","Dumbbell Shoulder Press":"k6tzKisR3NY","Lateral Raises":"dybxZJaWxCY","Front Raises":"h9xfpTrAvkE","Dumbbell Curls":"oLyP6sORFOc","Hammer Curls":"kl_jpIYbKo4","Concentration Curls":"EjUnEEfTSEY","Zottman Curls":"5Go_uOTnFl0","Ab Wheel Rollouts":"XWJmFD_AdbM","Plank":"xe2MXatLTUw","Oblique Crunch":"Hh9DTupf1vc","Dead Bug":"DqLL45uk2Tk","Bicycle Crunches":"NWzlS1Lp1e8","Bird Dog":"YO9bbyrgJkI","Russian Twist":"aRUMRbl7KS4","Dumbbell Crunch":"Yg6GsyZoqK0","Dumbbell Russian Twist":"aRUMRbl7KS4","Weighted Plank":"xe2MXatLTUw","Dumbbell Side Bend":"44DazvtgpGE","Pallof Press (Isometric)":"VAyk2hvwPd0","Dumbbell Windmill":"BUCD9aHk9nU","Suitcase Carry":"v8O0kNuvp_k","L-Sit Hold":"a4qGW79QtrE","Dumbbell Squats":"OTyb4YUDYYY","Dumbbell Lunges":"mJilHWIBWO8","Bulgarian Split Squat":"or1frhkjBDc","Romanian Deadlift":"Wou9zVQrAfs","Glute Bridge":"X_IGw8U_e38","Standing Calf Raises":"a-x_NR-ibos","Donkey Kicks":"JsDRMr1T7Is","Good Mornings (Dumbbell)":"QHsZAXdalGQ","Hip Thrust":"CvuVYMFd11g","Reverse Lunges":"J9MpoAQCjos","Seated Calf Raises":"ar8nav0jGoE","Single-Leg Calf Raises":"E1mG5L9rpFc","Farmer's Walk (Dumbbells)":"1uOs1hP3u4A","Renegade Row":"qmZJhocQVlM","Superman Hold":"eKB5rv5c7FQ","Reverse Snow Angels":"R7jH-CNUb_c","Seal Row (Reebok Deck)":"udXpPqWESq0","Arnold Press":"6K_N9AGhItQ","Decline Push-ups (Reebok Deck)":"SOu-3_YyX2c","Dumbbell Squeeze Press":"G2j_lJf6ljk","Single-Arm Dumbbell Press":"S1Kf4Xi8pxo","Dumbbell Around the World":"kaZR4a52bog"};
 
 const EXERCISE_ALTERNATIVES={
   // ── BRUST ────────────────────────────────────────────────────────────────
-  'Dumbbell Bench Press':         ['Push-ups (Reebok Deck)','Dumbbell Flyes','Bench Dips','Incline Dumbbell Press (Reebok Deck)','Dumbbell Pullover'],
-  'Dumbbell Flyes':           ['Dumbbell Bench Press','Push-ups (Reebok Deck)','Bench Dips','Dumbbell Pullover'],
-  'Push-ups (Reebok Deck)':       ['Dumbbell Bench Press','Dumbbell Flyes','Bench Dips','Incline Dumbbell Press (Reebok Deck)'],
-  'Incline Dumbbell Press (Reebok Deck)':['Dumbbell Bench Press','Push-ups (Reebok Deck)','Dumbbell Flyes'],
+  'Dumbbell Bench Press':         ['Push-ups (Reebok Deck)','Dumbbell Flyes','Incline Dumbbell Press (Reebok Deck)','Dumbbell Squeeze Press','Single-Arm Dumbbell Press','Bench Dips','Dumbbell Pullover'],
+  'Dumbbell Flyes':               ['Dumbbell Bench Press','Dumbbell Squeeze Press','Incline Dumbbell Press (Reebok Deck)','Dumbbell Around the World','Dumbbell Pullover'],
+  'Push-ups (Reebok Deck)':       ['Dumbbell Bench Press','Decline Push-ups (Reebok Deck)','Incline Dumbbell Press (Reebok Deck)','Bench Dips'],
+  'Incline Dumbbell Press (Reebok Deck)':['Dumbbell Bench Press','Push-ups (Reebok Deck)','Dumbbell Flyes','Dumbbell Squeeze Press'],
+  'Decline Push-ups (Reebok Deck)':['Push-ups (Reebok Deck)','Dumbbell Bench Press','Incline Dumbbell Press (Reebok Deck)'],
+  'Dumbbell Squeeze Press':       ['Dumbbell Flyes','Dumbbell Bench Press','Single-Arm Dumbbell Press'],
+  'Single-Arm Dumbbell Press':    ['Dumbbell Bench Press','Dumbbell Squeeze Press','Push-ups (Reebok Deck)'],
+  'Dumbbell Around the World':    ['Dumbbell Flyes','Dumbbell Bench Press'],
   'Dumbbell Pullover':            ['Dumbbell Flyes','Dumbbell Bench Press'],
 
   // ── TRIZEPS ──────────────────────────────────────────────────────────────
@@ -3476,7 +3496,12 @@ const EXERCISE_MUSCLES={"Push-ups (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.
 "Seal Row (Reebok Deck)":{pri:[M.BACK_LAT,M.BACK_MID],sec:[M.BICEP,M.SHOULDER_REAR]},
 "Dumbbell Pullover":     {pri:[M.BACK_LAT,M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
 "Arnold Press":          {pri:[M.SHOULDER_FRONT,M.SHOULDER_MID,M.SHOULDER_REAR],sec:[M.TRICEP,M.TRAP]},
-"Zottman Curls":         {pri:[M.BICEP],sec:[M.FOREARM]}};
+"Zottman Curls":         {pri:[M.BICEP],sec:[M.FOREARM]},
+"Incline Dumbbell Press (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
+"Decline Push-ups (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
+"Dumbbell Squeeze Press":{pri:[M.CHEST],sec:[M.TRICEP]},
+"Single-Arm Dumbbell Press":{pri:[M.CHEST],sec:[M.TRICEP,M.ABS]},
+"Dumbbell Around the World":{pri:[M.CHEST],sec:[M.SHOULDER_FRONT]}};
 
 const MUSCLE_LABELS={[M.CHEST]:'Brust',[M.TRICEP]:'Trizeps',[M.SHOULDER_FRONT]:'Vordere Schulter',[M.SHOULDER_MID]:'Mittlere Schulter',[M.SHOULDER_REAR]:'Hintere Schulter',[M.BICEP]:'Bizeps',[M.FOREARM]:'Unterarm',[M.BACK_LAT]:'Latissimus',[M.BACK_MID]:'Mittlerer Rücken',[M.BACK_LOW]:'Unterer Rücken',[M.TRAP]:'Trapezmuskel',[M.ABS]:'Bauch',[M.OBLIQUE]:'Schräge Bauch',[M.HIP_FLEXOR]:'Hüftbeuger',[M.QUAD]:'Quadrizeps',[M.HAMSTRING]:'Hamstrings',[M.GLUTE]:'Gesäß',[M.CALF]:'Waden',[M.CARDIO]:'Ausdauer'};
 
