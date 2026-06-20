@@ -1740,7 +1740,13 @@ function renderDashboard(){
       const totalDist=weekCardio.filter(e=>e.dist).reduce((a,e)=>a+(e.dist||0),0);
       const totalMeters=weekCardio.filter(e=>e.meters).reduce((a,e)=>a+(e.meters||0),0);
       const types=[...new Set(weekCardio.map(e=>e.type))];
+      const todayCardio=weekCardio.filter(e=>e.date===todayISO());
+      const todayDoneBadge=todayCardio.length?`<div style="display:flex;align-items:center;gap:6px;background:#10B98118;border:1px solid #10B98140;border-radius:8px;padding:5px 10px;margin-bottom:8px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        <span class="bc" style="font-size:12px;font-weight:700;color:#10B981">Heute Cardio erledigt · ${todayCardio.map(e=>{const c=CARDIO_TYPES[e.type]||{icon:'🏃',label:e.type};return c.icon+' '+c.label;}).join(', ')}</span>
+      </div>`:'';
       cardioWeekEl.innerHTML=`<div style="background:var(--card);border:1px solid rgba(16,185,129,.3);border-radius:12px;padding:12px 14px;cursor:pointer" onclick="switchTab('cardio')">
+        ${todayDoneBadge}
         <div style="display:flex;gap:10px;margin-bottom:8px">
           ${[{l:'Einheiten',v:weekCardio.length,c:'var(--green)'},{l:'Zeit',v:minsToHMS(totalMin),c:'var(--amber)'},
              totalDist>0?{l:'Distanz',v:totalDist.toFixed(1)+' km',c:'var(--blue)'}:
@@ -1784,10 +1790,10 @@ function renderWeekStrip(){
     const dayDoneWS=trained||hasCardioWS;
     let bg='var(--card)',borderColor='var(--border)';
     if(trained&&trainedDay){bg=trainedDay.color+'25';borderColor=trainedDay.color+'60';}
-    else if(hasCardioWS&&!trained){const cc=plannedDay?.color||'#10B981';bg=cc+'25';borderColor=cc+'60';}
+    else if(hasCardioWS&&!trained){bg='#10B98125';borderColor='#10B98160';}
     else if(isToday&&plannedDay){bg=plannedDay.color+'15';borderColor=plannedDay.color+'80';}
     else if(isToday){bg='rgba(37,99,235,.12)';borderColor='var(--blue)';}    const numBg=isToday?'var(--blue)':'transparent';const numColor=isToday?'#fff':dayDoneWS?(trainedDay?.color||plannedDay?.color||'var(--tp)'):'var(--ts)';const numFw=isToday||dayDoneWS?700:400;
-    let badge='';if(trained&&trainedDay)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${trainedDay.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(hasCardioWS)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${plannedDay?.color||'#10B981'}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(isRest)badge=`<span class="bc" style="font-size:8px;color:var(--tm);opacity:.45">R</span>`;else if(plannedDay)badge=`<div style="width:7px;height:7px;border-radius:99px;background:${plannedDay.color};opacity:${isPast?'.3':'1'}"></div>`;
+    let badge='';if(trained&&trainedDay)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${trainedDay.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(hasCardioWS)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(isRest)badge=`<span class="bc" style="font-size:8px;color:var(--tm);opacity:.45">R</span>`;else if(plannedDay)badge=`<div style="width:7px;height:7px;border-radius:99px;background:${plannedDay.color};opacity:${isPast?'.3':'1'}"></div>`;
     html+=`<div class="week-day" style="background:${bg};border-color:${borderColor};"><span class="day-label" style="${isToday?'color:var(--blue)':''}">${wd.label}</span><div class="day-num-wrap" style="background:${numBg}"><span class="bc" style="font-size:13px;font-weight:${numFw};color:${numColor}">${cellDate.getDate()}</span></div>${badge}</div>`;
   });
   html+='</div><div style="display:flex;gap:12px;padding:0 2px;margin-bottom:2px"><div style="display:flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span class="bc" style="font-size:10px;color:var(--tm)">Erledigt</span></div><div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:99px;background:var(--blue)"></div><span class="bc" style="font-size:10px;color:var(--tm)">Geplant</span></div><div style="display:flex;align-items:center;gap:4px"><span class="bc" style="font-size:10px;font-weight:700;color:var(--tm)">R</span><span class="bc" style="font-size:10px;color:var(--tm)">Ruhetag</span></div></div>';
@@ -2296,13 +2302,17 @@ function renderCalendar(){
     const d=parseISODateLocal(h.date);
     return d.getFullYear()===calYear&&d.getMonth()===calMonth;
   });
+  const mCardio=cardioLog.filter(e=>{
+    const d=parseISODateLocal(e.date);
+    return d.getFullYear()===calYear&&d.getMonth()===calMonth;
+  });
 
   document.getElementById('cal-stats').innerHTML=[
-    {l:'Trainings',v:mSessions.length},
-    {l:'Sätze',    v:mSessions.reduce((a,h)=>a+h.sets,0)},
-    {l:'Minuten',  v:mSessions.reduce((a,h)=>a+h.duration,0)},
+    {l:'Kraft',  v:mSessions.length,            c:'var(--blue)'},
+    {l:'Cardio', v:mCardio.length,               c:'#10B981'},
+    {l:'Minuten',v:mSessions.reduce((a,h)=>a+h.duration,0)+mCardio.reduce((a,e)=>a+e.time,0), c:'var(--amber)'},
   ].map(s=>`<div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
-    <div class="bc" style="font-size:22px;font-weight:800;color:var(--blue)">${s.v}</div>
+    <div class="bc" style="font-size:22px;font-weight:800;color:${s.c}">${s.v}</div>
     <div class="bc" style="font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.07em">${s.l}</div>
   </div>`).join('');
 
@@ -2334,9 +2344,8 @@ function renderCalendar(){
       cellBg=trainedDay.color+'50';
       dotHtml=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${trainedDay.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
     } else if(hasCardio&&!trained){
-      const cardioCol=plannedDay?.color||'#10B981';
-      cellBg=cardioCol+'50';
-      dotHtml=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${cardioCol}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+      cellBg='#10B98150';
+      dotHtml=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
     } else if(isRest){
       cellBg='rgba(30,37,53,0.6)';
     } else if(!isRest&&plannedDay){
@@ -2385,22 +2394,42 @@ function renderCalendar(){
       </div>`;
     }).join('');
 
-  // Trainings des Monats (Scroll-Liste unten)
-  document.getElementById('cal-sessions').innerHTML=mSessions.length===0?'':
+  // Trainings des Monats (Scroll-Liste unten) — Kraft + Cardio kombiniert
+  const mCombined=[
+    ...mSessions.map(h=>({...h,_type:'strength'})),
+    ...mCardio.map(e=>({...e,_type:'cardio'}))
+  ].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('cal-sessions').innerHTML=mCombined.length===0?'':
     `<div class="bc slabel">Trainings im ${MONTHS[calMonth]}</div>
-    ${[...mSessions].reverse().map(h=>{
-      const dd=WORKOUT_DAYS.find(d=>d.id===h.dayId);
-      return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openWorkoutDetail('${h.id}')">
-        <div style="width:4px;height:36px;border-radius:4px;background:${dd?.color||'var(--blue)'};flex-shrink:0"></div>
-        <div style="flex:1">
-          <div class="bc" style="font-size:14px;font-weight:700;color:var(--tp)">${h.name}</div>
-          <div class="bc" style="font-size:11px;color:var(--tm)">${fmtL(h.date)}${h.note?` · <em style="color:var(--ts)">"${h.note}"</em>`:''}</div>
-        </div>
-        <div style="text-align:right">
-          <div class="bc" style="font-size:15px;font-weight:800;color:${dd?.color||'var(--blue)'}">${h.duration} min</div>
-          <div class="bc" style="font-size:11px;color:var(--tm)">${h.sets} Sätze</div>
-        </div>
-      </div>`;
+    ${mCombined.map(item=>{
+      if(item._type==='strength'){
+        const dd=WORKOUT_DAYS.find(d=>d.id===item.dayId);
+        return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openWorkoutDetail('${item.id}')">
+          <div style="width:4px;height:36px;border-radius:4px;background:${dd?.color||'var(--blue)'};flex-shrink:0"></div>
+          <div style="flex:1">
+            <div class="bc" style="font-size:14px;font-weight:700;color:var(--tp)">${item.name}</div>
+            <div class="bc" style="font-size:11px;color:var(--tm)">${fmtL(item.date)}${item.note?` · <em style="color:var(--ts)">"${item.note}"</em>`:''}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="bc" style="font-size:15px;font-weight:800;color:${dd?.color||'var(--blue)'}">${item.duration} min</div>
+            <div class="bc" style="font-size:11px;color:var(--tm)">${item.sets} Sätze</div>
+          </div>
+        </div>`;
+      } else {
+        const cfg=CARDIO_TYPES[item.type]||{icon:'🏃',label:item.type,color:'#10B981'};
+        const distStr=item.dist?` · ${item.dist} km`:item.meters?` · ${item.meters} m`:'';
+        return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openCalendarDay('${item.date}')">
+          <div style="width:4px;height:36px;border-radius:4px;background:#10B981;flex-shrink:0"></div>
+          <div style="flex:1">
+            <div class="bc" style="font-size:14px;font-weight:700;color:var(--tp)">${cfg.icon} ${cfg.label}${distStr}</div>
+            <div class="bc" style="font-size:11px;color:var(--tm)">${fmtL(item.date)}${item.note?` · <em style="color:var(--ts)">"${item.note}"</em>`:''}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="bc" style="font-size:15px;font-weight:800;color:#10B981">${item.time} min</div>
+            ${item.hr?`<div class="bc" style="font-size:11px;color:var(--tm)">${item.hr} bpm</div>`:''}
+          </div>
+        </div>`;
+      }
     }).join('')}`;
 }
 
