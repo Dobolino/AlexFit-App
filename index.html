@@ -1055,16 +1055,37 @@ function getTopPRs(prs){
   return top.slice(0,3);
 }
 function computeStreak(){
-  // Combined streak: Kraft + Cardio both count as training days
+  // Combined streak: Kraft + Cardio both count as training days.
+  // Ruhetage (laut Plan kein Trainingstag) unterbrechen die Streak NICHT —
+  // sie werden beim Rückwärtszählen einfach übersprungen.
   const seen=new Set([...history.map(h=>h.date),...cardioLog.map(e=>e.date)]);
   if(!seen.size)return 0;
-  // Check pause mode
   if(settings.streakPaused)return settings.streakFrozenAt||0;
+
   const cursor=new Date();cursor.setHours(0,0,0,0);
   let iso=dateToISO(cursor);
-  if(!seen.has(iso)){cursor.setDate(cursor.getDate()-1);iso=dateToISO(cursor);}
+
+  const isRestDay=(d)=>!PLAN_DOW[d.getDay()];
+
+  // Heute: wenn weder trainiert noch Ruhetag, mit gestern starten
+  if(!seen.has(iso)&&!isRestDay(cursor)){
+    cursor.setDate(cursor.getDate()-1);iso=dateToISO(cursor);
+  }
+
   let streak=0;
-  while(seen.has(iso)){streak++;cursor.setDate(cursor.getDate()-1);iso=dateToISO(cursor);}
+  // Rückwärts zählen: trainierte Tage zählen, Ruhetage überspringen (zählen nicht, brechen aber auch nicht ab)
+  while(true){
+    if(seen.has(iso)){
+      streak++;
+      cursor.setDate(cursor.getDate()-1);iso=dateToISO(cursor);
+    } else if(isRestDay(cursor)){
+      // Ruhetag ohne Eintrag — überspringen, Streak bleibt intakt
+      cursor.setDate(cursor.getDate()-1);iso=dateToISO(cursor);
+    } else {
+      // Geplanter Trainingstag wurde verpasst — Streak endet hier
+      break;
+    }
+  }
   return streak;
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
@@ -1314,17 +1335,6 @@ const MUSCLE_GROUPS = [
 let addExFilter='alle';
 
 
-
-
-function removeAddedExercise(ei){
-  const ex=workoutExercises[ei];
-  if(!ex._added){showToast('Plan-Übungen können nicht entfernt werden');return;}
-  showConfirm('"'+ex.name+'" entfernen?',()=>{
-    workoutExercises.splice(ei,1);
-    saveSession();renderExerciseList();updateProgress();
-    showToast('Übung entfernt');
-  },'Entfernen','var(--red)');
-}
 
 // ── RPE (RATING OF PERCEIVED EXERTION 1–10) ──────────────────────────────────
 function cycleRPE(ei,si){
@@ -1763,18 +1773,21 @@ function renderDashboard(){
 
 function renderWeekStrip(){
   const now=new Date(),todayIso=todayISO();const trainedDates=new Set(history.map(h=>h.date));const dayIdByDate={};history.forEach(h=>{dayIdByDate[h.date]=h.dayId;});
+  const cardioDatesWS=new Set(cardioLog.map(e=>e.date));
   const monday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
   let html='<div class="week-strip">';
   WEEK_ORDER.forEach((wd,i)=>{
     const cellDate=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i);
     const iso=cellDate.getFullYear()+'-'+String(cellDate.getMonth()+1).padStart(2,'0')+'-'+String(cellDate.getDate()).padStart(2,'0');
-    const isToday=iso===todayIso;const trained=trainedDates.has(iso);const trainedDay=trained?WORKOUT_DAYS.find(d=>d.id===dayIdByDate[iso]):null;
+    const isToday=iso===todayIso;const trained=trainedDates.has(iso);const hasCardioWS=cardioDatesWS.has(iso);const trainedDay=trained?WORKOUT_DAYS.find(d=>d.id===dayIdByDate[iso]):null;
     const plannedDayId=PLAN_DOW[wd.dowJS];const plannedDay=plannedDayId?WORKOUT_DAYS.find(d=>d.id===plannedDayId):null;const isRest=!plannedDayId;const isPast=cellDate<now&&!isToday;
+    const dayDoneWS=trained||hasCardioWS;
     let bg='var(--card)',borderColor='var(--border)';
     if(trained&&trainedDay){bg=trainedDay.color+'25';borderColor=trainedDay.color+'60';}
+    else if(hasCardioWS&&!trained){const cc=plannedDay?.color||'#10B981';bg=cc+'25';borderColor=cc+'60';}
     else if(isToday&&plannedDay){bg=plannedDay.color+'15';borderColor=plannedDay.color+'80';}
-    else if(isToday){bg='rgba(37,99,235,.12)';borderColor='var(--blue)';}    const numBg=isToday?'var(--blue)':'transparent';const numColor=isToday?'#fff':trained?(trainedDay?.color||'var(--tp)'):'var(--ts)';const numFw=isToday||trained?700:400;
-    let badge='';if(trained&&trainedDay)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${trainedDay.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(isRest)badge=`<span class="bc" style="font-size:8px;color:var(--tm);opacity:.45">R</span>`;else if(plannedDay)badge=`<div style="width:7px;height:7px;border-radius:99px;background:${plannedDay.color};opacity:${isPast?'.3':'1'}"></div>`;
+    else if(isToday){bg='rgba(37,99,235,.12)';borderColor='var(--blue)';}    const numBg=isToday?'var(--blue)':'transparent';const numColor=isToday?'#fff':dayDoneWS?(trainedDay?.color||plannedDay?.color||'var(--tp)'):'var(--ts)';const numFw=isToday||dayDoneWS?700:400;
+    let badge='';if(trained&&trainedDay)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${trainedDay.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(hasCardioWS)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${plannedDay?.color||'#10B981'}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(isRest)badge=`<span class="bc" style="font-size:8px;color:var(--tm);opacity:.45">R</span>`;else if(plannedDay)badge=`<div style="width:7px;height:7px;border-radius:99px;background:${plannedDay.color};opacity:${isPast?'.3':'1'}"></div>`;
     html+=`<div class="week-day" style="background:${bg};border-color:${borderColor};"><span class="day-label" style="${isToday?'color:var(--blue)':''}">${wd.label}</span><div class="day-num-wrap" style="background:${numBg}"><span class="bc" style="font-size:13px;font-weight:${numFw};color:${numColor}">${cellDate.getDate()}</span></div>${badge}</div>`;
   });
   html+='</div><div style="display:flex;gap:12px;padding:0 2px;margin-bottom:2px"><div style="display:flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span class="bc" style="font-size:10px;color:var(--tm)">Erledigt</span></div><div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:99px;background:var(--blue)"></div><span class="bc" style="font-size:10px;color:var(--tm)">Geplant</span></div><div style="display:flex;align-items:center;gap:4px"><span class="bc" style="font-size:10px;font-weight:700;color:var(--tm)">R</span><span class="bc" style="font-size:10px;color:var(--tm)">Ruhetag</span></div></div>';
@@ -2311,14 +2324,19 @@ function renderCalendar(){
     const plannedDayId=PLAN_DOW[jsDow];
     const plannedDay=plannedDayId?WORKOUT_DAYS.find(d=>d.id===plannedDayId):null;
     const isRest=!plannedDayId;
-    const isMissed=!trained&&!isRest&&plannedDay&&cellDate<now&&iso!==todayIso;
     const hasCardio=cardioDates.has(iso);
+    const dayCompleted=trained||hasCardio;
+    const isMissed=!dayCompleted&&!isRest&&plannedDay&&cellDate<now&&iso!==todayIso;
 
     // Hintergrundfarbe
     let cellBg,dotHtml='',tagLabel='';
     if(trained&&trainedDay){
       cellBg=trainedDay.color+'50';
       dotHtml=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${trainedDay.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+    } else if(hasCardio&&!trained){
+      const cardioCol=plannedDay?.color||'#10B981';
+      cellBg=cardioCol+'50';
+      dotHtml=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${cardioCol}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
     } else if(isRest){
       cellBg='rgba(30,37,53,0.6)';
     } else if(!isRest&&plannedDay){
@@ -2336,7 +2354,7 @@ function renderCalendar(){
     const ringColor=isToday?(plannedDay?plannedDay.color:'var(--blue)'):'';
     const todayRing=isToday?`box-shadow:inset 0 0 0 2px ${ringColor};`:'';
     const numBg=isToday?'var(--blue)':'transparent';
-    const numColor=isToday?'#fff':trained?'#fff':isRest?'var(--tm)':isMissed?'rgba(239,68,68,0.45)':'var(--ts)';
+    const numColor=isToday?'#fff':dayCompleted?'#fff':isRest?'var(--tm)':isMissed?'rgba(239,68,68,0.45)':'var(--ts)';
     const numFw=isToday||trained?700:400;
     const cardioDot=hasCardio?`<div style="width:5px;height:5px;border-radius:99px;background:#10B981;margin-top:1px"></div>`:'';
 
@@ -4052,14 +4070,6 @@ function scheduleTrainingReminder(){
 function saveReminderTime(){
   const t=document.getElementById('s-reminder-time')?.value;
   if(!t){showToast('Bitte Zeit eingeben');return;}
-  settings.reminderTime=t;saveSettings();
-  if(Notification.permission==='granted'){scheduleTrainingReminder();showToast(`Erinnerung gesetzt für ${t} ✓`);}
-  else requestNotificationPermission();
-}
-
-function saveReminderTime(){
-  const t=document.getElementById('s-reminder-time')?.value;
-  if(!t){showToast('Bitte Zeit eingeben');return;}
   settings.reminderTime=t;
   saveSettings();
   if(Notification.permission==='granted'){
@@ -4184,7 +4194,7 @@ function getMotivationMessage(){
   const streak=computeStreak();const totalWorkouts=history.length;const now=new Date();
   const monday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
   const thisWeek=history.filter(h=>parseISODateLocal(h.date)>=monday).length;
-  const todayDow=now.getDay();const hasTodayWorkout=history.some(h=>h.date===dateToISO(now));
+  const todayDow=now.getDay();const todayIsoMM=dateToISO(now);const hasTodayWorkout=history.some(h=>h.date===todayIsoMM)||cardioLog.some(e=>e.date===todayIsoMM);
   const plannedToday=PLAN_DOW[todayDow];const currentKg=weightLog.length?weightLog[weightLog.length-1].kg:settings.startKg;const lost=(settings.startKg-currentKg).toFixed(1);
   if(parseFloat(lost)>=10)return{msg:`🔥 Unglaublich — schon ${lost} kg abgenommen!`,color:'var(--amber)',icon:'🏆'};
   if(parseFloat(lost)>=5&&parseFloat(lost)<10)return{msg:`💪 ${lost} kg abgenommen! Weiter so!`,color:'var(--green)',icon:'🏆'};
