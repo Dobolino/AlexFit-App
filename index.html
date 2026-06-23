@@ -1007,6 +1007,49 @@ function loadSettings(){
     needsSave=true;
   }
 
+  // Migration: Übungsnamen DE→EN (einmalig)
+  if(!meta.namesMigrated){
+    const LEGACY_NAME_MAP={
+      'Kurzhantel Bankdrücken':                       'Dumbbell Bench Press',
+      'Kurzhantel Fliegende':                         'Dumbbell Flyes',
+      'Liegestütz (Reebok Deck)':                     'Push-ups (Reebok Deck)',
+      'Enges Bankdrücken (Trizeps)':                  'Close-Grip Bench Press',
+      'Kurzhantel Kickbacks':                         'Dumbbell Kickbacks',
+      'Overhead Trizepsstrecken':                     'Overhead Triceps Extension',
+      'Kurzhantel Kniebeugen':                        'Dumbbell Squats',
+      'Kurzhantel Ausfallschritte':                   'Dumbbell Lunges',
+      'Rumänisches Kreuzheben':                       'Romanian Deadlift',
+      'Hüftheben (Glute Bridge)':                     'Glute Bridge',
+      'Wadenheben stehend':                           'Standing Calf Raises',
+      'Klimmzüge / Negativklimmzüge':                 'Pull-ups / Negative Pull-ups',
+      'Kurzhantel Rudern einarmig (Lat-Fokus)':       'Single-Arm Dumbbell Row',
+      'Kurzhantel Rudern beidarmig (oberer Rücken)':  'Double-Arm Dumbbell Row',
+      'Kurzhantel Curls':                             'Dumbbell Curls',
+      'Hammercurls':                                  'Hammer Curls',
+      'Reverse Flyes (Kurzhanteln)':                  'Reverse Flyes (Dumbbells)',
+      'Kurzhantel Schulterdrücken':                   'Dumbbell Shoulder Press',
+      'Seitheben':                                    'Lateral Raises',
+      'Frontheben':                                   'Front Raises',
+      'Schrägbauchcrunch':                            'Oblique Crunch',
+      'WalkingPad Aufwärmen':                         'WalkingPad Warm-up',
+      'Rudern Intervalle':                            'Rowing Intervals',
+      'Rudern Steadystate':                           'Rowing Steady-State',
+      'Dips an der Bank':                             'Bench Dips',
+      "Farmer's Walk (Kurzhanteln)":                  "Farmer's Walk (Dumbbells)",
+      'Kurzhantel Russian Twist':                     'Dumbbell Russian Twist',
+      'Kurzhantel Crunch':                            'Dumbbell Crunch',
+      'Kurzhantel Side Bend':                         'Dumbbell Side Bend',
+      'Single-Leg Wadenheben':                        'Single-Leg Calf Raises',
+      'Face Pulls (Widerstandsband)':                 'Face Pulls (Resistance Band)',
+    };
+    const hist=safeParse('af_history',[]);
+    let renamed=0;
+    hist.forEach(h=>{if(h.exercises)h.exercises.forEach(ex=>{const n=LEGACY_NAME_MAP[ex.name];if(n){ex.name=n;renamed++;}});});
+    if(renamed>0)localStorage.setItem('af_history',JSON.stringify(hist));
+    meta.namesMigrated=true;
+    needsSave=true;
+  }
+
   if(needsSave)localStorage.setItem('af_meta',JSON.stringify(meta));
   return meta;
 }
