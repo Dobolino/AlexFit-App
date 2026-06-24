@@ -1935,7 +1935,7 @@ function openWorkoutPreview(dayId){
       <div>
         <div class="bc" style="font-size:10px;font-weight:800;color:${d.color};text-transform:uppercase;letter-spacing:.12em;margin-bottom:3px">${isToday?'Heute · ':''} ${d.tag} · ${d.label}</div>
         <div class="bc" style="font-size:21px;font-weight:900;color:var(--tp)">${d.name}</div>
-        <div class="bc" style="font-size:11px;color:var(--tm);margin-top:2px">${d.exercises.length} Übungen · ${d.exercises.reduce((a,e)=>a+e.sets,0)} Sätze</div>
+        <div class="bc" style="font-size:11px;color:var(--tm);margin-top:2px">${d.exercises.length} Übungen · ${d.exercises.reduce((a,e)=>a+e.sets,0)} Sätze${(()=>{const ls=[...history].reverse().find(h=>h.dayId===dayId);return ls?` · Letztes: ${fmtS(ls.date)} (${ls.duration} min)`:''})()}</div>
       </div>
       <button onclick="closeWorkoutPreview()" style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--tp);font-size:22px;flex-shrink:0">×</button>
     </div>`;
@@ -1944,7 +1944,9 @@ function openWorkoutPreview(dayId){
     `<div style="padding:10px 0 6px">${getMuscleMapSVG(d.muscles,d.color)}</div>
     <div style="display:flex;flex-wrap:wrap;gap:5px;padding:4px 0 10px;border-bottom:1px solid var(--border);margin-bottom:4px">
       ${d.muscles.map(m=>`<span style="background:${d.color}20;border:1px solid ${d.color}40;border-radius:6px;padding:2px 8px"><span class="bc" style="font-size:11px;color:${d.color}">${m}</span></span>`).join('')}
-    </div>`+
+    </div>
+    ${(()=>{const st=getScheduledTemplate(dayId);if(!st)return'';return`<div style="background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px"><div style="flex:1"><div class="bc" style="font-size:11px;font-weight:700;color:var(--blue)">📌 Custom Template verfügbar</div><div class="bc" style="font-size:10px;color:var(--tm)">${st.name} · ${st.exercises.length} Übungen</div></div><button onclick="closeWorkoutPreview();loadTemplate('${st.id}')" style="background:var(--blue);border:none;border-radius:8px;padding:6px 12px"><span class="bc" style="font-size:11px;font-weight:700;color:#fff">Laden</span></button></div>`;})()}
+    `+
     d.exercises.map(ex=>{
       const lp=getLastPerf(ex.name);
       const lpStr=lp?(ex.bw?`${lp.reps} Wdh`:`${lp.weight} kg × ${lp.reps}`):null;
@@ -1960,6 +1962,7 @@ function openWorkoutPreview(dayId){
             <span class="bc" style="font-size:11px;color:var(--tm)">${ex.reps}</span>
             ${rpeStr?`<span style="background:${getRPEColor(lp.avgRpe)}22;border:1px solid ${getRPEColor(lp.avgRpe)}44;border-radius:4px;padding:0 5px"><span class="bc" style="font-size:10px;font-weight:700;color:${getRPEColor(lp.avgRpe)}">${rpeStr}</span></span>`:''}
           </div>
+          ${(()=>{const r=WEIGHT_RANGES[ex.name];if(!r||ex.bw)return'';return`<div style="display:flex;gap:4px;margin-top:4px"><span style="background:#10b98118;border:1px solid #10b98130;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#10B981">A ${r[0]}–${r[1]}</span></span><span style="background:#f59e0b18;border:1px solid #f59e0b30;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#F59E0B">F ${r[2]}–${r[3]}</span></span><span style="background:#ef444418;border:1px solid #ef444430;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#EF4444">T ${r[4]}–${r[5]} kg</span></span></div>`;})()}
         </div>
         ${lpStr?`<div style="text-align:right;flex-shrink:0">
           <div class="bc" style="font-size:13px;font-weight:800;color:${d.color}">${lpStr}</div>
@@ -2657,11 +2660,21 @@ function renderHistory(){
 
   el.innerHTML=`
     <div class="bc slabel" style="margin-bottom:10px">Letzte Trainings</div>
-    <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:12px;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:20px;scroll-snap-type:x mandatory">
+    <div id="history-carousel" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:12px;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:20px;scroll-snap-type:x mandatory">
       ${cards}
     </div>
     <div class="bc slabel" style="margin-bottom:10px">Alle Trainings</div>
-    ${allListItems}`;
+    <div style="margin-bottom:12px"><input id="history-search" type="search" placeholder="Training suchen…" oninput="filterHistoryList()" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--tp);font-size:13px;font-family:inherit;box-sizing:border-box"></div>
+    <div id="history-full-list">${allListItems}</div>`;
+}
+function filterHistoryList(){
+  const q=(document.getElementById('history-search')?.value||'').toLowerCase().trim();
+  const items=document.getElementById('history-full-list')?.children;
+  if(!items)return;
+  [...items].forEach(el=>{
+    const text=el.textContent.toLowerCase();
+    el.style.display=(!q||text.includes(q))?'':'none';
+  });
 }
 function deleteHistory(id){showConfirm('Training löschen?',()=>{history=history.filter(h=>h.id!==id);save();showToast('Training gelöscht');renderHistory();});}
 
@@ -3611,6 +3624,41 @@ const MUSCLES={CHEST:'chest',TRICEP:'tricep',SHOULDER_FRONT:'shoulder_front',SHO
 const M=MUSCLES;
 const BODY_MUSCLES_MAP={[M.CHEST]:['chest-upper-left','chest-upper-right','chest-lower-left','chest-lower-right'],[M.TRICEP]:['triceps-long-left','triceps-lateral-left','triceps-long-right','triceps-lateral-right'],[M.SHOULDER_FRONT]:['shoulder-front-left','shoulder-front-right'],[M.SHOULDER_MID]:['shoulder-side-left','shoulder-side-right','shoulder-front-left','shoulder-front-right','deltoid-rear-left','deltoid-rear-right'],[M.SHOULDER_REAR]:['deltoid-rear-left','deltoid-rear-right'],[M.BICEP]:['biceps-left','biceps-right'],[M.FOREARM]:['forearm-left','forearm-right','forearm-flexors-left','forearm-extensors-left','forearm-flexors-right','forearm-extensors-right'],[M.BACK_LAT]:['lats-upper-left','lats-mid-left','lats-lower-left','lats-upper-right','lats-mid-right','lats-lower-right'],[M.BACK_MID]:['traps-mid-left','traps-mid-right','lower-back-ql-left','lower-back-ql-right'],[M.BACK_LOW]:['lower-back-erectors-left','lower-back-erectors-right','spine'],[M.TRAP]:['traps-upper-left','traps-mid-left','traps-lower-left','traps-upper-right','traps-mid-right','traps-lower-right'],[M.ABS]:['abs-upper-left','abs-upper-right','abs-lower-left','abs-lower-right'],[M.OBLIQUE]:['obliques-left','obliques-right'],[M.HIP_FLEXOR]:['hip-flexor-left','hip-flexor-right'],[M.QUAD]:['quads-left','quads-right'],[M.HAMSTRING]:['hamstrings-medial-left','hamstrings-lateral-left','hamstrings-medial-right','hamstrings-lateral-right'],[M.GLUTE]:['gluteus-medius-left','gluteus-maximus-left','gluteus-medius-right','gluteus-maximus-right'],[M.CALF]:['calves-gastroc-medial-left','calves-gastroc-lateral-left','calves-soleus-left','calves-gastroc-medial-right','calves-gastroc-lateral-right','calves-soleus-right','tibialis-anterior-left','tibialis-anterior-right'],[M.CARDIO]:[]};
 
+const WEIGHT_RANGES={
+  'Dumbbell Bench Press':    [8,12,14,20,22,32],
+  'Dumbbell Flyes':          [5,8, 8,12,12,18],
+  'Incline Dumbbell Press (Reebok Deck)':[6,10,10,16,16,24],
+  'Dumbbell Squeeze Press':  [6,10,10,16,16,24],
+  'Single-Arm Dumbbell Press':[6,10,10,16,16,22],
+  'Dumbbell Around the World':[4,6, 6,10,10,14],
+  'Close-Grip Bench Press':  [8,12,12,18,18,26],
+  'Dumbbell Kickbacks':      [4,6, 6,10,10,16],
+  'Overhead Triceps Extension':[6,10,10,14,14,20],
+  'Single-Arm Dumbbell Row': [10,14,16,22,24,34],
+  'Double-Arm Dumbbell Row': [8,12,14,20,22,30],
+  'Reverse Flyes (Dumbbells)':[4,6, 6,10,10,14],
+  'Dumbbell Curls':          [6,10,10,14,14,20],
+  'Hammer Curls':            [6,10,10,14,14,20],
+  'Concentration Curls':     [5,8, 8,12,12,18],
+  'Zottman Curls':           [4,8, 8,12,12,16],
+  'Dumbbell Shoulder Press': [6,10,10,16,16,24],
+  'Lateral Raises':          [4,6, 6,10,10,14],
+  'Front Raises':            [4,6, 6,10,10,14],
+  'Arnold Press':            [6,10,10,14,14,20],
+  "Farmer's Walk (Dumbbells)":[10,14,16,22,22,32],
+  'Dumbbell Squats':         [10,14,16,22,24,34],
+  'Dumbbell Lunges':         [8,12,12,18,18,26],
+  'Bulgarian Split Squat':   [8,12,12,18,18,26],
+  'Romanian Deadlift':       [10,14,16,22,24,34],
+  'Glute Bridge':            [10,16,16,24,24,36],
+  'Hip Thrust':              [12,18,18,28,28,40],
+  'Goblet Squat':            [10,16,16,24,24,34],
+  'Renegade Row':            [6,10,10,14,14,20],
+  'Seal Row (Reebok Deck)':  [8,12,12,18,18,26],
+  'Dumbbell Russian Twist':  [4,6, 6,10,10,14],
+  'Dumbbell Side Bend':      [6,10,10,14,14,20],
+};
+
 const EXERCISE_VIDEOS={"Floor Dips":"2z8JmcrW-As","Hollow Body Hold":"4i9PR-9Bd8c","Incline Curls (Reebok Deck)":"soxrZlIl35U","Incline Dumbbell Press (Reebok Deck)":"8fXfwG4ftaQ","Pike Push-ups":"K2bZ7CtIcv0","Single-Leg Glute Bridge":"2pLT-olgUJs","Single-Leg RDL":"31B2XPVgRR8","Straight-Arm Pullover":"ouFkyHbk2yI","Sumo Squat (Dumbbell)":"qpHseyhe1KQ","Upright Row (Dumbbell)":"AwTAlSpDOHk","Goblet Squat":"MeIiIdhvXT4","Mountain Climbers":"nmwgirgXLYM","Side Plank":"K2VljzCC16g","Step-ups (Reebok Deck)":"dQqApCGd5Ss","Push-ups (Reebok Deck)":"4Bc1tPaYkOo","Dumbbell Bench Press":"mTaiQemkEpU","Dumbbell Flyes":"rk8YayRoTRQ","Dumbbell Pullover":"raU5C9bWo9U","Close-Grip Bench Press":"EvjftwN-nSY","Dumbbell Kickbacks":"WhBxKbe1-NU","Overhead Triceps Extension":"b_r_LW4HEcM","Bench Dips":"4ua3MzaU0QU","Pull-ups / Negative Pull-ups":"eDP_OOhMTZ4","Single-Arm Dumbbell Row":"yHqqGd0tXcw","Double-Arm Dumbbell Row":"f8r7gA3nyb8","Face Pulls (Resistance Band)":"IeOqdw9WI90","Reverse Flyes (Dumbbells)":"LsT-bR_zxLo","Dumbbell Shoulder Press":"k6tzKisR3NY","Lateral Raises":"dybxZJaWxCY","Front Raises":"h9xfpTrAvkE","Dumbbell Curls":"oLyP6sORFOc","Hammer Curls":"bddmdB102n0","Concentration Curls":"EjUnEEfTSEY","Zottman Curls":"5Go_uOTnFl0","Ab Wheel Rollouts":"XWJmFD_AdbM","Plank":"xe2MXatLTUw","Oblique Crunch":"Hh9DTupf1vc","Dead Bug":"DqLL45uk2Tk","Bicycle Crunches":"NWzlS1Lp1e8","Bird Dog":"YO9bbyrgJkI","Russian Twist":"aRUMRbl7KS4","Dumbbell Crunch":"Yg6GsyZoqK0","Dumbbell Russian Twist":"aRUMRbl7KS4","Weighted Plank":"xe2MXatLTUw","Dumbbell Side Bend":"44DazvtgpGE","Pallof Press (Isometric)":"VAyk2hvwPd0","Dumbbell Windmill":"BUCD9aHk9nU","Suitcase Carry":"v8O0kNuvp_k","L-Sit Hold":"a4qGW79QtrE","Dumbbell Squats":"OTyb4YUDYYY","Dumbbell Lunges":"mJilHWIBWO8","Bulgarian Split Squat":"or1frhkjBDc","Romanian Deadlift":"Wou9zVQrAfs","Glute Bridge":"X_IGw8U_e38","Standing Calf Raises":"a-x_NR-ibos","Donkey Kicks":"JsDRMr1T7Is","Good Mornings (Dumbbell)":"QHsZAXdalGQ","Hip Thrust":"CvuVYMFd11g","Reverse Lunges":"J9MpoAQCjos","Seated Calf Raises":"ar8nav0jGoE","Single-Leg Calf Raises":"E1mG5L9rpFc","Farmer's Walk (Dumbbells)":"1uOs1hP3u4A","Renegade Row":"qmZJhocQVlM","Superman Hold":"eKB5rv5c7FQ","Reverse Snow Angels":"R7jH-CNUb_c","Seal Row (Reebok Deck)":"udXpPqWESq0","Arnold Press":"6K_N9AGhItQ","Decline Push-ups (Reebok Deck)":"SOu-3_YyX2c","Dumbbell Squeeze Press":"G2j_lJf6ljk","Single-Arm Dumbbell Press":"S1Kf4Xi8pxo","Dumbbell Around the World":"kaZR4a52bog"};
 
 const EXERCISE_ALTERNATIVES={
@@ -4480,6 +4528,29 @@ function deleteTemplate(id){
     saveTemplates(t);showToast('Template gelöscht');renderTemplatesInSettings();
   });
 }
+function scheduleTemplate(templateId, dayId){
+  if(!settings.templateSchedule) settings.templateSchedule={};
+  if(dayId==='none'){
+    // Remove any schedule for this template
+    Object.keys(settings.templateSchedule).forEach(d=>{
+      if(settings.templateSchedule[d]===templateId) delete settings.templateSchedule[d];
+    });
+  } else {
+    // Remove template from other days first
+    Object.keys(settings.templateSchedule).forEach(d=>{
+      if(settings.templateSchedule[d]===templateId) delete settings.templateSchedule[d];
+    });
+    settings.templateSchedule[dayId]=templateId;
+  }
+  saveSettings();
+  renderTemplatesInSettings();
+  showToast(dayId==='none'?'Einplanung entfernt':'Template eingeplant ✓');
+}
+function getScheduledTemplate(dayId){
+  const id=settings.templateSchedule?.[dayId];
+  if(!id)return null;
+  return getTemplates().find(t=>t.id===id)||null;
+}
 
 function renderTemplatesInSettings(){
   const el=document.getElementById('settings-templates');
@@ -4489,17 +4560,28 @@ function renderTemplatesInSettings(){
     el.innerHTML='<div style="text-align:center;padding:12px"><span class="bc" style="font-size:13px;color:var(--tm)">Noch keine Templates — speichere ein Training als Template</span></div>';
     return;
   }
-  el.innerHTML=templates.map(t=>`
-    <div style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
-      <div style="flex:1;min-width:0">
-        <div class="bc" style="font-size:13px;font-weight:700;color:var(--tp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</div>
-        <div class="bc" style="font-size:10px;color:var(--tm)">${t.exercises.length} Übungen · ${t.createdAt}</div>
+  const schedule=settings.templateSchedule||{};
+  el.innerHTML=templates.map(t=>{
+    const scheduledDay=Object.entries(schedule).find(([,tid])=>tid===t.id)?.[0];
+    const dd=scheduledDay?WORKOUT_DAYS.find(x=>x.id===scheduledDay):null;
+    return`<div style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="flex:1;min-width:0">
+          <div class="bc" style="font-size:13px;font-weight:700;color:var(--tp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</div>
+          <div class="bc" style="font-size:10px;color:var(--tm)">${t.exercises.length} Übungen · ${t.createdAt}${dd?` · <span style="color:${dd.color}">📌 ${dd.tag} ${dd.name}</span>`:''}</div>
+        </div>
+        <button onclick="loadTemplate('${t.id}')" style="background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);border-radius:7px;padding:6px 10px"><span class="bc" style="font-size:11px;font-weight:700;color:var(--blue)">Laden</span></button>
+        <button onclick="deleteTemplate('${t.id}')" style="background:var(--cardElev);border:1px solid var(--border);border-radius:7px;padding:6px 8px;color:var(--red);font-size:14px">×</button>
       </div>
-      <button onclick="loadTemplate('${t.id}')" style="background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);border-radius:7px;padding:6px 10px">
-        <span class="bc" style="font-size:11px;font-weight:700;color:var(--blue)">Laden</span>
-      </button>
-      <button onclick="deleteTemplate('${t.id}')" style="background:var(--cardElev);border:1px solid var(--border);border-radius:7px;padding:6px 8px;color:var(--red);font-size:14px">×</button>
-    </div>`).join('');
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="bc" style="font-size:10px;color:var(--tm);flex-shrink:0">Einplanen für:</span>
+        <select onchange="scheduleTemplate('${t.id}',this.value)" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:4px 8px;color:var(--tp);font-size:11px;font-family:inherit">
+          <option value="none"${!scheduledDay?' selected':''}>— Kein Tag —</option>
+          ${['d1','d4','d2','d3','d5'].map(id=>{const d=WORKOUT_DAYS.find(x=>x.id===id);return`<option value="${id}"${scheduledDay===id?' selected':''}>${d?.tag} ${d?.name}</option>`;}).join('')}
+        </select>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ── LAUTSTÄRKE-TASTEN für Satz-Häkchen ───────────────────────────────────────
