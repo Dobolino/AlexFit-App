@@ -1940,10 +1940,17 @@ function openWorkoutPreview(dayId){
       <button onclick="closeWorkoutPreview()" style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--tp);font-size:22px;flex-shrink:0">×</button>
     </div>`;
   const getRPEColor=rpe=>rpe>=8?'var(--red)':rpe>=6?'var(--amber)':'var(--green)';
+  const priSet=new Set(),secSet=new Set();
+  d.exercises.forEach(ex=>{const m=EXERCISE_MUSCLES[ex.name];if(m){m.pri.forEach(k=>priSet.add(k));m.sec.forEach(k=>{if(!priSet.has(k))secSet.add(k);});}});
+  const priKeys=[...priSet],secKeys=[...secSet];
+  const priLabels=priKeys.map(k=>MUSCLE_LABELS[k]||k);
+  const secLabels=secKeys.map(k=>MUSCLE_LABELS[k]||k);
+  destroyMuscleCharts();
   document.getElementById('workout-preview-body').innerHTML=
-    `<div style="padding:10px 0 6px">${getMuscleMapSVG(d.muscles,d.color)}</div>
+    `<div style="padding:6px 0 4px">${buildMuscleSVG(priKeys,secKeys)}</div>
     <div style="display:flex;flex-wrap:wrap;gap:5px;padding:4px 0 10px;border-bottom:1px solid var(--border);margin-bottom:4px">
-      ${d.muscles.map(m=>`<span style="background:${d.color}20;border:1px solid ${d.color}40;border-radius:6px;padding:2px 8px"><span class="bc" style="font-size:11px;color:${d.color}">${m}</span></span>`).join('')}
+      ${priLabels.map(m=>`<span style="background:${d.color}20;border:1px solid ${d.color}40;border-radius:6px;padding:2px 8px"><span class="bc" style="font-size:11px;color:${d.color}">${m}</span></span>`).join('')}
+      ${secLabels.map(m=>`<span style="background:var(--cardElev);border:1px solid var(--border);border-radius:6px;padding:2px 8px"><span class="bc" style="font-size:11px;color:var(--tm)">${m}</span></span>`).join('')}
     </div>
     ${(()=>{const st=getScheduledTemplate(dayId);if(!st)return'';return`<div style="background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px"><div style="flex:1"><div class="bc" style="font-size:11px;font-weight:700;color:var(--blue)">📌 Custom Template verfügbar</div><div class="bc" style="font-size:10px;color:var(--tm)">${st.name} · ${st.exercises.length} Übungen</div></div><button onclick="closeWorkoutPreview();loadTemplate('${st.id}')" style="background:var(--blue);border:none;border-radius:8px;padding:6px 12px"><span class="bc" style="font-size:11px;font-weight:700;color:#fff">Laden</span></button></div>`;})()}
     `+
@@ -1977,10 +1984,12 @@ function openWorkoutPreview(dayId){
       <span class="bc" style="font-size:17px;font-weight:800;color:#fff">${isSame?'Training fortsetzen':'Training starten'}</span>
     </button>`;
   overlay.style.display='flex';
+  setTimeout(()=>initMuscleCharts(priKeys,secKeys),0);
 }
 function closeWorkoutPreview(){
   const overlay=document.getElementById('workout-preview-overlay');
   if(overlay)overlay.style.display='none';
+  destroyMuscleCharts();
 }
 function startWorkout(dayId){
   if(workoutExercises.length>0&&activeWorkoutDay&&activeWorkoutDay.id!==dayId){
