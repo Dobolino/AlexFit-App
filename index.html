@@ -113,13 +113,20 @@
   [style*='overflow-x:auto']::-webkit-scrollbar{display:none;}
   [style*='scroll-snap-type']::-webkit-scrollbar{display:none;}
   .set-table{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px;}
-  .set-head{display:grid;grid-template-columns:26px 1fr 1fr 1fr 34px;gap:4px;padding:7px 10px;background:var(--cardElev);border-bottom:1px solid var(--border);}
+  .set-head{display:grid;grid-template-columns:24px 1fr 1fr 1fr 44px 44px;gap:6px;padding:8px 10px;background:var(--cardElev);border-bottom:1px solid var(--border);}
   .set-head span{font-size:9px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.07em;}
-  .set-row{display:grid;grid-template-columns:26px 1fr 1fr 1fr 34px;gap:4px;padding:7px 10px;align-items:center;transition:background .2s;border-bottom:1px solid var(--border);}
+  .set-row{display:grid;grid-template-columns:24px 1fr 1fr 1fr 44px 44px;gap:6px;padding:8px 10px;align-items:center;min-height:52px;transition:background .2s;border-bottom:1px solid var(--border);}
   .set-row:last-of-type{border-bottom:none;}.set-row.done{background:rgba(16,185,129,.1);}
-  .set-row input{background:var(--cardElev);border:1px solid var(--border);border-radius:6px;color:var(--tp);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;padding:4px;text-align:center;width:100%;}
-  .check-btn{width:30px;height:30px;border-radius:8px;background:var(--cardElev);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+  .set-row input{background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--tp);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;padding:8px 4px;min-height:44px;text-align:center;width:100%;}
+  .check-btn{width:44px;height:44px;border-radius:10px;background:var(--cardElev);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
   .check-btn.done{background:var(--green);border-color:var(--green);}
+  .rpe-btn{width:44px;height:44px;border-radius:9px;border:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .workout-section{margin-bottom:12px;}
+  .workout-section-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0 8px;background:none;border:none;text-align:left;}
+  .workout-section-toggle .slabel{margin-bottom:0;}
+  .workout-section-chevron{width:18px;height:18px;flex-shrink:0;color:var(--tm);transition:transform .2s ease;}
+  .workout-section-toggle[aria-expanded="true"] .workout-section-chevron{transform:rotate(180deg);}
+  .workout-section-panel.is-collapsed{display:none;}
   .add-set-btn{width:100%;padding:8px;background:transparent;border:none;border-top:1px dashed var(--border);color:var(--blue);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;justify-content:center;gap:4px;}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);}
   .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);background:var(--cardElev);border-bottom:1px solid var(--border);}
@@ -262,15 +269,29 @@
     <!-- WORKOUT ACTIVE -->
     <div id="screen-workout-active" class="screen">
       <div id="workout-header"></div>
-      <div class="slabel">Aufwärmen — 5 Min</div>
-      <div id="warmup-list" class="card" style="margin-bottom:16px"></div>
+      <div class="workout-section">
+        <button type="button" class="workout-section-toggle" id="warmup-toggle" onclick="toggleWorkoutSection('warmup')" aria-expanded="false" aria-controls="warmup-panel">
+          <span class="bc slabel">Aufwärmen — 5 Min</span>
+          <svg class="workout-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="warmup-panel" class="workout-section-panel is-collapsed" aria-hidden="true">
+          <div id="warmup-list" class="card" style="margin-bottom:16px"></div>
+        </div>
+      </div>
       <div id="exercise-list"></div>
       <button onclick="toggleAddEx()" style="width:100%;padding:12px;background:var(--card);border:1px dashed rgba(37,99,235,.5);border-radius:12px;color:var(--blue);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Übung hinzufügen
       </button>
       <div id="add-ex-panel" style="display:none;margin-bottom:12px"></div>
-      <div class="slabel">Abkühlen & Dehnen</div>
-      <div id="cooldown-list" class="card" style="margin-bottom:20px"></div>
+      <div class="workout-section">
+        <button type="button" class="workout-section-toggle" id="cooldown-toggle" onclick="toggleWorkoutSection('cooldown')" aria-expanded="false" aria-controls="cooldown-panel">
+          <span class="bc slabel">Abkühlen & Dehnen</span>
+          <svg class="workout-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="cooldown-panel" class="workout-section-panel is-collapsed" aria-hidden="true">
+          <div id="cooldown-list" class="card" style="margin-bottom:20px"></div>
+        </div>
+      </div>
       <div style="margin-bottom:12px">
         <div class="bc" style="font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Trainingsnotiz (optional)</div>
         <input id="workout-note-input" class="weight-inp" type="text"
@@ -2013,6 +2034,15 @@ function toggleTimer(){timerRunning=!timerRunning;if(timerRunning)_timerStartTS=
 function resetTimer(){timerRunning=false;workoutElapsed=0;saveSession();updateTimerDisplay();const btn=document.getElementById('timer-toggle-btn');if(btn)btn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>`;}
 function updateProgress(){const total=workoutExercises.reduce((a,ex)=>a+ex.setData.length,0);const done=workoutExercises.reduce((a,ex)=>a+ex.setData.filter(s=>s.done).length,0);const pct=total>0?Math.round((done/total)*100):0;const bar=document.getElementById('workout-prog-bar');const txt=document.getElementById('workout-prog-txt');const pctTxt=document.getElementById('workout-prog-pct');if(bar)bar.style.width=pct+'%';if(txt)txt.textContent=done+'/'+total+' Sätze';if(pctTxt)pctTxt.textContent=pct+'%';}
 
+function toggleWorkoutSection(section){
+  const panel=document.getElementById(section+'-panel');
+  const toggle=document.getElementById(section+'-toggle');
+  if(!panel||!toggle)return;
+  const collapsed=panel.classList.toggle('is-collapsed');
+  toggle.setAttribute('aria-expanded',collapsed?'false':'true');
+  panel.setAttribute('aria-hidden',collapsed?'true':'false');
+}
+
 function renderWorkoutActive(){
   const d=activeWorkoutDay;
   document.getElementById('workout-header').innerHTML=`
@@ -2076,21 +2106,21 @@ function renderExerciseList(){
       </div>
       ${ex.note?`<div style="margin:-4px 0 8px 12px;padding:5px 10px;background:rgba(245,158,11,.08);border-left:2px solid var(--amber);border-radius:0 6px 6px 0"><span style="font-size:11px;color:var(--amber)">${ex.note}</span></div>`:''}
       <div class="set-table">
-        <div class="set-head" style="grid-template-columns:22px 1fr 1fr 1fr 32px 34px">
+        <div class="set-head">
           <span>#</span><span>${ex.bw?'VORH.(Wdh)':'VORH.(kg×Wdh)'}</span>
           <span style="text-align:center">${ex.bw?'—':'KG'}</span>
           <span style="text-align:center">WDH</span><span style="text-align:center;font-size:8px">RPE</span><span style="text-align:center">✓</span>
         </div>
         ${ex.setData.map((s,si)=>`
-          <div class="set-row${s.done?' done':''}" id="sr-${ei}-${si}" style="position:relative;grid-template-columns:22px 1fr 1fr 1fr 32px 34px;">
+          <div class="set-row${s.done?' done':''}" id="sr-${ei}-${si}">
             <span class="bc" style="font-size:13px;font-weight:700;color:var(--tm)">${si+1}</span>
             ${(()=>{const lp=getLastPerf(ex.name);if(lp&&ex.bw&&(parseInt(lp.reps)||0)>0)return `<span class="bc" style="font-size:11px;color:var(--ts)">${lp.reps} Wdh</span>`;if(lp&&!ex.bw&&lp.weight>0)return `<span class="bc" style="font-size:11px;color:var(--ts)">${lp.weight}kg×${lp.reps}</span>`;return `<span class="bc" style="font-size:11px;color:var(--tm)">—</span>`;})()}
-            ${ex.bw?`<div style="display:flex;align-items:center;justify-content:center"><span class="bc" style="font-size:11px;color:var(--tm);background:var(--cardElev);border:1px solid var(--border);border-radius:6px;padding:4px;width:100%;text-align:center">BW</span></div>`
-              :`<input type="number" inputmode="decimal" value="${s.weight}" onchange="setVal(${ei},${si},'weight',this.value)" placeholder="${!s.weight&&!ex.bw?((lp=>{return lp&&lp.weight>0?(suggestWeight(ex.name,lp.weight)||lp.weight)+'':'';})(getLastPerf(ex.name))):'0'}">`}
-            <input type="number" inputmode="numeric" value="${s.reps}" placeholder="${ex.reps||'0'}" onchange="setVal(${ei},${si},'reps',this.value)">
-            <button onclick="cycleRPE(${ei},${si})" id="rpe-${ei}-${si}" title="RPE (Anstrengung 1–10)" style="width:30px;height:30px;border-radius:7px;background:${getRPEColor(s.rpe)};border:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;color:${s.rpe?'#fff':'var(--tm)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${s.rpe||'·'}</button>
+            ${ex.bw?`<div style="display:flex;align-items:center;justify-content:center"><span class="bc" style="font-size:11px;color:var(--tm);background:var(--cardElev);border:1px solid var(--border);border-radius:8px;padding:8px 4px;min-height:44px;width:100%;text-align:center;display:flex;align-items:center;justify-content:center">BW</span></div>`
+              :`<input type="number" inputmode="decimal" step="0.5" value="${s.weight}" oninput="setVal(${ei},${si},'weight',this.value)" placeholder="${!s.weight&&!ex.bw?((lp=>{return lp&&lp.weight>0?(suggestWeight(ex.name,lp.weight)||lp.weight)+'':'';})(getLastPerf(ex.name))):'0'}">`}
+            <input type="number" inputmode="numeric" value="${s.reps}" placeholder="${ex.reps||'0'}" oninput="setVal(${ei},${si},'reps',this.value)">
+            <button class="rpe-btn" onclick="cycleRPE(${ei},${si})" id="rpe-${ei}-${si}" title="RPE (Anstrengung 1–10)" style="background:${getRPEColor(s.rpe)};color:${s.rpe?'#fff':'var(--tm)'}">${s.rpe||'·'}</button>
             <button class="check-btn${s.done?' done':''}" id="cb-${ei}-${si}" onclick="toggleSet(${ei},${si})">
-              ${s.done?`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`:''}
+              ${s.done?`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`:''}
             </button>
           </div>`).join('')}
         <div id="ex-1rm-${ei}" style="display:none;padding:5px 10px 4px;border-top:1px dashed var(--border);text-align:right">
@@ -4642,11 +4672,12 @@ updateWeightDisplay();
 updatePhaseDisplay();
 if(restoreSession())showToast('Training fortgesetzt 💪');
 renderDashboard();setNavActive('dashboard');
-// Keyboard dismiss on scroll
-document.getElementById('content').addEventListener('touchmove', ()=>{
-  if(document.activeElement && ['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){
-    document.activeElement.blur();
-  }
+// Keyboard dismiss only when tapping outside the active field
+document.getElementById('content').addEventListener('touchstart', (e)=>{
+  const ae=document.activeElement;
+  if(!ae||!['INPUT','TEXTAREA'].includes(ae.tagName))return;
+  if(ae===e.target||ae.contains(e.target))return;
+  ae.blur();
 }, {passive:true});
 
 window.addEventListener('resize',()=>{const active=document.querySelector('.navbtn.active');if(active)updateNavIndicator(active.id.replace('nav-',''));});
