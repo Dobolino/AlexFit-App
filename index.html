@@ -127,6 +127,8 @@
   .workout-section-chevron{width:18px;height:18px;flex-shrink:0;color:var(--tm);transition:transform .2s ease;}
   .workout-section-toggle[aria-expanded="true"] .workout-section-chevron{transform:rotate(180deg);}
   .workout-section-panel.is-collapsed{display:none;}
+  .prev-set-btn{width:100%;min-height:44px;padding:6px 4px;border-radius:8px;background:var(--cardElev);border:1px dashed var(--border);color:var(--ts);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;text-align:center;line-height:1.2;}
+  .prev-set-btn:active{background:rgba(37,99,235,.15);border-color:rgba(37,99,235,.4);color:var(--tp);}
   .add-set-btn{width:100%;padding:8px;background:transparent;border:none;border-top:1px dashed var(--border);color:var(--blue);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;justify-content:center;gap:4px;}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);}
   .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);background:var(--cardElev);border-bottom:1px solid var(--border);}
@@ -2022,7 +2024,7 @@ function startWorkout(dayId){
 }
 function doStartWorkout(dayId){
   activeWorkoutDay=WORKOUT_DAYS.find(d=>d.id===dayId);
-  workoutExercises=activeWorkoutDay.exercises.map(ex=>({...ex,setData:Array.from({length:ex.sets},()=>({weight:'',reps:'',done:false}))}));
+  workoutExercises=activeWorkoutDay.exercises.map(ex=>({...ex,setData:createSetDataForExercise(ex)}));
   workoutElapsed=0;timerRunning=true;
   startWorkoutTimer();
   saveSession();
@@ -2111,18 +2113,25 @@ function renderExerciseList(){
           <span style="text-align:center">${ex.bw?'—':'KG'}</span>
           <span style="text-align:center">WDH</span><span style="text-align:center;font-size:8px">RPE</span><span style="text-align:center">✓</span>
         </div>
-        ${ex.setData.map((s,si)=>`
+        ${ex.setData.map((s,si)=>{
+          const prev=getLastSetValues(ex.name,si);
+          const prevLabel=formatLastSetLabel(ex,prev);
+          const weightPh=!s.weight&&!ex.bw?getSetWeightPlaceholder(ex.name,si):'0';
+          const repsPh=getSetRepsPlaceholder(ex,si);
+          return `
           <div class="set-row${s.done?' done':''}" id="sr-${ei}-${si}">
             <span class="bc" style="font-size:13px;font-weight:700;color:var(--tm)">${si+1}</span>
-            ${(()=>{const lp=getLastPerf(ex.name);if(lp&&ex.bw&&(parseInt(lp.reps)||0)>0)return `<span class="bc" style="font-size:11px;color:var(--ts)">${lp.reps} Wdh</span>`;if(lp&&!ex.bw&&lp.weight>0)return `<span class="bc" style="font-size:11px;color:var(--ts)">${lp.weight}kg×${lp.reps}</span>`;return `<span class="bc" style="font-size:11px;color:var(--tm)">—</span>`;})()}
+            ${prevLabel
+              ?`<button type="button" class="prev-set-btn" onclick="fillSetFromLast(${ei},${si})" title="Vorher übernehmen">${prevLabel}</button>`
+              :`<span class="bc" style="font-size:11px;color:var(--tm);display:flex;align-items:center;justify-content:center;min-height:44px">—</span>`}
             ${ex.bw?`<div style="display:flex;align-items:center;justify-content:center"><span class="bc" style="font-size:11px;color:var(--tm);background:var(--cardElev);border:1px solid var(--border);border-radius:8px;padding:8px 4px;min-height:44px;width:100%;text-align:center;display:flex;align-items:center;justify-content:center">BW</span></div>`
-              :`<input type="number" inputmode="decimal" step="0.5" value="${s.weight}" oninput="setVal(${ei},${si},'weight',this.value)" placeholder="${!s.weight&&!ex.bw?((lp=>{return lp&&lp.weight>0?(suggestWeight(ex.name,lp.weight)||lp.weight)+'':'';})(getLastPerf(ex.name))):'0'}">`}
-            <input type="number" inputmode="numeric" value="${s.reps}" placeholder="${ex.reps||'0'}" oninput="setVal(${ei},${si},'reps',this.value)">
+              :`<input type="number" inputmode="decimal" step="0.5" value="${s.weight}" oninput="setVal(${ei},${si},'weight',this.value)" placeholder="${weightPh}">`}
+            <input type="number" inputmode="numeric" value="${s.reps}" placeholder="${repsPh}" oninput="setVal(${ei},${si},'reps',this.value)">
             <button class="rpe-btn" onclick="cycleRPE(${ei},${si})" id="rpe-${ei}-${si}" title="RPE (Anstrengung 1–10)" style="background:${getRPEColor(s.rpe)};color:${s.rpe?'#fff':'var(--tm)'}">${s.rpe||'·'}</button>
             <button class="check-btn${s.done?' done':''}" id="cb-${ei}-${si}" onclick="toggleSet(${ei},${si})">
               ${s.done?`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`:''}
             </button>
-          </div>`).join('')}
+          </div>`;}).join('')}
         <div id="ex-1rm-${ei}" style="display:none;padding:5px 10px 4px;border-top:1px dashed var(--border);text-align:right">
           <span class="bc" style="font-size:10px;color:var(--blue)">Bestes 1RM ≈ <strong id="ex-1rm-val-${ei}">—</strong> kg</span>
         </div>
@@ -2210,11 +2219,20 @@ function toggleSet(ei,si){
   const done=workoutExercises[ei].setData[si].done;
   const row=document.getElementById(`sr-${ei}-${si}`);const btn=document.getElementById(`cb-${ei}-${si}`);
   if(row)row.classList.toggle('done',done);
-  if(btn){btn.classList.toggle('done',done);btn.innerHTML=done?`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`:'';}
-  if(done){ haptic('medium'); startRestTimer(workoutExercises[ei].restTimer||settings.defaultRestTime||getActivePlan().restTimer||120); } else { haptic('light'); }
+  if(btn){btn.classList.toggle('done',done);btn.innerHTML=done?`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`:'';}
+  if(done){
+    haptic('medium');
+    startRestTimer(workoutExercises[ei].restTimer||settings.defaultRestTime||getActivePlan().restTimer||120);
+    const next=findNextOpenSet();
+    if(next)setTimeout(()=>scrollToSetRow(next.ei,next.si),300);
+  } else { haptic('light'); }
   saveSession();updateProgress();
 }
-function addSet(ei){workoutExercises[ei].setData.push({weight:'',reps:'',done:false});saveSession();renderExerciseList();updateProgress();}
+function addSet(ei){
+  const ex=workoutExercises[ei];
+  ex.setData.push(createSetFromLast(ex.name,ex.setData.length));
+  saveSession();renderExerciseList();updateProgress();
+}
 function removeSet(ei){if(workoutExercises[ei].setData.length<=1)return;workoutExercises[ei].setData.pop();saveSession();renderExerciseList();updateProgress();}
 function toggleAddEx(){
   const p=document.getElementById('add-ex-panel');
@@ -2280,7 +2298,7 @@ function addExerciseFromLib(libId){
   workoutExercises.push({
     ...ex,
     _added:true,  // markiert als manuell hinzugefügt → Lösch-Button
-    setData:Array.from({length:ex.sets},()=>({weight:'',reps:'',done:false}))
+    setData:createSetDataForExercise(ex)
   });
   document.getElementById('add-ex-panel').style.display='none';
   saveSession();renderExerciseList();updateProgress();
@@ -2298,7 +2316,7 @@ function removeAddedExercise(ei){
 }
 function addExercise(id){
   const ex=WORKOUT_DAYS.flatMap(d=>d.exercises).find(e=>e.id===id);
-  workoutExercises.push({...ex,setData:Array.from({length:ex.sets},()=>({weight:'',reps:'',done:false}))});
+  workoutExercises.push({...ex,setData:createSetDataForExercise(ex)});
   document.getElementById('add-ex-panel').style.display='none';saveSession();renderExerciseList();updateProgress();
 }
 function doFinishWorkout(){
@@ -2337,6 +2355,83 @@ function getLastPerf(name){
     }
   }
   return null;
+}
+function getLastSetValues(name,setIndex){
+  for(let i=history.length-1;i>=0;i--){
+    const ex=history[i].exercises.find(e=>e.name===name);
+    if(ex?.sets?.[setIndex])return{...ex.sets[setIndex],date:history[i].date};
+  }
+  return null;
+}
+function createSetFromLast(exName,setIndex){
+  const prev=getLastSetValues(exName,setIndex);
+  if(!prev)return{weight:'',reps:'',done:false};
+  const bw=isBW(exName);
+  if(bw)return{weight:'',reps:prev.reps?String(prev.reps):'',done:false,...(prev.rpe?{rpe:prev.rpe}:{})};
+  const w=parseFloat(prev.weight)||0;
+  return{
+    weight:w>0?String(w):'',
+    reps:prev.reps?String(prev.reps):'',
+    done:false,
+    ...(prev.rpe?{rpe:prev.rpe}:{})
+  };
+}
+function createSetDataForExercise(ex,count){
+  const n=count!=null?count:(ex.sets||3);
+  return Array.from({length:n},(_,si)=>createSetFromLast(ex.name,si));
+}
+function formatLastSetLabel(ex,prev){
+  if(!prev)return null;
+  if(ex.bw){
+    const r=parseInt(prev.reps)||0;
+    return r>0?`${r} Wdh`:null;
+  }
+  const w=parseFloat(prev.weight)||0;
+  const r=parseInt(prev.reps)||0;
+  if(w>0)return `${w}kg×${r}`;
+  if(r>0)return `${r} Wdh`;
+  return null;
+}
+function getSetWeightPlaceholder(exName,setIndex){
+  const prev=getLastSetValues(exName,setIndex);
+  if(!prev)return '';
+  const w=parseFloat(prev.weight)||0;
+  if(w<=0)return '';
+  const suggested=suggestWeight(exName,w);
+  return suggested!=null?String(suggested):String(w);
+}
+function getSetRepsPlaceholder(ex,setIndex){
+  const prev=getLastSetValues(ex.name,setIndex);
+  if(prev?.reps)return String(prev.reps);
+  return ex.reps||'0';
+}
+function fillSetFromLast(ei,si){
+  const ex=workoutExercises[ei];
+  const prev=getLastSetValues(ex.name,si);
+  if(!prev){showToast('Kein vorheriger Satz');return;}
+  const s=ex.setData[si];
+  if(ex.bw){
+    if(prev.reps)s.reps=String(prev.reps);
+  }else{
+    const w=parseFloat(prev.weight)||0;
+    if(w>0)s.weight=String(w);
+    if(prev.reps)s.reps=String(prev.reps);
+  }
+  if(prev.rpe)s.rpe=prev.rpe;
+  saveSession();renderExerciseList();update1RM(ei);
+  haptic('light');showToast('Vorher übernommen ✓');
+}
+function findNextOpenSet(){
+  for(let ei=0;ei<workoutExercises.length;ei++){
+    for(let si=0;si<workoutExercises[ei].setData.length;si++){
+      if(!workoutExercises[ei].setData[si].done)return{ei,si};
+    }
+  }
+  return null;
+}
+function scrollToSetRow(ei,si){
+  const row=document.getElementById(`sr-${ei}-${si}`);
+  if(row)row.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 let restTimerInterval=null,restTimerSec=0,restTimerMax=120,_restTimerStartTS=0;
@@ -4549,7 +4644,7 @@ function loadTemplate(id){
     workoutExercises=tmpl.exercises.map(ex=>({
       ...ex,
       id:'lib_'+ex.name.replace(/\s/g,''),
-      setData:Array.from({length:ex.sets||3},()=>({weight:'',reps:'',done:false}))
+      setData:createSetDataForExercise(ex,ex.sets||3)
     }));
     if(!activeWorkoutDay){
       activeWorkoutDay={id:'custom',name:tmpl.dayName,color:'var(--blue)',tag:'C',muscles:[]};
