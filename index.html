@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AlexFit">
 <meta name="theme-color" content="#080B10">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon.svg">
 <title>AlexFit</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -599,9 +602,25 @@
               Export CSV
             </button>
             <label style="flex:1;padding:14px;background:var(--cardElev);border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-              <input type="file" accept=".csv" onchange="importCSV(this.files[0])" style="display:none">
+              <input type="file" accept=".csv" onchange="importCSV(this.files[0]);this.value=''" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ts)" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               <span class="bc" style="font-size:13px;font-weight:700;color:var(--ts)">Import CSV</span>
+            </label>
+          </div>
+          <button onclick="exportJSON()" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(37,99,235,.25),rgba(37,99,235,.08));border:1px solid rgba(37,99,235,.45);border-radius:10px;color:var(--tp);font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Vollbackup JSON (empfohlen)
+          </button>
+          <div style="display:flex;gap:10px">
+            <label style="flex:1;padding:14px;background:var(--cardElev);border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+              <input type="file" accept=".json,application/json" onchange="importJSON(this.files[0],'merge');this.value=''" style="display:none">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ts)" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span class="bc" style="font-size:13px;font-weight:700;color:var(--ts)">JSON hinzufügen</span>
+            </label>
+            <label style="flex:1;padding:14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.35);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+              <input type="file" accept=".json,application/json" onchange="importJSON(this.files[0],'replace');this.value=''" style="display:none">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span class="bc" style="font-size:13px;font-weight:700;color:var(--red)">JSON ersetzen</span>
             </label>
           </div>
           <button onclick="exportAppleHealth()" style="width:100%;padding:14px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);border-radius:10px;color:var(--green);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px">
@@ -612,6 +631,11 @@
         <div style="margin-top:10px;padding:10px;background:var(--cardElev);border-radius:8px">
           <div style="font-size:11px;color:var(--tm);line-height:1.5" id="settings-backup-info">
             💾 Letztes Backup: wird geladen…
+          </div>
+        </div>
+        <div style="margin-top:8px;padding:10px;background:var(--cardElev);border-radius:8px">
+          <div style="font-size:11px;color:var(--tm);line-height:1.5">
+            💡 <strong style="color:var(--ts)">Vollbackup JSON</strong> sichert Workouts, Gewicht, Cardio, Erholung, Fotos, Templates und Einstellungen. CSV eignet sich für Tabellen/Apple Health.
           </div>
         </div>
         <div style="margin-top:8px;padding:10px;background:var(--cardElev);border-radius:8px">
@@ -975,6 +999,7 @@ const COOLDOWN=["Brust dehnen 30s je Seite","Schulter Stretch 30s","Nackenmobili
 const GOAL_KG=77;
 const BF_MIN=12,BF_MAX=18;
 const SCHEMA_VERSION=3;
+const BACKUP_FORMAT_VERSION=1;
 const SESSION_KEY='af_active_session';
 const PROGRAM_WEEKS=12;
 
@@ -1716,9 +1741,9 @@ function renderDashboard(){
         <span style="font-size:18px">💾</span>
         <div style="flex:1">
           <div class="bc" style="font-size:12px;font-weight:700;color:var(--amber)">${bw.msg}</div>
-          <div style="font-size:11px;color:var(--tm)">Einstellungen → Export CSV zum Sichern</div>
+          <div style="font-size:11px;color:var(--tm)">Einstellungen → Vollbackup JSON zum Sichern</div>
         </div>
-        <button onclick="exportCSV()" style="background:var(--amber);border-radius:8px;padding:6px 12px;flex-shrink:0">
+        <button onclick="exportJSON()" style="background:var(--amber);border-radius:8px;padding:6px 12px;flex-shrink:0">
           <span class="bc" style="font-size:11px;font-weight:700;color:#fff">Backup</span>
         </button>
       </div>`;
@@ -3060,6 +3085,178 @@ function importCSV(file){
     renderDashboard();
   };
   reader.readAsText(file);
+}
+
+const BACKUP_APP_NAME='AlexFit';
+
+function collectBackupPayload(){
+  return{
+    backupVersion:BACKUP_FORMAT_VERSION,
+    schemaVersion:SCHEMA_VERSION,
+    exportedAt:new Date().toISOString(),
+    app:BACKUP_APP_NAME,
+    data:{
+      meta:settings,
+      history,
+      weights:weightLog,
+      cardio:cardioLog,
+      recovery:recoveryLog,
+      photos:safeParse('af_photos',[]),
+      templates:safeParse('af_templates',[]),
+      theme:localStorage.getItem('af_theme')||'dark',
+    }
+  };
+}
+function validateBackupPayload(payload){
+  if(!payload||typeof payload!=='object')return false;
+  if(payload.app&&payload.app!==BACKUP_APP_NAME)return false;
+  if(!payload.data||typeof payload.data!=='object')return false;
+  return true;
+}
+function summarizeBackupPayload(payload){
+  const d=payload.data||{};
+  return{
+    date:(payload.exportedAt||'').slice(0,10)||'?',
+    history:(d.history||[]).length,
+    weights:(d.weights||[]).length,
+    cardio:(d.cardio||[]).length,
+    recovery:(d.recovery||[]).length,
+    photos:(d.photos||[]).length,
+    templates:(d.templates||[]).length,
+  };
+}
+function downloadJSONBackup(payload){
+  const today=todayISO();
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='AlexFit_Backup_'+today+'.json';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+function exportJSON(){
+  downloadJSONBackup(collectBackupPayload());
+  markBackupDone();
+  showToast('Vollbackup JSON gespeichert ✓');
+}
+function importJSON(file,mode='merge'){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    let payload;
+    try{payload=JSON.parse(e.target.result);}
+    catch{showToast('Ungültige JSON-Datei');return;}
+    if(!validateBackupPayload(payload)){showToast('Keine gültige AlexFit-Backup-Datei');return;}
+    const s=summarizeBackupPayload(payload);
+    const summary=`Backup vom ${s.date}: ${s.history} Workouts, ${s.weights} Gewicht, ${s.cardio} Cardio, ${s.recovery} Erholung, ${s.photos} Fotos, ${s.templates} Templates.`;
+    if(mode==='replace'){
+      showConfirm(
+        summary+'\n\nACHTUNG: Alle aktuellen AlexFit-Daten auf diesem Gerät werden durch dieses Backup ersetzt.',
+        ()=>restoreJSONBackup(payload),
+        'Alles ersetzen',
+        'var(--red)'
+      );
+      return;
+    }
+    showConfirm(
+      summary+'\n\nNeue Einträge werden zum bestehenden Stand hinzugefügt. Nichts wird gelöscht.',
+      ()=>applyJSONMerge(payload),
+      'Hinzufügen',
+      'var(--blue)'
+    );
+  };
+  reader.readAsText(file);
+}
+function mergeSettingsFromBackup(imported){
+  if(!imported||typeof imported!=='object')return;
+  if(!settings.templateSchedule&&imported.templateSchedule)settings.templateSchedule=imported.templateSchedule;
+  if(!settings.reminderTime&&imported.reminderTime)settings.reminderTime=imported.reminderTime;
+  if(imported.lastBackup&&(!settings.lastBackup||imported.lastBackup>settings.lastBackup))settings.lastBackup=imported.lastBackup;
+  if(imported.namesMigrated)settings.namesMigrated=true;
+  saveSettings();
+}
+function refreshAfterBackupImport(){
+  applyActivePlan();
+  currentWeight=weightLog.length?weightLog[weightLog.length-1].kg:settings.startKg;
+  updateWeightDisplay();
+  updatePhaseDisplay();
+  renderDashboard();
+  if(document.getElementById('screen-weight')?.classList.contains('active'))renderWeight();
+  if(document.getElementById('screen-cardio')?.classList.contains('active'))renderCardio();
+  if(document.getElementById('screen-stats')?.classList.contains('active'))renderStatsTab();
+  if(document.getElementById('screen-settings')?.classList.contains('active'))renderSettings();
+}
+function applyJSONMerge(payload){
+  const d=payload.data||{};
+  let importedH=0,importedW=0,importedC=0,importedR=0,importedP=0,importedT=0;
+
+  (d.history||[]).forEach(h=>{
+    if(!h||typeof h!=='object')return;
+    if(h.id&&history.find(x=>x.id===h.id))return;
+    if(history.find(x=>x.date===h.date&&x.name===h.name))return;
+    history.push({...h,id:h.id||('h'+Date.now()+Math.random().toString(36).slice(2,6))});
+    importedH++;
+  });
+  if(importedH>0){history.sort((a,b)=>a.date.localeCompare(b.date));save();}
+
+  (d.weights||[]).forEach(w=>{
+    if(!w?.date||!w.kg)return;
+    if(!weightLog.find(x=>x.date===w.date)){weightLog.push(w);importedW++;}
+  });
+  if(importedW>0){weightLog.sort((a,b)=>a.date.localeCompare(b.date));saveW();}
+
+  (d.cardio||[]).forEach(c=>{
+    if(!c?.date||!c.type||!c.time)return;
+    if(!cardioLog.find(x=>x.date===c.date&&x.type===c.type&&Math.abs((x.time||0)-(c.time||0))<1)){cardioLog.push(c);importedC++;}
+  });
+  if(importedC>0){cardioLog.sort((a,b)=>a.date.localeCompare(b.date));saveC();}
+
+  (d.recovery||[]).forEach(r=>{
+    if(!r?.date||!r.sleep||!r.energy||!r.stress)return;
+    if(!recoveryLog.find(x=>x.date===r.date)){recoveryLog.push(r);importedR++;}
+  });
+  if(importedR>0){recoveryLog.sort((a,b)=>a.date.localeCompare(b.date));saveRecovery();}
+
+  const photos=safeParse('af_photos',[]);
+  (d.photos||[]).forEach(p=>{
+    if(!p?.id||photos.find(x=>x.id===p.id))return;
+    photos.push(p);importedP++;
+  });
+  if(importedP>0)localStorage.setItem('af_photos',JSON.stringify(photos));
+
+  const templates=getTemplates();
+  (d.templates||[]).forEach(t=>{
+    if(!t?.id||templates.find(x=>x.id===t.id))return;
+    templates.push(t);importedT++;
+  });
+  if(importedT>0)saveTemplates(templates);
+
+  mergeSettingsFromBackup(d.meta);
+  if(d.theme&&!localStorage.getItem('af_theme'))applyTheme(d.theme);
+
+  const total=importedH+importedW+importedC+importedR+importedP+importedT;
+  showToast(`${total} Einträge hinzugefügt ✓`);
+  refreshAfterBackupImport();
+}
+function restoreJSONBackup(payload){
+  const d=payload.data||{};
+
+  if(Array.isArray(d.history)){history=d.history;save();}
+  if(Array.isArray(d.weights)){weightLog=d.weights;saveW();}
+  if(Array.isArray(d.cardio)){cardioLog=d.cardio;saveC();}
+  if(Array.isArray(d.recovery)){recoveryLog=d.recovery;saveRecovery();}
+  if(Array.isArray(d.photos))localStorage.setItem('af_photos',JSON.stringify(d.photos));
+  if(Array.isArray(d.templates))saveTemplates(d.templates);
+
+  if(d.meta&&typeof d.meta==='object'){
+    const meta={...d.meta,v:Math.max(d.meta.v||1,SCHEMA_VERSION)};
+    localStorage.setItem('af_meta',JSON.stringify(meta));
+    settings=loadSettings();
+  }
+  if(d.theme)applyTheme(d.theme);
+
+  refreshAfterBackupImport();
+  showToast('Backup vollständig wiederhergestellt ✓');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -4796,7 +4993,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 if('serviceWorker' in navigator){
-  const sw=`const C='af-v8';const ASSETS=['.','https://unpkg.com/body-muscles@1.0.0/dist/umd/body-muscles.umd.min.js'];self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS)));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!=='af-v8').map(k=>caches.delete(k)))));});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match('.'))));});`;
+  const sw=`const C='af-v9';const ASSETS=['.','manifest.webmanifest','icons/icon.svg','https://unpkg.com/body-muscles@1.0.0/dist/umd/body-muscles.umd.min.js'];self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS)));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!=='af-v9').map(k=>caches.delete(k)))));});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match('.'))));});`;
   const blob=new Blob([sw],{type:'application/javascript'});
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
 }

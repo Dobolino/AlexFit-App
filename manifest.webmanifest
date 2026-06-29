@@ -1,0 +1,26 @@
+{
+  "name": "AlexFit",
+  "short_name": "AlexFit",
+  "description": "Persönliches Krafttraining, Gewicht & Cardio",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080B10",
+  "theme_color": "#080B10",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
