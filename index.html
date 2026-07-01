@@ -739,7 +739,8 @@
     <div style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;" id="workout-summary-scroll">
       <div id="workout-summary-body"></div>
     </div>
-    <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;">
+    <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:8px" id="workout-summary-footer">
+      <button id="workout-summary-save-plan-btn" onclick="confirmSaveWorkoutPlanFromSummary()" style="display:none;width:100%;padding:14px;border-radius:12px;background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.45);color:var(--blue);font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.06em">📌 Für nächste Woche speichern</button>
       <button onclick="closeSummaryAndGoToHistory()" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--blue),#1D4ED8);color:#fff;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.06em">Zum Verlauf →</button>
     </div>
   </div>
@@ -1115,7 +1116,7 @@ let history=safeParse('af_history',[]);
 let weightLog=safeParse('af_weights',[]);
 let cardioLog=safeParse('af_cardio',[]);
 let currentWeight=weightLog.length?weightLog[weightLog.length-1].kg:settings.startKg;
-let activeWorkoutDay=null,workoutExercises=[],workoutElapsed=0,workoutTimer=null,timerRunning=false,_timerStartTS=0;
+let activeWorkoutDay=null,workoutExercises=[],workoutElapsed=0,workoutTimer=null,timerRunning=false,_timerStartTS=0,workoutBaselineSignature='',_pendingPlanSave=null;
 let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 let activeCardioType='walking';
 let activeStatsTab='stats';
@@ -1191,7 +1192,7 @@ function tagHTML(muscle,color){const c=color||MC[muscle]||'#2563EB';return`<span
 
 function saveSession(){
   if(!workoutExercises.length||!activeWorkoutDay){sessionStorage.removeItem(SESSION_KEY);return;}
-  sessionStorage.setItem(SESSION_KEY,JSON.stringify({dayId:activeWorkoutDay.id,workoutExercises,workoutElapsed,timerRunning}));
+  sessionStorage.setItem(SESSION_KEY,JSON.stringify({dayId:activeWorkoutDay.id,workoutExercises,workoutElapsed,timerRunning,workoutBaselineSignature}));
 }
 function clearSession(){sessionStorage.removeItem(SESSION_KEY);}
 function startWorkoutTimer(){
@@ -1215,6 +1216,7 @@ function restoreSession(){
     workoutExercises=s.workoutExercises;
     workoutElapsed=s.workoutElapsed||0;
     timerRunning=s.timerRunning!==false;
+    workoutBaselineSignature=s.workoutBaselineSignature||getWorkoutPlanSignature(workoutExercises);
     startWorkoutTimer();
     return true;
   }catch(e){clearSession();return false;}
@@ -2000,9 +2002,9 @@ function openWorkoutPreview(dayId){
       ${priLabels.map(m=>`<span style="background:${d.color}20;border:1px solid ${d.color}40;border-radius:6px;padding:2px 8px"><span class="bc" style="font-size:11px;color:${d.color}">${m}</span></span>`).join('')}
       ${secLabels.map(m=>`<span style="background:var(--cardElev);border:1px solid var(--border);border-radius:6px;padding:2px 8px"><span class="bc" style="font-size:11px;color:var(--tm)">${m}</span></span>`).join('')}
     </div>
-    ${(()=>{const st=getScheduledTemplate(dayId);if(!st)return'';return`<div style="background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px"><div style="flex:1"><div class="bc" style="font-size:11px;font-weight:700;color:var(--blue)">📌 Custom Template verfügbar</div><div class="bc" style="font-size:10px;color:var(--tm)">${st.name} · ${st.exercises.length} Übungen</div></div><button onclick="closeWorkoutPreview();loadTemplate('${st.id}')" style="background:var(--blue);border:none;border-radius:8px;padding:6px 12px"><span class="bc" style="font-size:11px;font-weight:700;color:#fff">Laden</span></button></div>`;})()}
+    ${(()=>{const st=getScheduledTemplate(dayId);if(!st)return'';return`<div style="background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px"><div style="flex:1"><div class="bc" style="font-size:11px;font-weight:700;color:var(--blue)">📌 Dein gespeicherter Plan</div><div class="bc" style="font-size:10px;color:var(--tm)">${st.name} · ${st.exercises.length} Übungen · wird automatisch geladen</div></div></div>`;})()}
     `+
-    d.exercises.map(ex=>{
+    (getScheduledTemplate(dayId)?.exercises||d.exercises).map(ex=>{
       const lp=getLastPerf(ex.name);
       const lpStr=lp?(ex.bw?`${lp.reps} Wdh`:`${lp.weight} kg × ${lp.reps}`):null;
       const rpeStr=lp?.avgRpe?`RPE ${lp.avgRpe}`:null;
@@ -2049,12 +2051,19 @@ function startWorkout(dayId){
 }
 function doStartWorkout(dayId){
   activeWorkoutDay=WORKOUT_DAYS.find(d=>d.id===dayId);
-  workoutExercises=activeWorkoutDay.exercises.map(ex=>({...ex,setData:createSetDataForExercise(ex)}));
+  const scheduled=getScheduledTemplate(dayId);
+  if(scheduled){
+    workoutExercises=templateExercisesToWorkoutExercises(scheduled.exercises);
+  }else{
+    workoutExercises=activeWorkoutDay.exercises.map(ex=>({...ex,setData:createSetDataForExercise(ex)}));
+  }
+  workoutBaselineSignature=getWorkoutPlanSignature(workoutExercises);
   workoutElapsed=0;timerRunning=true;
   startWorkoutTimer();
   saveSession();
   renderWorkoutActive();
   updateWorkoutBadge();setNavActive('workout');showScreen('workout-active');
+  if(scheduled)showToast(`${scheduled.name} geladen ✓`);
 }
 function updateTimerDisplay(){const el=document.getElementById('workout-timer');if(el){el.textContent=fmt(workoutElapsed);el.style.textShadow=timerRunning?'0 0 20px var(--blue)':'none';}updateProgress();}
 function toggleTimer(){timerRunning=!timerRunning;if(timerRunning)_timerStartTS=Date.now()-workoutElapsed*1000;saveSession();const btn=document.getElementById('timer-toggle-btn');if(btn)btn.innerHTML=timerRunning?`<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`:`<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>`;}
@@ -2082,7 +2091,8 @@ function renderWorkoutActive(){
     <div style="background:linear-gradient(135deg,${d.color}22,var(--cardElev));border:1px solid ${d.color}40;border-radius:14px;padding:16px;margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div><div class="bc" style="font-size:11px;font-weight:600;color:${d.color};text-transform:uppercase;letter-spacing:.1em">${todayStr()}</div>
-          <div class="bc" style="font-size:22px;font-weight:800;color:var(--tp)">${d.name}</div></div>
+          <div class="bc" style="font-size:22px;font-weight:800;color:var(--tp)">${d.name}</div>
+          ${getScheduledTemplate(d.id)?`<div class="bc" style="font-size:10px;color:var(--blue);margin-top:2px">📌 Dein gespeicherter Plan</div>`:''}</div>
         <div style="text-align:right">
           <div id="workout-timer" class="bc timer-glow" style="font-size:28px;font-weight:900;color:var(--blue);letter-spacing:.05em">${fmt(workoutElapsed)}</div>
           <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:4px">
@@ -2348,7 +2358,18 @@ function doFinishWorkout(){
   clearInterval(workoutTimer);
   const prMap=computePRs();
   const workoutNote=document.getElementById('workout-note-input')?.value.trim()||'';
-  const entry={id:'h'+Date.now(),dayId:activeWorkoutDay.id,phaseId:getActivePhaseId(),name:activeWorkoutDay.name,date:todayISO(),duration:Math.max(1,Math.round(workoutElapsed/60)),note:workoutNote||undefined,
+  const finishedDay=activeWorkoutDay;
+  const planChanged=getWorkoutPlanSignature(workoutExercises)!==workoutBaselineSignature;
+  if(planChanged&&finishedDay){
+    _pendingPlanSave={
+      dayId:finishedDay.id,
+      dayName:finishedDay.name,
+      exercises:workoutExercises.map(ex=>({
+        name:ex.name,muscle:ex.muscle,sets:ex.setData.length,reps:ex.reps,bw:ex.bw||false,_added:ex._added||false,note:ex.note
+      }))
+    };
+  }else _pendingPlanSave=null;
+  const entry={id:'h'+Date.now(),dayId:finishedDay.id,phaseId:getActivePhaseId(),name:finishedDay.name,date:todayISO(),duration:Math.max(1,Math.round(workoutElapsed/60)),note:workoutNote||undefined,
     sets:workoutExercises.reduce((a,ex)=>a+ex.setData.filter(s=>s.done).length,0),
     exercises:workoutExercises.map(ex=>{
       const bw=isBW(ex.name);const done=ex.setData.filter(s=>s.done).map(s=>({weight:parseFloat(s.weight)||0,reps:parseInt(s.reps)||0,...(s.rpe?{rpe:s.rpe}:{})}));
@@ -2356,7 +2377,7 @@ function doFinishWorkout(){
       return{name:ex.name,sets:done,isPR};
     }).filter(ex=>ex.sets.length>0),
   };
-  history.push(entry);save();workoutExercises=[];activeWorkoutDay=null;timerRunning=false;clearSession();
+  history.push(entry);save();workoutExercises=[];activeWorkoutDay=null;timerRunning=false;workoutBaselineSignature='';clearSession();
   haptic('done'); showToast('Training gespeichert! 💪');
   if(!showWorkoutSummary(entry)){switchTab('stats');switchStatsTab('history');}
 }
@@ -4410,11 +4431,35 @@ function showWorkoutSummary(entry){
 
   overlay.classList.add('show');
   document.getElementById('workout-summary-scroll').scrollTop=0;
+  const saveBtn=document.getElementById('workout-summary-save-plan-btn');
+  if(saveBtn){
+    if(_pendingPlanSave){
+      saveBtn.style.display='block';
+      saveBtn.textContent=`📌 Plan für ${entry.name} speichern`;
+    }else saveBtn.style.display='none';
+  }
   return true;
+}
+
+function confirmSaveWorkoutPlanFromSummary(){
+  if(!_pendingPlanSave)return;
+  const {dayId,dayName,exercises}=_pendingPlanSave;
+  showConfirm(
+    `Diesen Plan (${exercises.length} Übungen) als Standard für ${dayName} speichern? Beim nächsten ${dayName}-Training wird er automatisch geladen.`,
+    ()=>{
+      persistWorkoutPlanForDay(dayId,exercises,dayName);
+      _pendingPlanSave=null;
+      const saveBtn=document.getElementById('workout-summary-save-plan-btn');
+      if(saveBtn)saveBtn.style.display='none';
+    },
+    'Speichern',
+    'var(--blue)'
+  );
 }
 
 function closeSummaryAndGoToHistory(){
   document.getElementById('workout-summary-overlay')?.classList.remove('show');
+  _pendingPlanSave=null;
   switchTab('stats');switchStatsTab('history');
 }
 
@@ -4813,6 +4858,47 @@ function exportAppleHealth(){
 function getTemplates(){ return safeParse('af_templates',[]); }
 function saveTemplates(t){ localStorage.setItem('af_templates',JSON.stringify(t)); }
 
+function getWorkoutPlanSignature(exercises){
+  return (exercises||[]).map(ex=>`${ex.name}|${ex.setData?.length||ex.sets||0}|${ex.reps||''}|${ex.bw?'1':'0'}`).join(';;');
+}
+function templateExercisesToWorkoutExercises(tmplExercises){
+  return (tmplExercises||[]).map(ex=>({
+    ...ex,
+    id:ex.id||('lib_'+ex.name.replace(/\s/g,'')),
+    sets:ex.sets||3,
+    setData:createSetDataForExercise(ex,ex.sets||3)
+  }));
+}
+function persistWorkoutPlanForDay(dayId,exercises,dayName){
+  const templates=getTemplates();
+  const existingId=settings.templateSchedule?.[dayId];
+  const existing=existingId?templates.find(t=>t.id===existingId):null;
+  const tmplExercises=(exercises||[]).map(ex=>({
+    name:ex.name,muscle:ex.muscle,sets:ex.sets||3,reps:ex.reps,bw:ex.bw||false,_added:ex._added||false
+  }));
+  if(existing){
+    existing.exercises=tmplExercises;
+    existing.updatedAt=todayISO();
+    existing.dayId=dayId;
+    saveTemplates(templates);
+    scheduleTemplate(existing.id,dayId,false);
+    showToast(`Plan für ${dayName} aktualisiert ✓`);
+  }else{
+    const tmpl={
+      id:'t'+Date.now(),
+      name:(dayName||'Training')+' (Mein Plan)',
+      createdAt:todayISO(),
+      dayName:dayName||'Custom',
+      dayId,
+      exercises:tmplExercises
+    };
+    templates.push(tmpl);
+    saveTemplates(templates);
+    scheduleTemplate(tmpl.id,dayId,false);
+    showToast(`Plan für ${dayName} gespeichert ✓`);
+  }
+}
+
 function saveCurrentAsTemplate(){
   if(!workoutExercises.length){showToast('Kein aktives Training');return;}
   const name=prompt('Template-Name:',activeWorkoutDay?.name+' (Custom)');
@@ -4847,6 +4933,7 @@ function loadTemplate(id){
       activeWorkoutDay={id:'custom',name:tmpl.dayName,color:'var(--blue)',tag:'C',muscles:[]};
     }
     workoutElapsed=0;timerRunning=true;
+    workoutBaselineSignature=getWorkoutPlanSignature(workoutExercises);
     startWorkoutTimer();saveSession();
     renderWorkoutActive();setNavActive('workout');showScreen('workout-active');
     showToast('Template geladen: '+tmpl.name);
@@ -4859,7 +4946,7 @@ function deleteTemplate(id){
     saveTemplates(t);showToast('Template gelöscht');renderTemplatesInSettings();
   });
 }
-function scheduleTemplate(templateId, dayId){
+function scheduleTemplate(templateId, dayId, showToastMsg=true){
   if(!settings.templateSchedule) settings.templateSchedule={};
   if(dayId==='none'){
     // Remove any schedule for this template
@@ -4875,7 +4962,7 @@ function scheduleTemplate(templateId, dayId){
   }
   saveSettings();
   renderTemplatesInSettings();
-  showToast(dayId==='none'?'Einplanung entfernt':'Template eingeplant ✓');
+  if(showToastMsg)showToast(dayId==='none'?'Einplanung entfernt':'Template eingeplant ✓');
 }
 function getScheduledTemplate(dayId){
   const id=settings.templateSchedule?.[dayId];
