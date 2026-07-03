@@ -157,6 +157,9 @@
   .weight-stepper input:focus{outline:none;}
   .week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;}
   .week-day{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;border-radius:10px;border:1px solid var(--border);background:var(--card);transition:background .2s;}
+  .week-day.day-skipped{background:linear-gradient(160deg,rgba(45,50,62,.94),rgba(22,26,36,.98));border-color:rgba(90,100,118,.55);box-shadow:inset 0 0 0 1px rgba(239,68,68,.16);}
+  .cal-cell.cal-skipped{background:linear-gradient(160deg,rgba(45,50,62,.9),rgba(22,26,36,.96))!important;box-shadow:inset 0 0 0 1px rgba(239,68,68,.14);}
+  .skip-chip{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);}
   .day-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tm);}
   .day-num-wrap{width:26px;height:26px;border-radius:99px;display:flex;align-items:center;justify-content:center;}
   #ex-info-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9997;display:none;align-items:flex-end;justify-content:center;padding-bottom:calc(20px + var(--safe-bot));}
@@ -1164,6 +1167,19 @@ function getTopPRs(prs){
 }
 
 const GRACE_SKIPS_PER_MONTH=2;
+const SKIP_VIS={icon:'#9AA3B2',text:'#B8BFC9',border:'rgba(90,100,118,.55)'};
+
+function skipIconSVG(size=12,color=SKIP_VIS.icon){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2.5C8.14 2.5 5 5.5 5 9.2c0 2.35 1.23 4.4 3.1 5.55V17.5h2.2v-1.5h3.4v1.5h2.2v-2.75C15.87 13.6 17 11.55 17 9.2 17 5.5 13.86 2.5 12 2.5Z" stroke="${color}" stroke-width="1.65" stroke-linejoin="round"/><circle cx="9.25" cy="9" r="1.1" fill="${color}"/><circle cx="14.75" cy="9" r="1.1" fill="${color}"/><path d="M10.25 12.5h3.5" stroke="${color}" stroke-width="1.35" stroke-linecap="round"/><path d="M8.75 17.5V21M12 17.5V21M15.25 17.5V21" stroke="${color}" stroke-width="1.3" stroke-linecap="round"/></svg>`;
+}
+function skipDayPanelHTML(iso){
+  return `<div style="text-align:center;padding:28px 16px;background:linear-gradient(160deg,rgba(45,50,62,.94),rgba(22,26,36,.98));border:1px solid ${SKIP_VIS.border};border-radius:14px;box-shadow:inset 0 0 0 1px rgba(239,68,68,.14)">
+    <div class="skip-chip" style="width:56px;height:56px;margin:0 auto 12px">${skipIconSVG(28)}</div>
+    <div class="bc" style="font-size:16px;font-weight:800;color:${SKIP_VIS.text}">Training übersprungen</div>
+    <div class="bc" style="font-size:11px;color:var(--tm);margin-top:5px">Streak geschützt · Skip-Token verwendet</div>
+    <button onclick="undoGraceSkip('${iso}');closeCalendarDay();setTimeout(()=>openCalendarDay('${iso}'),200)" style="margin-top:16px;padding:9px 16px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:12px;font-weight:700">Skip zurücknehmen</button>
+  </div>`;
+}
 
 function graceMonthKey(iso){return iso.slice(0,7);}
 function getGraceSkipsForMonth(monthKey){return settings.graceSkipsByMonth?.[monthKey]||[];}
@@ -1231,7 +1247,7 @@ function useGraceSkip(iso){
   settings.graceSkipsByMonth[mk].push(iso);
   saveSettings();
   const left=getGraceSkipsRemaining(mk);
-  showToast(`Übersprungen — Streak bleibt 🔥 (${left}/${GRACE_SKIPS_PER_MONTH} übrig)`);
+  showToast(`Übersprungen — Streak bleibt (${left}/${GRACE_SKIPS_PER_MONTH} übrig)`);
   renderDashboard();
   if(document.getElementById('screen-calendar')?.classList.contains('active'))renderCalendar();
 }
@@ -1243,6 +1259,7 @@ function undoGraceSkip(iso){
   saveSettings();
   showToast('Skip zurückgenommen');
   renderDashboard();
+  if(document.getElementById('screen-calendar')?.classList.contains('active'))renderCalendar();
 }
 
 function computeStreak(){
@@ -1830,13 +1847,13 @@ function renderDashboard(){
     const plannedDay=todayPlanned?WORKOUT_DAYS.find(d=>d.id===todayPlanned):null;
     const remaining=getGraceSkipsRemaining();
     if(isGraceSkipped(today)){
-      graceEl.innerHTML=`<div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
-        <span style="font-size:22px">⏭️</span>
+      graceEl.innerHTML=`<div style="background:linear-gradient(160deg,rgba(45,50,62,.94),rgba(22,26,36,.98));border:1px solid ${SKIP_VIS.border};border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:inset 0 0 0 1px rgba(239,68,68,.14)">
+        <div class="skip-chip" style="width:40px;height:40px;flex-shrink:0">${skipIconSVG(20)}</div>
         <div style="flex:1">
-          <div class="bc" style="font-size:13px;font-weight:800;color:var(--amber)">Heute übersprungen</div>
+          <div class="bc" style="font-size:13px;font-weight:800;color:${SKIP_VIS.text}">Heute übersprungen</div>
           <div class="bc" style="font-size:11px;color:var(--tm)">Streak bleibt erhalten · ${remaining}/${GRACE_SKIPS_PER_MONTH} Skips übrig</div>
         </div>
-        <button onclick="undoGraceSkip('${today}')" style="background:var(--cardElev);border:1px solid var(--border);border-radius:8px;padding:6px 10px;flex-shrink:0"><span class="bc" style="font-size:10px;font-weight:700;color:var(--ts)">Rückgängig</span></button>
+        <button onclick="undoGraceSkip('${today}')" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:6px 10px;flex-shrink:0"><span class="bc" style="font-size:10px;font-weight:700;color:var(--ts)">Rückgängig</span></button>
       </div>`;
     }else if(plannedDay&&!hasTrainingOnDate(today)&&canUseGraceSkip(today)){
       graceEl.innerHTML=`<div style="background:var(--card);border:1px dashed rgba(245,158,11,.45);border-radius:12px;padding:12px 14px">
@@ -1847,7 +1864,7 @@ function renderDashboard(){
             <div class="bc" style="font-size:11px;color:var(--tm);margin-top:2px">Training überspringen — Streak bleibt. ${remaining} von ${GRACE_SKIPS_PER_MONTH} Skips diesen Monat.</div>
           </div>
         </div>
-        <button onclick="confirmGraceSkip('${today}')" style="width:100%;padding:12px;border-radius:10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);color:var(--amber);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em">Heute überspringen (Skip)</button>
+        <button onclick="confirmGraceSkip('${today}')" style="width:100%;padding:12px;border-radius:10px;background:linear-gradient(160deg,rgba(45,50,62,.85),rgba(22,26,36,.95));border:1px solid ${SKIP_VIS.border};color:${SKIP_VIS.text};font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;justify-content:center;gap:8px">${skipIconSVG(14)} Heute überspringen</button>
       </div>`;
     }else if(remaining<GRACE_SKIPS_PER_MONTH){
       graceEl.innerHTML=`<div style="padding:8px 12px;background:var(--cardElev);border-radius:10px;text-align:center"><span class="bc" style="font-size:11px;color:var(--tm)">Skip-Tokens: ${remaining}/${GRACE_SKIPS_PER_MONTH} übrig diesen Monat</span></div>`;
@@ -2009,19 +2026,28 @@ function renderWeekStrip(){
     const iso=cellDate.getFullYear()+'-'+String(cellDate.getMonth()+1).padStart(2,'0')+'-'+String(cellDate.getDate()).padStart(2,'0');
     const isToday=iso===todayIso;const trained=trainedDates.has(iso);const hasCardioWS=cardioDatesWS.has(iso);const trainedDay=trained?getTrainedDayForDate(iso):null;
     const plannedDayId=PLAN_DOW[wd.dowJS];const plannedDay=plannedDayId?WORKOUT_DAYS.find(d=>d.id===plannedDayId):null;const isRest=!plannedDayId;const isPast=cellDate<now&&!isToday;
-    const graceSkip=isGraceSkipped(iso);
+    const graceSkip=!trained&&isGraceSkipped(iso);
     const dayDoneWS=trained||hasCardioWS||graceSkip;
     const doneColor=trainedDay?.color||plannedDay?.color||'var(--green)';
     let bg='var(--card)',borderColor='var(--border)';
     if(trained){bg=doneColor+'25';borderColor=doneColor+'60';}
-    else if(graceSkip){bg='rgba(245,158,11,.12)';borderColor='rgba(245,158,11,.35)';}
     else if(hasCardioWS&&!trained){bg='#10B98125';borderColor='#10B98160';}
     else if(isToday&&plannedDay){bg=plannedDay.color+'15';borderColor=plannedDay.color+'80';}
-    else if(isToday){bg='rgba(37,99,235,.12)';borderColor='var(--blue)';}    const numBg=isToday?'var(--blue)':'transparent';const numColor=isToday?'#fff':dayDoneWS?(trainedDay?.color||plannedDay?.color||(graceSkip?'var(--amber)':'var(--tp)')):'var(--ts)';const numFw=isToday||dayDoneWS?700:400;
-    let badge='';if(trained)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${doneColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(graceSkip)badge=`<span class="bc" style="font-size:10px;color:var(--amber)">⏭</span>`;else if(hasCardioWS)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(isRest)badge=`<span class="bc" style="font-size:8px;color:var(--tm);opacity:.45">R</span>`;else if(plannedDay)badge=`<div style="width:7px;height:7px;border-radius:99px;background:${plannedDay.color};opacity:${isPast?'.3':'1'}"></div>`;
-    html+=`<div class="week-day" style="background:${bg};border-color:${borderColor};"><span class="day-label" style="${isToday?'color:var(--blue)':''}">${wd.label}</span><div class="day-num-wrap" style="background:${numBg}"><span class="bc" style="font-size:13px;font-weight:${numFw};color:${numColor}">${cellDate.getDate()}</span></div>${badge}</div>`;
+    else if(isToday){bg='rgba(37,99,235,.12)';borderColor='var(--blue)';}
+    const skipClass=graceSkip?' day-skipped':'';
+    const numBg=isToday?'var(--blue)':'transparent';
+    const numColor=isToday?'#fff':graceSkip?SKIP_VIS.text:dayDoneWS?(trainedDay?.color||plannedDay?.color||'var(--tp)'):'var(--ts)';
+    const numFw=isToday||dayDoneWS?700:400;
+    let badge='';
+    if(trained)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${doneColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+    else if(graceSkip)badge=skipIconSVG(12);
+    else if(hasCardioWS)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+    else if(isRest)badge=`<span class="bc" style="font-size:8px;color:var(--tm);opacity:.45">R</span>`;
+    else if(plannedDay)badge=`<div style="width:7px;height:7px;border-radius:99px;background:${plannedDay.color};opacity:${isPast?'.3':'1'}"></div>`;
+    const cellStyle=graceSkip?'':`background:${bg};border-color:${borderColor};`;
+    html+=`<div class="week-day${skipClass}" style="${cellStyle}"><span class="day-label" style="${isToday?'color:var(--blue)':graceSkip?'color:var(--tm)':''}">${wd.label}</span><div class="day-num-wrap" style="background:${numBg}"><span class="bc" style="font-size:13px;font-weight:${numFw};color:${numColor}">${cellDate.getDate()}</span></div>${badge}</div>`;
   });
-  html+='</div><div style="display:flex;gap:12px;padding:0 2px;margin-bottom:2px"><div style="display:flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span class="bc" style="font-size:10px;color:var(--tm)">Erledigt</span></div><div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:99px;background:var(--blue)"></div><span class="bc" style="font-size:10px;color:var(--tm)">Geplant</span></div><div style="display:flex;align-items:center;gap:4px"><span class="bc" style="font-size:10px;font-weight:700;color:var(--tm)">R</span><span class="bc" style="font-size:10px;color:var(--tm)">Ruhetag</span></div></div>';
+  html+=`</div><div style="display:flex;flex-wrap:wrap;gap:10px 12px;padding:0 2px;margin-bottom:2px"><div style="display:flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span class="bc" style="font-size:10px;color:var(--tm)">Erledigt</span></div><div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:99px;background:var(--blue)"></div><span class="bc" style="font-size:10px;color:var(--tm)">Geplant</span></div><div style="display:flex;align-items:center;gap:4px"><span style="display:inline-flex;width:14px;height:14px;border-radius:4px;background:linear-gradient(160deg,rgba(45,50,62,.94),rgba(22,26,36,.98));border:1px solid ${SKIP_VIS.border};align-items:center;justify-content:center">${skipIconSVG(8)}</span><span class="bc" style="font-size:10px;color:var(--tm)">Übersprungen</span></div><div style="display:flex;align-items:center;gap:4px"><span class="bc" style="font-size:10px;font-weight:700;color:var(--tm)">R</span><span class="bc" style="font-size:10px;color:var(--tm)">Ruhetag</span></div></div>`;
   document.getElementById('week-strip-wrap').innerHTML=html;
 }
 function renderWorkoutSelect(){
@@ -2666,6 +2692,7 @@ function openCalendarDay(iso){
   // Header-Farbe
   const headerCol=sessions.length?(WORKOUT_DAYS.find(d=>d.id===sessions[0].dayId)?.color||'var(--blue)')
     :cardioSessions.length?(CARDIO_TYPES[cardioSessions[0].type]?.color||'var(--green)')
+    :isGraceSkipped(iso)?'#6B7280'
     :plannedDay?plannedDay.color
     :'var(--border)';
 
@@ -2679,7 +2706,7 @@ function openCalendarDay(iso){
       <div>
         <div class="bc" style="font-size:20px;font-weight:900;color:var(--tp)">${dateStr}</div>
         ${plannedDay?`<div class="bc" style="font-size:11px;color:${plannedDay.color};margin-top:2px">Geplant: ${plannedDay.name}</div>`:'<div class="bc" style="font-size:11px;color:var(--tm);margin-top:2px">Ruhetag</div>'}
-        ${isGraceSkipped(iso)?`<div class="bc" style="font-size:11px;color:var(--amber);margin-top:2px">⏭️ Übersprungen (Streak geschützt)</div>`:''}
+        ${isGraceSkipped(iso)&&!sessions.length?`<div class="bc" style="font-size:11px;color:${SKIP_VIS.text};margin-top:2px;display:flex;align-items:center;gap:5px">${skipIconSVG(11)} Übersprungen · Streak geschützt</div>`:''}
       </div>
       <button onclick="closeCalendarDay()" style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--tp);font-size:22px;flex-shrink:0">×</button>
     </div>`;
@@ -2688,28 +2715,18 @@ function openCalendarDay(iso){
 
   if(!hasAnything){
     if(isGraceSkipped(iso)){
-      html=`<div style="text-align:center;padding:24px 16px">
-        <div style="font-size:28px;margin-bottom:8px">⏭️</div>
-        <div class="bc" style="font-size:15px;font-weight:700;color:var(--amber)">Training übersprungen</div>
-        <div class="bc" style="font-size:11px;color:var(--tm);margin-top:4px">Streak wurde geschützt</div>
-        <button onclick="undoGraceSkip('${iso}');closeCalendarDay();setTimeout(()=>openCalendarDay('${iso}'),200)" style="margin-top:12px;padding:8px 14px;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:12px;font-weight:700">Skip zurücknehmen</button>
-      </div>`;
+      html=skipDayPanelHTML(iso);
     }else{
       const isPast=date<new Date()&&iso!==todayISO();
       html=`<div style="text-align:center;padding:32px 16px">
         <div style="font-size:32px;margin-bottom:10px">${isPast?'😴':'📅'}</div>
         <div class="bc" style="font-size:15px;color:var(--tm)">${isPast?'Kein Training an diesem Tag':'Noch kein Eintrag'}</div>
         ${!isPast&&plannedDay?`<button onclick="closeCalendarDay();startWorkout('${plannedDay.id}')" style="margin-top:14px;padding:10px 20px;background:${plannedDay.color};border-radius:10px;color:#fff;font-size:14px;font-weight:700">${plannedDay.name} starten</button>`:''}
-        ${canUseGraceSkip(iso)?`<button onclick="confirmGraceSkip('${iso}');closeCalendarDay()" style="margin-top:10px;padding:10px 16px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);border-radius:10px;color:var(--amber);font-size:13px;font-weight:700">Training überspringen (Skip)</button>`:''}
+        ${canUseGraceSkip(iso)?`<button onclick="confirmGraceSkip('${iso}');closeCalendarDay()" style="margin-top:10px;padding:10px 16px;background:linear-gradient(160deg,rgba(45,50,62,.85),rgba(22,26,36,.95));border:1px solid ${SKIP_VIS.border};border-radius:10px;color:${SKIP_VIS.text};font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px">${skipIconSVG(14)} Training überspringen</button>`:''}
       </div>`;
     }
   } else if(isGraceSkipped(iso)&&!sessions.length&&!cardioSessions.length){
-    html=`<div style="text-align:center;padding:24px 16px">
-      <div style="font-size:28px;margin-bottom:8px">⏭️</div>
-      <div class="bc" style="font-size:15px;font-weight:700;color:var(--amber)">Training übersprungen</div>
-      <div class="bc" style="font-size:11px;color:var(--tm);margin-top:4px">Streak wurde geschützt</div>
-      <button onclick="undoGraceSkip('${iso}');closeCalendarDay();setTimeout(()=>openCalendarDay('${iso}'),200)" style="margin-top:12px;padding:8px 14px;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:12px;font-weight:700">Skip zurücknehmen</button>
-    </div>`;
+    html=skipDayPanelHTML(iso);
   } else {
     // Kraft-Trainings
     sessions.forEach(h=>{
@@ -2821,7 +2838,7 @@ function renderCalendar(){
     const plannedDay=plannedDayId?WORKOUT_DAYS.find(d=>d.id===plannedDayId):null;
     const isRest=!plannedDayId;
     const hasCardio=cardioDates.has(iso);
-    const graceSkip=isGraceSkipped(iso);
+    const graceSkip=!trained&&isGraceSkipped(iso);
     const dayCompleted=trained||hasCardio||graceSkip;
     const isMissed=!dayCompleted&&!isRest&&plannedDay&&cellDate<now&&iso!==todayIso;
     const doneColor=trainedDay?.color||plannedDay?.color||'var(--green)';
@@ -2832,8 +2849,8 @@ function renderCalendar(){
       cellBg=doneColor+'50';
       dotHtml=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${doneColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
     } else if(graceSkip){
-      cellBg='rgba(245,158,11,.18)';
-      dotHtml=`<span style="font-size:9px;color:var(--amber)">⏭</span>`;
+      cellBg='transparent';
+      dotHtml=skipIconSVG(11);
     } else if(hasCardio&&!trained){
       cellBg='#10B98150';
       dotHtml=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
@@ -2854,16 +2871,17 @@ function renderCalendar(){
     const ringColor=isToday?(plannedDay?plannedDay.color:'var(--blue)'):'';
     const todayRing=isToday?`box-shadow:inset 0 0 0 2px ${ringColor};`:'';
     const numBg=isToday?'var(--blue)':'transparent';
-    const numColor=isToday?'#fff':dayCompleted?'#fff':isRest?'var(--tm)':isMissed?'rgba(239,68,68,0.45)':'var(--ts)';
-    const numFw=isToday||trained?700:400;
+    const numColor=isToday?'#fff':graceSkip?SKIP_VIS.text:dayCompleted?'#fff':isRest?'var(--tm)':isMissed?'rgba(239,68,68,0.45)':'var(--ts)';
+    const numFw=isToday||dayCompleted?700:400;
     const cardioDot=hasCardio?`<div style="width:5px;height:5px;border-radius:99px;background:#10B981;margin-top:1px"></div>`:'';
 
     // Klickbar: jede Zelle öffnet Day-Detail (auch Ruhetage)
-    const hasContent=trained||hasCardio;
+    const hasContent=trained||hasCardio||graceSkip;
     const cursor=hasContent?'cursor:pointer;':'cursor:default;';
     const onclick=`onclick="openCalendarDay('${iso}')"`;
+    const skipClass=graceSkip?' cal-skipped':'';
 
-    html+=`<div class="cal-cell" style="background:${cellBg};${todayRing}${cursor}" ${onclick}>
+    html+=`<div class="cal-cell${skipClass}" style="background:${cellBg};${todayRing}${cursor}" ${onclick}>
       <div style="width:24px;height:24px;border-radius:99px;display:flex;align-items:center;justify-content:center;background:${numBg}">
         <span class="bc" style="font-size:12px;font-weight:${numFw};color:${numColor}">${day}</span>
       </div>
@@ -2883,7 +2901,10 @@ function renderCalendar(){
         <div style="width:10px;height:10px;border-radius:3px;background:${d.color}"></div>
         <span class="bc" style="font-size:11px;color:var(--tm)">${d.tag} ${d.name}</span>
       </div>`;
-    }).join('');
+    }).join('')+`<div style="display:flex;align-items:center;gap:4px;width:100%;margin-top:2px">
+      <span style="display:inline-flex;width:12px;height:12px;border-radius:3px;background:linear-gradient(160deg,rgba(45,50,62,.94),rgba(22,26,36,.98));border:1px solid ${SKIP_VIS.border};align-items:center;justify-content:center">${skipIconSVG(7)}</span>
+      <span class="bc" style="font-size:11px;color:var(--tm)">Übersprungen (Skip)</span>
+    </div>`;
 
   // Trainings des Monats (Scroll-Liste unten) — Kraft + Cardio kombiniert
   const mCombined=[
