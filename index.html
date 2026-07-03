@@ -1127,6 +1127,7 @@ let history=safeParse('af_history',[]);
 migrateHistoryEntries();
 let weightLog=safeParse('af_weights',[]);
 let cardioLog=safeParse('af_cardio',[]);
+migrateCardioTimes();
 let currentWeight=weightLog.length?weightLog[weightLog.length-1].kg:settings.startKg;
 let activeWorkoutDay=null,workoutExercises=[],workoutElapsed=0,workoutTimer=null,timerRunning=false,_timerStartTS=0,workoutBaselineSignature='',_pendingPlanSave=null;
 let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
@@ -2813,7 +2814,7 @@ function renderCalendar(){
   document.getElementById('cal-stats').innerHTML=[
     {l:'Kraft',  v:mSessions.length,            c:'var(--blue)'},
     {l:'Cardio', v:mCardio.length,               c:'#10B981'},
-    {l:'Minuten',v:mSessions.reduce((a,h)=>a+h.duration,0)+mCardio.reduce((a,e)=>a+e.time,0), c:'var(--amber)'},
+    {l:'Minuten',v:fmtMins(mSessions.reduce((a,h)=>a+h.duration,0)+sumMins(mCardio,e=>e.time)), c:'var(--amber)'},
   ].map(s=>`<div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
     <div class="bc" style="font-size:22px;font-weight:800;color:${s.c}">${s.v}</div>
     <div class="bc" style="font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.07em">${s.l}</div>
@@ -2937,7 +2938,7 @@ function renderCalendar(){
             <div class="bc" style="font-size:11px;color:var(--tm)">${fmtL(item.date)}${item.note?` · <em style="color:var(--ts)">"${item.note}"</em>`:''}</div>
           </div>
           <div style="text-align:right">
-            <div class="bc" style="font-size:15px;font-weight:800;color:#10B981">${item.time} min</div>
+            <div class="bc" style="font-size:15px;font-weight:800;color:#10B981">${fmtMins(item.time)} min</div>
             ${item.hr?`<div class="bc" style="font-size:11px;color:var(--tm)">${item.hr} bpm</div>`:''}
           </div>
         </div>`;
@@ -3130,7 +3131,7 @@ function exportCSV(){
   csv+='\n## CARDIO\n';
   csv+='Datum,Typ,Zeit(min),Distanz_km,Distanz_m,Herzfrequenz,Notiz\n';
   cardioLog.forEach(e=>{
-    csv+=`${e.date},"${CARDIO_TYPES[e.type]?.label||e.type}",${e.time},${e.dist||''},${e.meters||''},${e.hr||''},"${e.note||''}"\n`;
+    csv+=`${e.date},"${CARDIO_TYPES[e.type]?.label||e.type}",${fmtMins(e.time)},${e.dist||''},${e.meters||''},${e.hr||''},"${e.note||''}"\n`;
   });
 
   // Erholung
@@ -3223,7 +3224,7 @@ function importCSV(file){
       else if(section==='cardio'&&cols.length>=3){
         const typeLabel=cols[1]?.replace(/"/g,'');
         const type=Object.entries(CARDIO_TYPES).find(([,c])=>c.label===typeLabel)?.[0]||typeLabel?.toLowerCase()||'walking';
-        const time=parseFloat(cols[2]);if(!time||time<=0)return;
+        const time=roundMins(parseFloat(cols[2]),2);if(!time||time<=0)return;
         const dist=parseFloat(cols[3])||null;
         const meters=parseFloat(cols[4])||null;
         const hr=parseInt(cols[5])||null;
@@ -3404,7 +3405,8 @@ function applyJSONMerge(payload){
 
   (d.cardio||[]).forEach(c=>{
     if(!c?.date||!c.type||!c.time)return;
-    if(!cardioLog.find(x=>x.date===c.date&&x.type===c.type&&Math.abs((x.time||0)-(c.time||0))<1)){cardioLog.push(c);importedC++;}
+    const entry={...c,time:roundMins(c.time,2)};
+    if(!cardioLog.find(x=>x.date===entry.date&&x.type===entry.type&&Math.abs((x.time||0)-(entry.time||0))<1)){cardioLog.push(entry);importedC++;}
   });
   if(importedC>0){cardioLog.sort((a,b)=>a.date.localeCompare(b.date));saveC();}
 
@@ -3589,12 +3591,36 @@ const CARDIO_TYPES = {
 };
 
 // Helpers for time display
+function roundMins(mins,decimals=2){
+  if(mins==null||isNaN(mins))return 0;
+  const f=Math.pow(10,decimals);
+  return Math.round(mins*f)/f;
+}
+function fmtMins(mins){
+  const r=roundMins(mins,2);
+  if(Math.abs(r-Math.round(r))<0.001)return String(Math.round(r));
+  return r.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+}
+function sumMins(entries,getVal=(e)=>e){
+  return roundMins(entries.reduce((a,e)=>a+(parseFloat(getVal(e))||0),0),2);
+}
 function minsToHMS(totalMins){
-  const h=Math.floor(totalMins/60),m=Math.floor(totalMins%60),s=Math.round((totalMins-Math.floor(totalMins))*60);
+  totalMins=roundMins(totalMins,2);
+  const totalSec=Math.round(totalMins*60);
+  const h=Math.floor(totalSec/3600),m=Math.floor((totalSec%3600)/60),s=totalSec%60;
   if(h>0)return h+'h '+String(m).padStart(2,'0')+'min'+(s>0?' '+String(s).padStart(2,'0')+'s':'');
   return m+'min'+(s>0?' '+String(s).padStart(2,'0')+'s':'');
 }
-function hmsToMins(h,m,s){return(parseInt(h)||0)*60+(parseInt(m)||0)+(parseInt(s)||0)/60;}
+function hmsToMins(h,m,s){return roundMins((parseInt(h)||0)*60+(parseInt(m)||0)+(parseInt(s)||0)/60,2);}
+function migrateCardioTimes(){
+  let changed=false;
+  cardioLog.forEach(e=>{
+    if(e.time==null)return;
+    const r=roundMins(e.time,2);
+    if(r!==e.time){e.time=r;changed=true;}
+  });
+  if(changed)saveC();
+}
 
 
 
@@ -3715,7 +3741,7 @@ function getCardioTimeMins(){
   const h=parseInt(document.getElementById('cardio-time-h')?.value)||0;
   const m=parseInt(document.getElementById('cardio-time-m')?.value)||0;
   const s=parseInt(document.getElementById('cardio-time-s')?.value)||0;
-  return h*60+m+s/60;
+  return roundMins(h*60+m+s/60,2);
 }
 
 function updateCardioCalc(){
@@ -3740,7 +3766,7 @@ function addCardioEntry(){
   if(!time||time<=0){showToast('Bitte Zeit eingeben');return;}
   if(!date){showToast('Bitte Datum wählen');return;}
   const cfg=CARDIO_TYPES[activeCardioType];
-  let entry={date,time,note,type:activeCardioType,hr:hr||undefined};
+  let entry={date,time:roundMins(time,2),note,type:activeCardioType,hr:hr||undefined};
   if(cfg.fields.includes('meters')){const m=parseFloat(document.getElementById('cardio-meters')?.value);if(!isNaN(m)&&m>0)entry.meters=m;}
   if(cfg.fields.includes('dist')){const d=parseFloat(document.getElementById('cardio-dist')?.value);if(!isNaN(d)&&d>0)entry.dist=d;}
   cardioLog.push(entry);cardioLog.sort((a,b)=>a.date.localeCompare(b.date));saveC();
@@ -3991,12 +4017,12 @@ function renderProgress(){renderProgressPhotos();
   const totalWorkouts=history.length;
   const totalCardio=cardioLog.length;
   const totalSets=history.reduce((a,h)=>a+h.sets,0);
-  const totalCardioMin=cardioLog.reduce((a,e)=>a+e.time,0);
+  const totalCardioMin=sumMins(cardioLog,e=>e.time);
   document.getElementById('stats-overview').innerHTML=[
     {l:'Workouts',v:totalWorkouts,c:'var(--blue)'},
     {l:'Sätze',v:totalSets,c:'var(--tp)'},
     {l:'Cardio',v:totalCardio,c:'var(--green)'},
-    {l:'Cardio min',v:totalCardioMin,c:'var(--amber)'},
+    {l:'Cardio min',v:fmtMins(totalCardioMin),c:'var(--amber)'},
   ].map(s=>`<div style="flex:1;min-width:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center">
     <div class="bc" style="font-size:22px;font-weight:800;color:${s.c}">${s.v}</div>
     <div class="bc" style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">${s.l}</div>
@@ -4020,20 +4046,20 @@ function renderProgress(){renderProgressPhotos();
       statsCardioEl.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
         ${[
           {l:'Einheiten',v:cardioLog.length,c:'var(--green)'},
-          {l:'Ges. Minuten',v:cardioLog.reduce((a,e)=>a+e.time,0),c:'var(--amber)'},
+          {l:'Ges. Minuten',v:fmtMins(sumMins(cardioLog,e=>e.time)),c:'var(--amber)'},
         ].map(s=>`<div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center"><div class="bc" style="font-size:22px;font-weight:800;color:${s.c}">${s.v}</div><div class="bc" style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">${s.l}</div></div>`).join('')}
       </div>
       ${presentTypes.map(type=>{
         const cfg=CARDIO_TYPES[type]||{color:'var(--green)',label:type,icon:'•'};
         const td=cardioLog.filter(e=>e.type===type);
-        const tTime=td.reduce((a,e)=>a+e.time,0);
+        const tTime=sumMins(td,e=>e.time);
         let extra='';
         if(type==='rowing'){const tM=td.reduce((a,e)=>a+(e.meters||0),0);if(tM>0)extra=`${tM.toFixed(0)} m`;}
         else{const tD=td.reduce((a,e)=>a+(e.dist||0),0);if(tD>0)extra=`${tD.toFixed(1)} km`;}
         return`<div style="background:var(--card);border:1px solid ${cfg.color}30;border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
           <span style="font-size:20px">${cfg.icon}</span>
           <div style="flex:1"><div class="bc" style="font-size:14px;font-weight:700;color:${cfg.color}">${cfg.label}</div>
-          <div class="bc" style="font-size:11px;color:var(--tm)">${td.length}× · ${tTime} min${extra?' · '+extra:''}</div></div>
+          <div class="bc" style="font-size:11px;color:var(--tm)">${td.length}× · ${fmtMins(tTime)} min${extra?' · '+extra:''}</div></div>
         </div>`;
       }).join('')}`;
     }
@@ -4436,7 +4462,7 @@ function saveCardioEdit(idx){
   const h=parseInt(document.getElementById('edit-time-h')?.value)||0;
   const m=parseInt(document.getElementById('edit-time-m')?.value)||0;
   const s=parseInt(document.getElementById('edit-time-s')?.value)||0;
-  const time=h*60+m+s/60;
+  const time=roundMins(h*60+m+s/60,2);
   if(!time||time<=0){showToast('Zeit eingeben');return;}
   e.time=time;
   e.date=document.getElementById('edit-date')?.value||e.date;
