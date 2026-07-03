@@ -1121,6 +1121,7 @@ function loadSettings(){
 let settings=loadSettings();
 applyActivePlan();
 let history=safeParse('af_history',[]);
+migrateHistoryEntries();
 let weightLog=safeParse('af_weights',[]);
 let cardioLog=safeParse('af_cardio',[]);
 let currentWeight=weightLog.length?weightLog[weightLog.length-1].kg:settings.startKg;
@@ -1189,6 +1190,21 @@ function getTrainedDayForDate(iso){
     if(d)return d;
   }
   return null;
+}
+function migrateHistoryEntries(){
+  let changed=false;
+  history.forEach(h=>{
+    if(h.date){
+      const norm=dateToISO(parseISODateLocal(h.date));
+      if(h.date!==norm){h.date=norm;changed=true;}
+    }
+    if(h.dayId&&WORKOUT_DAYS.find(d=>d.id===h.dayId))return;
+    const phasePlan=WORKOUT_PLANS[h.phaseId||'p1'];
+    if(h.dayId&&phasePlan?.days.find(d=>d.id===h.dayId))return;
+    const byName=WORKOUT_DAYS.find(d=>d.name===h.name)||phasePlan?.days.find(d=>d.name===h.name);
+    if(byName){h.dayId=byName.id;changed=true;}
+  });
+  if(changed)save();
 }
 function canUseGraceSkip(iso){
   if(!iso||iso>todayISO())return false;
@@ -2486,7 +2502,7 @@ function doFinishWorkout(){
       return{name:ex.name,sets:done,isPR};
     }).filter(ex=>ex.sets.length>0),
   };
-  history.push(entry);save();workoutExercises=[];activeWorkoutDay=null;timerRunning=false;workoutBaselineSignature='';clearSession();
+  history.push(entry);save();renderDashboard();workoutExercises=[];activeWorkoutDay=null;timerRunning=false;workoutBaselineSignature='';clearSession();
   haptic('done'); showToast('Training gespeichert! 💪');
   if(!showWorkoutSummary(entry)){switchTab('stats');switchStatsTab('history');}
 }
