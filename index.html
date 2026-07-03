@@ -1009,6 +1009,7 @@ const COOLDOWN=["Brust dehnen 30s je Seite","Schulter Stretch 30s","Nackenmobili
 const GOAL_KG=77;
 const BF_MIN=12,BF_MAX=18;
 const SCHEMA_VERSION=3;
+const APP_BUILD='2026.07.03';
 const BACKUP_FORMAT_VERSION=1;
 const SESSION_KEY='af_active_session';
 const PROGRAM_WEEKS=12;
@@ -4939,6 +4940,7 @@ function renderSettings(){
     } else {
       backupInfoEl.innerHTML=`⚠️ <strong style="color:var(--amber)">Noch kein Backup</strong> · ${totalEntries} Einträge nicht gesichert`;
     }
+    backupInfoEl.innerHTML+=`<div style="margin-top:6px;font-size:10px;color:var(--tm);opacity:.7">App-Version ${APP_BUILD}</div>`;
   }
     // Notification Status
   const ns=getNotificationStatus();
@@ -5288,7 +5290,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 if('serviceWorker' in navigator){
-  const sw=`const C='af-v9';const ASSETS=['.','manifest.webmanifest','icons/icon.svg','https://unpkg.com/body-muscles@1.0.0/dist/umd/body-muscles.umd.min.js'];self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS)));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!=='af-v9').map(k=>caches.delete(k)))));});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match('.'))));});`;
+  const sw=`const C='af-v10';const ASSETS=['.','manifest.webmanifest','icons/icon.svg','https://unpkg.com/body-muscles@1.0.0/dist/umd/body-muscles.umd.min.js'];self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS)));self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!=='af-v10').map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).then(r=>r).catch(()=>caches.match(e.request).then(r=>r||caches.match('.'))));});`;
   const blob=new Blob([sw],{type:'application/javascript'});
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
 }
