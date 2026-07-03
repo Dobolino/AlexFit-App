@@ -1175,6 +1175,21 @@ function isPlannedTrainingDay(iso){return !!PLAN_DOW[parseISODateLocal(iso).getD
 function hasTrainingOnDate(iso){
   return history.some(h=>h.date===iso)||cardioLog.some(e=>e.date===iso);
 }
+function getTrainedDayForDate(iso){
+  const entries=history.filter(h=>h.date===iso);
+  if(!entries.length)return null;
+  for(let i=entries.length-1;i>=0;i--){
+    const h=entries[i];
+    let d=WORKOUT_DAYS.find(x=>x.id===h.dayId);
+    if(d)return d;
+    const plan=WORKOUT_PLANS[h.phaseId||'p1'];
+    if(plan) d=plan.days.find(x=>x.id===h.dayId);
+    if(d)return d;
+    d=WORKOUT_DAYS.find(x=>x.name===h.name);
+    if(d)return d;
+  }
+  return null;
+}
 function canUseGraceSkip(iso){
   if(!iso||iso>todayISO())return false;
   if(!isPlannedTrainingDay(iso))return false;
@@ -1969,22 +1984,25 @@ function renderDashboard(){
 }
 
 function renderWeekStrip(){
-  const now=new Date(),todayIso=todayISO();const trainedDates=new Set(history.map(h=>h.date));const dayIdByDate={};history.forEach(h=>{dayIdByDate[h.date]=h.dayId;});
+  const now=new Date(),todayIso=todayISO();const trainedDates=new Set(history.map(h=>h.date));
   const cardioDatesWS=new Set(cardioLog.map(e=>e.date));
   const monday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
   let html='<div class="week-strip">';
   WEEK_ORDER.forEach((wd,i)=>{
     const cellDate=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i);
     const iso=cellDate.getFullYear()+'-'+String(cellDate.getMonth()+1).padStart(2,'0')+'-'+String(cellDate.getDate()).padStart(2,'0');
-    const isToday=iso===todayIso;const trained=trainedDates.has(iso);const hasCardioWS=cardioDatesWS.has(iso);const trainedDay=trained?WORKOUT_DAYS.find(d=>d.id===dayIdByDate[iso]):null;
+    const isToday=iso===todayIso;const trained=trainedDates.has(iso);const hasCardioWS=cardioDatesWS.has(iso);const trainedDay=trained?getTrainedDayForDate(iso):null;
     const plannedDayId=PLAN_DOW[wd.dowJS];const plannedDay=plannedDayId?WORKOUT_DAYS.find(d=>d.id===plannedDayId):null;const isRest=!plannedDayId;const isPast=cellDate<now&&!isToday;
-    const dayDoneWS=trained||hasCardioWS;
+    const graceSkip=isGraceSkipped(iso);
+    const dayDoneWS=trained||hasCardioWS||graceSkip;
+    const doneColor=trainedDay?.color||plannedDay?.color||'var(--green)';
     let bg='var(--card)',borderColor='var(--border)';
-    if(trained&&trainedDay){bg=trainedDay.color+'25';borderColor=trainedDay.color+'60';}
+    if(trained){bg=doneColor+'25';borderColor=doneColor+'60';}
+    else if(graceSkip){bg='rgba(245,158,11,.12)';borderColor='rgba(245,158,11,.35)';}
     else if(hasCardioWS&&!trained){bg='#10B98125';borderColor='#10B98160';}
     else if(isToday&&plannedDay){bg=plannedDay.color+'15';borderColor=plannedDay.color+'80';}
-    else if(isToday){bg='rgba(37,99,235,.12)';borderColor='var(--blue)';}    const numBg=isToday?'var(--blue)':'transparent';const numColor=isToday?'#fff':dayDoneWS?(trainedDay?.color||plannedDay?.color||'var(--tp)'):'var(--ts)';const numFw=isToday||dayDoneWS?700:400;
-    let badge='';if(trained&&trainedDay)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${trainedDay.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(hasCardioWS)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(isRest)badge=`<span class="bc" style="font-size:8px;color:var(--tm);opacity:.45">R</span>`;else if(plannedDay)badge=`<div style="width:7px;height:7px;border-radius:99px;background:${plannedDay.color};opacity:${isPast?'.3':'1'}"></div>`;
+    else if(isToday){bg='rgba(37,99,235,.12)';borderColor='var(--blue)';}    const numBg=isToday?'var(--blue)':'transparent';const numColor=isToday?'#fff':dayDoneWS?(trainedDay?.color||plannedDay?.color||(graceSkip?'var(--amber)':'var(--tp)')):'var(--ts)';const numFw=isToday||dayDoneWS?700:400;
+    let badge='';if(trained)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${doneColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(graceSkip)badge=`<span class="bc" style="font-size:10px;color:var(--amber)">⏭</span>`;else if(hasCardioWS)badge=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;else if(isRest)badge=`<span class="bc" style="font-size:8px;color:var(--tm);opacity:.45">R</span>`;else if(plannedDay)badge=`<div style="width:7px;height:7px;border-radius:99px;background:${plannedDay.color};opacity:${isPast?'.3':'1'}"></div>`;
     html+=`<div class="week-day" style="background:${bg};border-color:${borderColor};"><span class="day-label" style="${isToday?'color:var(--blue)':''}">${wd.label}</span><div class="day-num-wrap" style="background:${numBg}"><span class="bc" style="font-size:13px;font-weight:${numFw};color:${numColor}">${cellDate.getDate()}</span></div>${badge}</div>`;
   });
   html+='</div><div style="display:flex;gap:12px;padding:0 2px;margin-bottom:2px"><div style="display:flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span class="bc" style="font-size:10px;color:var(--tm)">Erledigt</span></div><div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:99px;background:var(--blue)"></div><span class="bc" style="font-size:10px;color:var(--tm)">Geplant</span></div><div style="display:flex;align-items:center;gap:4px"><span class="bc" style="font-size:10px;font-weight:700;color:var(--tm)">R</span><span class="bc" style="font-size:10px;color:var(--tm)">Ruhetag</span></div></div>';
@@ -2748,7 +2766,6 @@ function renderCalendar(){
   const now=new Date(),todayIso=todayISO();
   const prog1=parseISODateLocal(settings.programStart),prog2=parseISODateLocal(settings.programEnd);
   const trainedDates=new Set(history.map(h=>h.date));
-  const dayIdByDate={};history.forEach(h=>{dayIdByDate[h.date]=h.dayId;});
   const cardioDates=new Set(cardioLog.map(j=>j.date));
 
   const mSessions=history.filter(h=>{
@@ -2783,19 +2800,24 @@ function renderCalendar(){
     const jsDow=cellDate.getDay();
     const isToday=iso===todayIso;
     const trained=trainedDates.has(iso);
-    const trainedDay=trained?WORKOUT_DAYS.find(d=>d.id===dayIdByDate[iso]):null;
+    const trainedDay=trained?getTrainedDayForDate(iso):null;
     const plannedDayId=PLAN_DOW[jsDow];
     const plannedDay=plannedDayId?WORKOUT_DAYS.find(d=>d.id===plannedDayId):null;
     const isRest=!plannedDayId;
     const hasCardio=cardioDates.has(iso);
-    const dayCompleted=trained||hasCardio;
+    const graceSkip=isGraceSkipped(iso);
+    const dayCompleted=trained||hasCardio||graceSkip;
     const isMissed=!dayCompleted&&!isRest&&plannedDay&&cellDate<now&&iso!==todayIso;
+    const doneColor=trainedDay?.color||plannedDay?.color||'var(--green)';
 
     // Hintergrundfarbe
     let cellBg,dotHtml='',tagLabel='';
-    if(trained&&trainedDay){
-      cellBg=trainedDay.color+'50';
-      dotHtml=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${trainedDay.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+    if(trained){
+      cellBg=doneColor+'50';
+      dotHtml=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${doneColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+    } else if(graceSkip){
+      cellBg='rgba(245,158,11,.18)';
+      dotHtml=`<span style="font-size:9px;color:var(--amber)">⏭</span>`;
     } else if(hasCardio&&!trained){
       cellBg='#10B98150';
       dotHtml=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
