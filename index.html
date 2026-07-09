@@ -12,6 +12,27 @@
 <link rel="apple-touch-icon" href="icons/icon.svg">
 <title>AlexFit</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script>(function(){try{
+  function drawIcon(sz){
+    const c=document.createElement('canvas');c.width=c.height=sz;
+    const ctx=c.getContext('2d');
+    const r=sz*0.22;
+    ctx.fillStyle='#080B10';
+    ctx.beginPath();ctx.moveTo(r,0);ctx.lineTo(sz-r,0);ctx.arcTo(sz,0,sz,r,r);ctx.lineTo(sz,sz-r);ctx.arcTo(sz,sz,sz-r,sz,r);ctx.lineTo(r,sz);ctx.arcTo(0,sz,0,sz-r,r);ctx.lineTo(0,r);ctx.arcTo(0,0,r,0,r);ctx.closePath();ctx.fill();
+    ctx.font=Math.round(sz*0.62)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('💪',sz/2,sz*0.53);
+    return c.toDataURL('image/png');
+  }
+  const png192=drawIcon(192);
+  const png512=drawIcon(512);
+  const svgFav=encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#080B10"/><text x="50" y="76" text-anchor="middle" font-size="72" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">💪</text></svg>');
+  const fi=document.createElement('link');fi.rel='icon';fi.type='image/svg+xml';fi.href='data:image/svg+xml,'+svgFav;document.head.appendChild(fi);
+  const ai=document.createElement('link');ai.rel='apple-touch-icon';ai.sizes='192x192';ai.href=png192;document.head.appendChild(ai);
+  const mf={name:'AlexFit',short_name:'AlexFit',description:'Persönlicher Trainings-Tracker',start_url:'.',display:'standalone',background_color:'#080B10',theme_color:'#080B10',orientation:'portrait',icons:[{src:png192,sizes:'192x192',type:'image/png',purpose:'any'},{src:png512,sizes:'512x512',type:'image/png',purpose:'maskable'}]};
+  const mb=new Blob([JSON.stringify(mf)],{type:'application/json'});
+  const ml=document.createElement('link');ml.rel='manifest';ml.href=URL.createObjectURL(mb);document.head.appendChild(ml);
+}catch(e){}}())</script>
 <style>
   :root{--bg:#080B10;--card:#0F1219;--cardElev:#151B27;--border:#1E2535;--blue:#2563EB;--green:#10B981;--amber:#F59E0B;--red:#EF4444;--tp:#F0F2F5;--tm:#5A6478;--ts:#8A95A8;--safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);--glass-bg:rgba(255,255,255,.07);--glass-border:rgba(255,255,255,.14);--glass-highlight:rgba(255,255,255,.18);--glass-shadow:rgba(0,0,0,.45);--nav-indicator:rgba(37,99,235,.42);--nav-indicator-border:rgba(147,197,253,.35);}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;}
