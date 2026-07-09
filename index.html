@@ -2193,7 +2193,15 @@ function openWorkoutPreview(dayId){
             <span class="bc" style="font-size:11px;color:var(--tm)">${ex.reps}</span>
             ${rpeStr?`<span style="background:${getRPEColor(lp.avgRpe)}22;border:1px solid ${getRPEColor(lp.avgRpe)}44;border-radius:4px;padding:0 5px"><span class="bc" style="font-size:10px;font-weight:700;color:${getRPEColor(lp.avgRpe)}">${rpeStr}</span></span>`:''}
           </div>
-          ${(()=>{const r=WEIGHT_RANGES[ex.name];if(!r||ex.bw)return'';return`<div style="display:flex;gap:4px;margin-top:4px"><span style="background:#10b98118;border:1px solid #10b98130;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#10B981">A ${r[0]}–${r[1]}</span></span><span style="background:#f59e0b18;border:1px solid #f59e0b30;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#F59E0B">F ${r[2]}–${r[3]}</span></span><span style="background:#ef444418;border:1px solid #ef444430;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#EF4444">T ${r[4]}–${r[5]} kg</span></span></div>`;})()}
+          ${(()=>{
+            const hasNote=s=>ex.note&&ex.note.includes(s);
+            if(ex.bw&&hasNote('Dropset'))return`<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap"><span style="background:#ef444418;border:1px solid #ef444430;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#EF4444">① gestreckt</span></span><span style="background:#f59e0b18;border:1px solid #f59e0b30;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#F59E0B">② mittel</span></span><span style="background:#10b98118;border:1px solid #10b98130;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#10B981">③ gebeugt</span></span><span style="background:var(--cardElev);border:1px solid var(--border);border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:var(--tm)">letzter Satz</span></span></div>`;
+            const r=WEIGHT_RANGES[ex.name];if(!r||ex.bw)return'';
+            const badges=(v0,v1,v2,v3,v4,v5,extra)=>`<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap"><span style="background:#10b98118;border:1px solid #10b98130;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#10B981">A ${v0}–${v1}</span></span><span style="background:#f59e0b18;border:1px solid #f59e0b30;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#F59E0B">F ${v2}–${v3}</span></span><span style="background:#ef444418;border:1px solid #ef444430;border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:#EF4444">T ${v4}–${v5} kg</span></span>${extra}</div>`;
+            if(hasNote('Superset')){const a=r.map(v=>Math.round(v*0.85));return badges(a[0],a[1],a[2],a[3],a[4],a[5],`<span style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:var(--amber)">−15% Superset</span></span>`);}
+            if(hasNote('Dropset'))return badges(r[0],r[1],r[2],r[3],r[4],r[5],`<span style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:4px;padding:1px 5px"><span class="bc" style="font-size:9px;color:var(--amber)">↓70% letzter Satz</span></span>`);
+            return badges(r[0],r[1],r[2],r[3],r[4],r[5],'');
+          })()}
         </div>
         ${lpStr?`<div style="text-align:right;flex-shrink:0">
           <div class="bc" style="font-size:13px;font-weight:800;color:${d.color}">${lpStr}</div>
@@ -2344,6 +2352,7 @@ function renderExerciseList(){
         <div id="ex-1rm-${ei}" style="display:none;padding:5px 10px 4px;border-top:1px dashed var(--border);text-align:right">
           <span class="bc" style="font-size:10px;color:var(--blue)">Bestes 1RM ≈ <strong id="ex-1rm-val-${ei}">—</strong> kg</span>
         </div>
+        ${(()=>{if(!ex.bw||!ex.note||!ex.note.includes('Dropset'))return'';const lastS=ex.setData[ex.setData.length-1];const active=!!lastS.leverageDrop;const seen=!!settings.leverageDropsetSeen;return`<div style="border-top:1px dashed var(--amber);padding:10px 12px;background:rgba(245,158,11,.04)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${active?'10px':'0'}"><div style="display:flex;align-items:center;gap:6px"><span class="bc" style="font-size:10px;font-weight:800;color:var(--amber)">🔽 HEBEL-DROPSET</span><span class="bc" style="font-size:9px;color:var(--tm)">letzter Satz</span></div><button onclick="toggleLeverageDropset(${ei})" style="background:${active?'rgba(245,158,11,.2)':'var(--cardElev)'};border:1px solid ${active?'var(--amber)':'var(--border)'};border-radius:7px;padding:4px 10px"><span class="bc" style="font-size:10px;font-weight:700;color:${active?'var(--amber)':'var(--tm)'}">${active?'Aktiv ✓':'Aktivieren'}</span></button></div>${active?`${!seen?`<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:8px 10px;margin-bottom:10px"><span style="font-size:10px;color:var(--red)">⚠️ Bei Schulterproblemen: Übergänge zwischen Stufen langsam und kontrolliert ausführen, nicht unter Volllast reißen.</span></div>`:''}${[['#EF4444','① Gestreckt','reps',lastS.reps||'',`setVal(${ei},${ex.setData.length-1},'reps',this.value)`],['#F59E0B','② Mittel','drop2reps',lastS.drop2reps||'',`setLeverageDropReps(${ei},2,this.value)`],['#10B981','③ Gebeugt','drop3reps',lastS.drop3reps||'',`setLeverageDropReps(${ei},3,this.value)`]].map(([col,label,,val,oninput])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:${col}12;border:1px solid ${col}30;border-radius:8px;margin-bottom:6px"><span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></span><span class="bc" style="font-size:11px;color:var(--tp);flex:1">${label}</span><input type="number" inputmode="numeric" value="${val}" placeholder="Wdh" oninput="${oninput}" style="width:50px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--tp);font-size:13px;font-family:'Barlow Condensed',sans-serif;text-align:center"></div>`).join('')}`:''}`;})()}
         <button class="add-set-btn" onclick="addSet(${ei})">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Satz hinzufügen
         </button>
@@ -2384,6 +2393,20 @@ function swapExercise(ei,newName){
   saveSession();renderExerciseList();showToast(`Gewechselt: ${newName} ✓`);
 }
 
+function toggleLeverageDropset(ei){
+  const ex=workoutExercises[ei];
+  const lastS=ex.setData[ex.setData.length-1];
+  lastS.leverageDrop=!lastS.leverageDrop;
+  if(lastS.leverageDrop&&!settings.leverageDropsetSeen){settings.leverageDropsetSeen=true;saveSettings();}
+  saveSession();renderExerciseList();
+}
+function setLeverageDropReps(ei,stage,val){
+  const ex=workoutExercises[ei];
+  const lastS=ex.setData[ex.setData.length-1];
+  if(stage===2)lastS.drop2reps=val;
+  else if(stage===3)lastS.drop3reps=val;
+  saveSession();
+}
 function setVal(ei,si,field,val){
   workoutExercises[ei].setData[si][field]=val;saveSession();
   update1RM(ei);
@@ -2546,7 +2569,7 @@ function doFinishWorkout(){
   const entry={id:'h'+Date.now(),dayId:finishedDay.id,phaseId:getActivePhaseId(),name:finishedDay.name,date:todayISO(),duration:Math.max(1,Math.round(workoutElapsed/60)),note:workoutNote||undefined,
     sets:workoutExercises.reduce((a,ex)=>a+ex.setData.filter(s=>s.done).length,0),
     exercises:workoutExercises.map(ex=>{
-      const bw=isBW(ex.name);const done=ex.setData.filter(s=>s.done).map(s=>({weight:parseFloat(s.weight)||0,reps:parseInt(s.reps)||0,...(s.rpe?{rpe:s.rpe}:{})}));
+      const bw=isBW(ex.name);const done=ex.setData.filter(s=>s.done).map(s=>({weight:parseFloat(s.weight)||0,reps:parseInt(s.reps)||0,...(s.rpe?{rpe:s.rpe}:{}),...(s.leverageDrop?{leverageDrop:true,drop2reps:parseInt(s.drop2reps)||0,drop3reps:parseInt(s.drop3reps)||0}:{})}));
       let isPR=false;if(done.length>0){const prev=prMap[ex.name];if(bw){const mx=Math.max(...done.map(s=>s.reps));isPR=!prev||mx>prev.reps;}else{const mx=Math.max(...done.map(s=>s.weight));isPR=!prev||mx>prev.weight;}}
       return{name:ex.name,sets:done,isPR};
     }).filter(ex=>ex.sets.length>0),
@@ -2587,7 +2610,7 @@ function createSetFromLast(exName,setIndex){
   const prev=getLastSetValues(exName,setIndex);
   if(!prev)return{weight:'',reps:'',done:false};
   const bw=isBW(exName);
-  if(bw)return{weight:'',reps:prev.reps?String(prev.reps):'',done:false,...(prev.rpe?{rpe:prev.rpe}:{})};
+  if(bw)return{weight:'',reps:prev.reps?String(prev.reps):'',done:false,...(prev.rpe?{rpe:prev.rpe}:{}),...(prev.leverageDrop?{leverageDrop:true,drop2reps:String(prev.drop2reps||''),drop3reps:String(prev.drop3reps||'')}:{})};
   const w=parseFloat(prev.weight)||0;
   return{
     weight:w>0?String(w):'',
@@ -2604,6 +2627,7 @@ function formatLastSetLabel(ex,prev){
   if(!prev)return null;
   if(ex.bw){
     const r=parseInt(prev.reps)||0;
+    if(prev.leverageDrop&&(prev.drop2reps||prev.drop3reps)){const r2=parseInt(prev.drop2reps)||0;const r3=parseInt(prev.drop3reps)||0;return r>0?`↓${r}+${r2}+${r3} Wdh`:null;}
     return r>0?`${r} Wdh`:null;
   }
   const w=parseFloat(prev.weight)||0;
