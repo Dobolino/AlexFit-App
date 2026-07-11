@@ -398,6 +398,24 @@
             <button onclick="stepBF(+1)" style="flex:1;padding:9px;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:13px;font-weight:700">+1</button>
           </div>
         </div>
+        <!-- Muskelanteil 20–60%, Ziel 36–42% -->
+        <div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div class="bc" style="font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em">Muskelanteil (%)</div>
+            <div style="background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);border-radius:4px;padding:1px 6px"><span class="bc" style="font-size:9px;color:var(--blue);font-weight:700">Ziel: 36–42%</span></div>
+          </div>
+          <div class="weight-stepper">
+            <button onclick="stepMuscle(-0.5)">−</button>
+            <input id="w-muscle-input" type="number" inputmode="decimal" placeholder="z.B. 38.5" step="0.1">
+            <button onclick="stepMuscle(+0.5)">+</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button onclick="stepMuscle(-1)" style="flex:1;padding:9px;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:13px;font-weight:700">−1</button>
+            <button onclick="stepMuscle(-0.5)" style="flex:1;padding:9px;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:13px;font-weight:700">−0.5</button>
+            <button onclick="stepMuscle(+0.5)" style="flex:1;padding:9px;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:13px;font-weight:700">+0.5</button>
+            <button onclick="stepMuscle(+1)" style="flex:1;padding:9px;background:var(--cardElev);border:1px solid var(--border);border-radius:8px;color:var(--ts);font-size:13px;font-weight:700">+1</button>
+          </div>
+        </div>
         <div style="margin-bottom:14px">
           <div class="bc" style="font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Datum</div>
           <input id="w-date-input" class="weight-inp" type="date" style="padding:14px 12px;font-size:16px;">
@@ -3075,15 +3093,17 @@ function deleteHistory(id){showConfirm('Training löschen?',()=>{history=history
 
 function stepWeight(delta){const inp=document.getElementById('w-kg-input');const cur=parseFloat(inp.value)||currentWeight;const neu=Math.round((cur+delta)*10)/10;if(neu>=30&&neu<=300)inp.value=neu;}
 function stepBF(delta){const inp=document.getElementById('w-bf-input');const cur=parseFloat(inp.value)||20;const neu=Math.round((cur+delta)*10)/10;if(neu>=5&&neu<=40)inp.value=neu;}
+function stepMuscle(delta){const inp=document.getElementById('w-muscle-input');const cur=parseFloat(inp.value)||36;const neu=Math.round((cur+delta)*10)/10;if(neu>=20&&neu<=60)inp.value=neu;}
 
 function addWeightEntry(){
   const kgVal=parseFloat(document.getElementById('w-kg-input').value);const dateVal=document.getElementById('w-date-input').value;const note=document.getElementById('w-note-input').value.trim();
   if(isNaN(kgVal)||kgVal<30||kgVal>300){showToast('Bitte gültiges Gewicht eingeben');return;}
   if(!dateVal){showToast('Bitte Datum wählen');return;}
   const bfVal=parseFloat(document.getElementById('w-bf-input')?.value)||null;
-  weightLog.push({date:dateVal,kg:kgVal,note,bf:bfVal||undefined});weightLog.sort((a,b)=>a.date.localeCompare(b.date));saveW();
+  const muscleVal=parseFloat(document.getElementById('w-muscle-input')?.value)||null;
+  weightLog.push({date:dateVal,kg:kgVal,note,bf:bfVal||undefined,muscle:muscleVal||undefined});weightLog.sort((a,b)=>a.date.localeCompare(b.date));saveW();
   currentWeight=weightLog[weightLog.length-1].kg;updateWeightDisplay();
-  document.getElementById('w-kg-input').value='';document.getElementById('w-note-input').value='';const bfInp=document.getElementById('w-bf-input');if(bfInp)bfInp.value='';
+  document.getElementById('w-kg-input').value='';document.getElementById('w-note-input').value='';const bfInp=document.getElementById('w-bf-input');if(bfInp)bfInp.value='';const muscleInp=document.getElementById('w-muscle-input');if(muscleInp)muscleInp.value='';
   showToast('Gewicht gespeichert ✓');renderWeight();
 }
 function deleteWeightEntry(idx){showConfirm('Gewichtseintrag löschen?',()=>{weightLog.splice(idx,1);saveW();currentWeight=weightLog.length?weightLog[weightLog.length-1].kg:settings.startKg;updateWeightDisplay();renderWeight();showToast('Eintrag gelöscht');});}
@@ -3124,6 +3144,10 @@ function renderWeight(){
   const bfEntries=weightLog.filter(e=>e.bf);const currBF=bfEntries.length?bfEntries[bfEntries.length-1].bf:null;
   let bfColor='var(--tm)',bfLabel='';
   if(currBF){if(currBF<BF_MIN){bfColor='var(--blue)';bfLabel='Sehr schlank';}else if(currBF<=BF_MAX){bfColor='var(--green)';bfLabel='Im Zielbereich ✓';}else if(currBF<=25){bfColor='var(--amber)';bfLabel='Leicht erhöht';}else{bfColor='var(--red)';bfLabel='Zu hoch';}}
+  const MA_MIN=36,MA_MAX=42;
+  const muscleEntries=weightLog.filter(e=>e.muscle);const currMA=muscleEntries.length?muscleEntries[muscleEntries.length-1].muscle:null;
+  let maColor='var(--tm)',maLabel='';
+  if(currMA){if(currMA<MA_MIN){maColor='var(--amber)';maLabel='Unter Zielbereich';}else if(currMA<=MA_MAX){maColor='var(--blue)';maLabel='Im Zielbereich ✓';}else{maColor='var(--green)';maLabel='Sehr muskulös';}}
   document.getElementById('weight-stats').innerHTML=`
     <div style="background:var(--card);border:1px solid rgba(37,99,235,.4);border-radius:12px;padding:14px;margin-bottom:10px">
       <div class="bc" style="font-size:10px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:.09em;margin-bottom:10px">Aktueller Status</div>
@@ -3146,8 +3170,20 @@ function renderWeight(){
         <div style="position:absolute;left:${Math.min(currBF/50*100,98)}%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:99px;background:${bfColor};border:2px solid var(--card)"></div>
       </div>
       <div style="display:flex;justify-content:space-between"><span class="bc" style="font-size:9px;color:var(--tm)">0%</span><span class="bc" style="font-size:9px;color:var(--green)">Zielbereich ${BF_MIN}–${BF_MAX}%</span><span class="bc" style="font-size:9px;color:var(--tm)">50%</span></div>
+    </div>`:''}
+    ${currMA?`<div style="background:var(--card);border:1px solid ${maColor}40;border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="bc" style="font-size:10px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.09em">Muskelanteil</div>
+        <div style="background:${maColor}20;border:1px solid ${maColor}40;border-radius:4px;padding:1px 8px"><span class="bc" style="font-size:10px;color:${maColor};font-weight:700">${maLabel}</span></div>
+      </div>
+      <div class="bc" style="font-size:28px;font-weight:900;color:${maColor};margin-bottom:6px">${currMA}%</div>
+      <div style="position:relative;height:8px;background:var(--border);border-radius:99px;overflow:visible;margin-bottom:4px">
+        <div style="position:absolute;left:${(MA_MIN-20)/40*100}%;width:${(MA_MAX-MA_MIN)/40*100}%;height:100%;background:rgba(37,99,235,.4);border-radius:99px"></div>
+        <div style="position:absolute;left:${Math.min(Math.max((currMA-20)/40*100,2),98)}%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:99px;background:${maColor};border:2px solid var(--card)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between"><span class="bc" style="font-size:9px;color:var(--tm)">20%</span><span class="bc" style="font-size:9px;color:var(--blue)">Zielbereich ${MA_MIN}–${MA_MAX}%</span><span class="bc" style="font-size:9px;color:var(--tm)">60%</span></div>
     </div>`:''}`;
-  document.getElementById('weight-log').innerHTML=[...weightLog].reverse().map((e,ri)=>{const idx=weightLog.length-1-ri;return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px"><div style="flex:1"><div class="bc" style="font-size:16px;font-weight:800;color:var(--blue)">${e.kg} kg</div><div class="bc" style="font-size:11px;color:var(--tm)">${fmtS(e.date)}${e.bf?` · ${e.bf}% KF`:''}${e.note?` · ${e.note}`:''}</div></div><button onclick="deleteWeightEntry(${idx})" style="color:var(--red);font-size:18px;padding:4px 8px;line-height:1">×</button></div>`;}).join('');
+  document.getElementById('weight-log').innerHTML=[...weightLog].reverse().map((e,ri)=>{const idx=weightLog.length-1-ri;return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px"><div style="flex:1"><div class="bc" style="font-size:16px;font-weight:800;color:var(--blue)">${e.kg} kg</div><div class="bc" style="font-size:11px;color:var(--tm)">${fmtS(e.date)}${e.bf?` · ${e.bf}% KF`:''}${e.muscle?` · ${e.muscle}% MA`:''}${e.note?` · ${e.note}`:''}</div></div><button onclick="deleteWeightEntry(${idx})" style="color:var(--red);font-size:18px;padding:4px 8px;line-height:1">×</button></div>`;}).join('');
 }
 
 function exportCSV(){
@@ -3170,8 +3206,8 @@ function exportCSV(){
 
   // Gewicht
   csv+='\n## GEWICHT\n';
-  csv+='Datum,Gewicht(kg),Körperfett(%),Notiz\n';
-  weightLog.forEach(e=>{csv+=`${e.date},${e.kg},${e.bf||''},"${e.note||''}"\n`;});
+  csv+='Datum,Gewicht(kg),Körperfett(%),Muskelanteil(%),Notiz\n';
+  weightLog.forEach(e=>{csv+=`${e.date},${e.kg},${e.bf||''},${e.muscle||''},"${e.note||''}"\n`;});
 
   // Cardio
   csv+='\n## CARDIO\n';
