@@ -242,10 +242,15 @@
   <div id="topbar">
     <div>
       <div class="bc" style="font-size:22px;font-weight:900;letter-spacing:.02em">ALEX<span style="color:var(--blue)">FIT</span></div>
-      <button onclick="openPhasePicker()" style="display:flex;align-items:center;gap:4px;padding:0;background:none;border:none;cursor:pointer;margin-top:1px">
-        <div class="bc" id="phase-display" style="font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.1em;font-weight:700">Phase 1</div>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:1px">
+        <button onclick="openPhasePicker()" style="display:flex;align-items:center;gap:4px;padding:0;background:none;border:none;cursor:pointer">
+          <div class="bc" id="phase-display" style="font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.1em;font-weight:700">Phase 1</div>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="sick-days-chip" style="display:none;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.45);border-radius:99px;padding:1px 7px;display:none;align-items:center;gap:3px">
+          <span style="font-size:9px">🤒</span><span class="bc" id="sick-days-chip-text" style="font-size:9px;font-weight:800;color:var(--amber)"></span>
+        </div>
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
       <div onclick="switchTab('weight')" class="glass-chip" style="padding:6px 12px;display:flex;align-items:center;gap:6px;cursor:pointer;">
@@ -1954,6 +1959,9 @@ function renderDashboard(){
       </div>`;
     }else sickEl.innerHTML='';
   }
+  const sdChip=document.getElementById('sick-days-chip');
+  const sdText=document.getElementById('sick-days-chip-text');
+  if(sdChip&&sdText){const sc=settings.sickDays?.length||0;if(sc>0){sdText.textContent=`+${sc}T`;sdChip.style.display='flex';}else sdChip.style.display='none';}
 
     const advanceBannerEl=document.getElementById('phase-advance-banner');
   if(advanceBannerEl){
