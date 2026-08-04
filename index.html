@@ -1168,6 +1168,7 @@ migrateHistoryEntries();
 let weightLog=safeParse('af_weights',[]);
 let cardioLog=safeParse('af_cardio',[]);
 migrateCardioTimes();
+checkSickDayExtension();
 let currentWeight=weightLog.length?weightLog[weightLog.length-1].kg:settings.startKg;
 let activeWorkoutDay=null,workoutExercises=[],workoutElapsed=0,workoutTimer=null,timerRunning=false,_timerStartTS=0,workoutBaselineSignature='',_pendingPlanSave=null;
 let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
@@ -1790,6 +1791,7 @@ function renderDashboard(){
         <div style="background:var(--border);border-radius:99px;height:2px;overflow:hidden">
           <div style="background:var(--blue);opacity:.5;border-radius:99px;height:100%;width:${timePct}%"></div>
         </div>
+        ${(settings.sickDays?.length||0)>0?`<div style="margin-top:5px;display:flex;align-items:center;gap:5px"><span style="font-size:10px">🤒</span><span class="bc" style="font-size:9px;color:var(--amber)">Phase verlängert um ${settings.sickDays.length} Tag${settings.sickDays.length>1?'e':''} (Krankheit)</span></div>`:''}
       </div>` : ''}
     </div>`;
 
@@ -4558,14 +4560,25 @@ function saveCardioEdit(idx){
 }
 
 
+function checkSickDayExtension(){
+  if(!settings.streakPaused||settings.streakPauseReason!=='krank')return;
+  if(!settings.sickDays)settings.sickDays=[];
+  const today=dateToISO(new Date());
+  if(!settings.sickDays.includes(today)&&settings.programEnd){
+    settings.sickDays.push(today);
+    settings.programEnd=addDaysISO(settings.programEnd,1);
+    saveSettings();
+  }
+}
+
 function toggleStreakPause(reason){
   if(settings.streakPaused){
-    // Unpause
     settings.streakPaused=false;delete settings.streakFrozenAt;delete settings.streakPauseReason;
     showToast('Streak aktiv ✅');
   }else{
     settings.streakPaused=true;settings.streakFrozenAt=computeStreak();settings.streakPauseReason=reason;
     showToast(reason==='krank'?'Gute Besserung! Streak eingefroren 🤒':'Schönen Urlaub! Streak eingefroren 🏖️');
+    if(reason==='krank')checkSickDayExtension();
   }
   saveSettings();renderSettings();renderDashboard();
 }
@@ -5046,7 +5059,7 @@ function renderSettings(){
     const inactiveBtn=settings.streakPauseReason==='urlaub'?kBtn:uBtn;
     if(activeBtn){activeBtn.style.background='rgba(245,158,11,.2)';activeBtn.style.borderColor='var(--amber)';}
     if(inactiveBtn){inactiveBtn.style.background='var(--cardElev)';inactiveBtn.style.borderColor='var(--border)';}
-    if(pStatus)pStatus.innerHTML=`<span style="color:var(--amber)">⏸ Streak pausiert (${settings.streakFrozenAt||0} Tage eingefroren) · Tippen zum Fortsetzen</span>`;
+    if(pStatus){const sc=settings.sickDays?.length||0;const ext=sc&&settings.streakPauseReason==='krank'?` · Phase +${sc}T verlängert`:'';pStatus.innerHTML=`<span style="color:var(--amber)">⏸ Streak pausiert (${settings.streakFrozenAt||0} Tage eingefroren)${ext} · Tippen zum Fortsetzen</span>`;}
   }else{
     if(kBtn){kBtn.style.background='var(--cardElev)';kBtn.style.borderColor='var(--border)';}
     if(uBtn){uBtn.style.background='var(--cardElev)';uBtn.style.borderColor='var(--border)';}
