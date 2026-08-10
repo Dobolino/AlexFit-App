@@ -751,6 +751,20 @@
     </div>
   </div>
 </div>
+<div id="sick-start-overlay" onclick="if(event.target===this)closeSickStartDialog()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;display:none;align-items:center;justify-content:center;padding:24px">
+  <div style="background:var(--card);border:1px solid rgba(245,158,11,.5);border-radius:20px;padding:24px;width:calc(100% - 16px);max-width:380px">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:36px;margin-bottom:8px">🤒</div>
+      <div class="bc" style="font-size:18px;font-weight:800;color:var(--tp);margin-bottom:4px">Seit wann bist du krank?</div>
+      <div class="bc" style="font-size:12px;color:var(--tm)">Die Phase wird ab diesem Datum verlängert.</div>
+    </div>
+    <input id="sick-start-date" type="date" style="width:100%;padding:14px;border-radius:12px;border:1px solid rgba(245,158,11,.4);background:var(--cardElev);color:var(--tp);font-size:16px;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-align:center;margin-bottom:16px;box-sizing:border-box">
+    <div style="display:flex;gap:10px">
+      <button onclick="closeSickStartDialog()" style="flex:1;padding:14px;border-radius:12px;border:1px solid var(--border);color:var(--tm);font-size:15px;font-weight:700">Abbrechen</button>
+      <button onclick="confirmSickStart()" style="flex:2;padding:14px;border-radius:12px;background:rgba(245,158,11,.9);color:#000;font-size:15px;font-weight:800">Krank markieren 🤒</button>
+    </div>
+  </div>
+</div>
 <div id="cardio-detail-overlay" onclick="if(event.target===this)closeCardioDetail()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9996;display:none;align-items:flex-end;justify-content:center;padding-bottom:calc(16px + var(--safe-bot));">
   <div style="background:var(--card);border:1px solid var(--border);border-top:3px solid var(--blue);border-radius:20px 20px 16px 16px;width:calc(100% - 32px);max-width:440px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;" id="cardio-detail-sheet">
     <div id="cardio-detail-header" style="flex-shrink:0;padding:16px;border-bottom:1px solid var(--border);background:var(--card);"></div>
@@ -4608,16 +4622,39 @@ function checkSickDayExtension(){
   if(added>0)saveSettings();
 }
 
+function showSickStartDialog(){
+  const inp=document.getElementById('sick-start-date');
+  const today=dateToISO(new Date());
+  if(inp){inp.value=today;inp.max=today;}
+  const ov=document.getElementById('sick-start-overlay');
+  if(ov)ov.style.display='flex';
+}
+function closeSickStartDialog(){
+  const ov=document.getElementById('sick-start-overlay');
+  if(ov)ov.style.display='none';
+}
+function confirmSickStart(){
+  const inp=document.getElementById('sick-start-date');
+  const date=inp?.value||dateToISO(new Date());
+  closeSickStartDialog();
+  settings.streakPaused=true;settings.streakFrozenAt=computeStreak();settings.streakPauseReason='krank';
+  settings.sickStart=date;
+  checkSickDayExtension();
+  showToast('Gute Besserung! Streak eingefroren 🤒');
+  saveSettings();renderSettings();renderDashboard();
+}
+
 function toggleStreakPause(reason){
   if(settings.streakPaused){
     settings.streakPaused=false;delete settings.streakFrozenAt;delete settings.streakPauseReason;delete settings.sickStart;
     showToast('Streak aktiv ✅');
+    saveSettings();renderSettings();renderDashboard();
   }else{
+    if(reason==='krank'){showSickStartDialog();return;}
     settings.streakPaused=true;settings.streakFrozenAt=computeStreak();settings.streakPauseReason=reason;
-    if(reason==='krank'){settings.sickStart=dateToISO(new Date());checkSickDayExtension();}
-    showToast(reason==='krank'?'Gute Besserung! Streak eingefroren 🤒':'Schönen Urlaub! Streak eingefroren 🏖️');
+    showToast('Schönen Urlaub! Streak eingefroren 🏖️');
+    saveSettings();renderSettings();renderDashboard();
   }
-  saveSettings();renderSettings();renderDashboard();
 }
 
 
