@@ -4592,22 +4592,30 @@ function saveCardioEdit(idx){
 function checkSickDayExtension(){
   if(!settings.streakPaused||settings.streakPauseReason!=='krank')return;
   if(!settings.sickDays)settings.sickDays=[];
+  if(!settings.programEnd)return;
+  // Start from sickStart (recorded when mode was activated); fall back to today
+  const from=settings.sickStart||dateToISO(new Date());
   const today=dateToISO(new Date());
-  if(!settings.sickDays.includes(today)&&settings.programEnd){
-    settings.sickDays.push(today);
-    settings.programEnd=addDaysISO(settings.programEnd,1);
-    saveSettings();
+  let cursor=from;let added=0;
+  while(cursor<=today){
+    if(!settings.sickDays.includes(cursor)){
+      settings.sickDays.push(cursor);
+      settings.programEnd=addDaysISO(settings.programEnd,1);
+      added++;
+    }
+    const d=parseISODateLocal(cursor);d.setDate(d.getDate()+1);cursor=dateToISO(d);
   }
+  if(added>0)saveSettings();
 }
 
 function toggleStreakPause(reason){
   if(settings.streakPaused){
-    settings.streakPaused=false;delete settings.streakFrozenAt;delete settings.streakPauseReason;
+    settings.streakPaused=false;delete settings.streakFrozenAt;delete settings.streakPauseReason;delete settings.sickStart;
     showToast('Streak aktiv ✅');
   }else{
     settings.streakPaused=true;settings.streakFrozenAt=computeStreak();settings.streakPauseReason=reason;
+    if(reason==='krank'){settings.sickStart=dateToISO(new Date());checkSickDayExtension();}
     showToast(reason==='krank'?'Gute Besserung! Streak eingefroren 🤒':'Schönen Urlaub! Streak eingefroren 🏖️');
-    if(reason==='krank')checkSickDayExtension();
   }
   saveSettings();renderSettings();renderDashboard();
 }
