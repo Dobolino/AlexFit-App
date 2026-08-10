@@ -5031,7 +5031,7 @@ function saveReminderTime(){
 function renderSettings(){
   const si=document.getElementById('s-start-kg');const gi=document.getElementById('s-goal-kg');const di=document.getElementById('s-prog-start');const wi=document.getElementById('s-weeks');
   if(si)si.value=settings.startKg||95;if(gi)gi.value=settings.goalKg||77;if(di)di.value=settings.programStart||dateToISO(new Date());
-  if(wi){const s2=parseISODateLocal(settings.programStart||dateToISO(new Date()));const e2=parseISODateLocal(settings.programEnd||addDaysISO(dateToISO(new Date()),84));wi.value=Math.max(4,Math.round((e2-s2)/(7*24*3600*1000)))||12;}
+  if(wi){const s2=parseISODateLocal(settings.programStart||dateToISO(new Date()));const e2=parseISODateLocal(settings.programEnd||addDaysISO(dateToISO(new Date()),84));const sc=settings.sickDays?.length||0;wi.value=Math.max(4,Math.round(((e2-s2)-sc*86400000)/(7*24*3600*1000)))||12;}
   const ri=document.getElementById('s-rest-time');if(ri)ri.value=settings.defaultRestTime||120;
   // Phase-Info Block
   const phaseInfoEl=document.getElementById('settings-phase-info');
@@ -5128,7 +5128,10 @@ function saveSettingsForm(){
   if(!progStart){showToast('Bitte Startdatum eingeben');return;}
   settings.weekGoal=parseInt(document.getElementById('s-week-goal')?.value)||4;
   settings.defaultRestTime=parseInt(document.getElementById('s-rest-time')?.value)||120;
-  settings.startKg=startKg;settings.goalKg=goalKg;settings.programStart=progStart;settings.programEnd=addDaysISO(progStart,weeks*7);
+  settings.startKg=startKg;settings.goalKg=goalKg;settings.programStart=progStart;
+  settings.programEnd=addDaysISO(progStart,weeks*7);
+  // Re-apply sick day extensions so they're not lost when weeks are changed
+  const sc=settings.sickDays?.length||0;if(sc>0)settings.programEnd=addDaysISO(settings.programEnd,sc);
   saveSettings();currentWeight=weightLog.length?weightLog[weightLog.length-1].kg:startKg;updateWeightDisplay();showToast('Einstellungen gespeichert ✓');switchTab('dashboard');
 }
 function exportAllData(){exportCSV();}
