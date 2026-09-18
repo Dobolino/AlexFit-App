@@ -1923,11 +1923,12 @@ function checkPhaseAdvance(){
   const endDate=parseISODateLocal(settings.programEnd);
   const today=new Date();today.setHours(0,0,0,0);
   if(today>=endDate){
-    const phases=Object.keys(WORKOUT_PLANS);
+    const activePlans=settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS;
+    const phases=Object.keys(activePlans);
     const currentIdx=phases.indexOf(settings.activePhase);
     const nextPhaseId=phases[currentIdx+1];
     if(nextPhaseId){
-      const nextPlan=WORKOUT_PLANS[nextPhaseId];
+      const nextPlan=activePlans[nextPhaseId];
       return{ready:true,nextPhaseId,nextPlan};
     }
   }
