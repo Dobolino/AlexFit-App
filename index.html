@@ -1084,6 +1084,10 @@ function safeParse(key,fallback){
     return data;
   }catch(e){console.warn('AlexFit: Daten defekt für',key,e);return fallback;}
 }
+function escapeHTML(value){
+  return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+function htmlJSArg(value){return escapeHTML(JSON.stringify(String(value)));}
 function dateToISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function parseISODateLocal(iso){const p=iso.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
 function addDaysISO(iso,days){const d=parseISODateLocal(iso);d.setDate(d.getDate()+days);return dateToISO(d);}
@@ -1363,7 +1367,7 @@ function tagHTML(muscle,color){const c=color||MC[muscle]||'#2563EB';return`<span
 
 function saveSession(){
   if(!workoutExercises.length||!activeWorkoutDay){sessionStorage.removeItem(SESSION_KEY);return;}
-  sessionStorage.setItem(SESSION_KEY,JSON.stringify({dayId:activeWorkoutDay.id,workoutExercises,workoutElapsed,timerRunning,workoutBaselineSignature}));
+  sessionStorage.setItem(SESSION_KEY,JSON.stringify({dayId:activeWorkoutDay.id,customDay:activeWorkoutDay.id==='custom'?activeWorkoutDay:null,workoutExercises,workoutElapsed,timerRunning,workoutBaselineSignature}));
 }
 function clearSession(){sessionStorage.removeItem(SESSION_KEY);}
 function startWorkoutTimer(){
@@ -1382,7 +1386,7 @@ function restoreSession(){
   if(!raw)return false;
   try{
     const s=JSON.parse(raw);
-    activeWorkoutDay=WORKOUT_DAYS.find(d=>d.id===s.dayId);
+    activeWorkoutDay=s.dayId==='custom'?s.customDay:WORKOUT_DAYS.find(d=>d.id===s.dayId);
     if(!activeWorkoutDay||!Array.isArray(s.workoutExercises)||!s.workoutExercises.length)return false;
     workoutExercises=s.workoutExercises;
     workoutElapsed=s.workoutElapsed||0;
@@ -2147,7 +2151,7 @@ function renderWorkoutSelect(){
         </div>
         <div style="flex:1;min-width:0">
           <div class="bc" style="font-size:11px;font-weight:700;color:${activeWorkoutDay.color};text-transform:uppercase;letter-spacing:.08em">Aktives Training läuft</div>
-          <div class="bc" style="font-size:16px;font-weight:800;color:var(--tp)">${activeWorkoutDay.name} · ${fmt(workoutElapsed)}</div>
+          <div class="bc" style="font-size:16px;font-weight:800;color:var(--tp)">${escapeHTML(activeWorkoutDay.name)} · ${fmt(workoutElapsed)}</div>
         </div>
         <span class="bc" style="font-size:12px;font-weight:700;color:${activeWorkoutDay.color};text-transform:uppercase">Weiter →</span>
       </button>`:'';
@@ -2239,7 +2243,7 @@ function openWorkoutPreview(dayId){
       ${priLabels.map(m=>`<span style="background:${d.color}20;border:1px solid ${d.color}40;border-radius:6px;padding:2px 8px"><span class="bc" style="font-size:11px;color:${d.color}">${m}</span></span>`).join('')}
       ${secLabels.map(m=>`<span style="background:var(--cardElev);border:1px solid var(--border);border-radius:6px;padding:2px 8px"><span class="bc" style="font-size:11px;color:var(--tm)">${m}</span></span>`).join('')}
     </div>
-    ${(()=>{const st=getScheduledTemplate(dayId);if(!st)return'';return`<div style="background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px"><div style="flex:1"><div class="bc" style="font-size:11px;font-weight:700;color:var(--blue)">📌 Dein gespeicherter Plan</div><div class="bc" style="font-size:10px;color:var(--tm)">${st.name} · ${st.exercises.length} Übungen · wird automatisch geladen</div></div></div>`;})()}
+    ${(()=>{const st=getScheduledTemplate(dayId);if(!st)return'';return`<div style="background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px"><div style="flex:1"><div class="bc" style="font-size:11px;font-weight:700;color:var(--blue)">📌 Dein gespeicherter Plan</div><div class="bc" style="font-size:10px;color:var(--tm)">${escapeHTML(st.name)} · ${st.exercises.length} Übungen · wird automatisch geladen</div></div></div>`;})()}
     `+
     (getScheduledTemplate(dayId)?.exercises||d.exercises).map(ex=>{
       const lp=getLastPerf(ex.name);
@@ -2379,14 +2383,14 @@ function renderExerciseList(){
     <div style="margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
         <div style="width:4px;height:20px;border-radius:2px;background:${MC[ex.muscle]||activeWorkoutDay.color};flex-shrink:0"></div>
-        <span class="bc" onclick="showExerciseInfo(this.dataset.name)" data-name="${ex.name}" style="font-size:16px;font-weight:800;color:var(--tp);flex:1;cursor:pointer;min-width:0">${ex.name}${EXERCISE_VIDEOS[ex.name]?'<span class="ex-video-badge"><svg width="9" height="9" viewBox="0 0 24 24" fill="#EF4444"><polygon points="5,3 19,12 5,21"/></svg><span style="font-size:8px;color:#EF4444;font-weight:700;font-family:Barlow Condensed,sans-serif">VIDEO</span></span>':''} <span style="font-size:10px;color:var(--blue);font-weight:400">ℹ</span></span>
+        <span class="bc" onclick="showExerciseInfo(this.dataset.name)" data-name="${escapeHTML(ex.name)}" style="font-size:16px;font-weight:800;color:var(--tp);flex:1;cursor:pointer;min-width:0">${escapeHTML(ex.name)}${EXERCISE_VIDEOS[ex.name]?'<span class="ex-video-badge"><svg width="9" height="9" viewBox="0 0 24 24" fill="#EF4444"><polygon points="5,3 19,12 5,21"/></svg><span style="font-size:8px;color:#EF4444;font-weight:700;font-family:Barlow Condensed,sans-serif">VIDEO</span></span>':''} <span style="font-size:10px;color:var(--blue);font-weight:400">ℹ</span></span>
         ${EXERCISE_ALTERNATIVES[ex.name]?.length?`<button onclick="showAltMenu(${ei})" style="background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.3);border-radius:5px;padding:2px 7px;flex-shrink:0"><span class="bc" style="font-size:9px;color:var(--blue);font-weight:700">⇄ VARIANTE</span></button>`:''}
         ${ex.note&&ex.note.toLowerCase().includes('superset')?`<span style="background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);border-radius:5px;padding:1px 6px;flex-shrink:0"><span class="bc" style="font-size:9px;font-weight:800;color:var(--amber);text-transform:uppercase">Superset</span></span>`:''}
         ${ex.note&&ex.note.toLowerCase().includes('dropset')?`<span style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);border-radius:5px;padding:1px 6px;flex-shrink:0"><span class="bc" style="font-size:9px;font-weight:800;color:var(--red);text-transform:uppercase">Dropset</span></span>`:''}
         ${tagHTML(ex.muscle)}
         ${ex._added?`<button onclick="removeAddedExercise(${ei})" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:2px 8px;flex-shrink:0"><span class="bc" style="font-size:10px;font-weight:700;color:var(--red)">✕ entfernen</span></button>`:''}
       </div>
-      ${ex.note?`<div style="margin:-4px 0 8px 12px;padding:5px 10px;background:rgba(245,158,11,.08);border-left:2px solid var(--amber);border-radius:0 6px 6px 0"><span style="font-size:11px;color:var(--amber)">${ex.note}</span></div>`:''}
+      ${ex.note?`<div style="margin:-4px 0 8px 12px;padding:5px 10px;background:rgba(245,158,11,.08);border-left:2px solid var(--amber);border-radius:0 6px 6px 0"><span style="font-size:11px;color:var(--amber)">${escapeHTML(ex.note)}</span></div>`:''}
       <div class="set-table">
         <div class="set-head">
           <span>#</span><span>${ex.bw?'VORH.(Wdh)':'VORH.(kg×Wdh)'}</span>
@@ -2845,7 +2849,7 @@ function openCalendarDay(iso){
       html+=`<div style="background:var(--card);border:1px solid ${col}40;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer" onclick="closeCalendarDay();setTimeout(()=>openWorkoutDetail('${h.id}'),200)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div>
-            <div class="bc" style="font-size:15px;font-weight:800;color:var(--tp)">${h.name}${h.exercises.some(e=>e.isPR)?` <span style="font-size:11px">🏆</span>`:''}</div>
+            <div class="bc" style="font-size:15px;font-weight:800;color:var(--tp)">${escapeHTML(h.name)}${h.exercises.some(e=>e.isPR)?` <span style="font-size:11px">🏆</span>`:''}</div>
             <div class="bc" style="font-size:11px;color:var(--tm)">${h.duration} min · ${h.sets} Sätze</div>
           </div>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
@@ -2854,7 +2858,7 @@ function openCalendarDay(iso){
           ${h.exercises.slice(0,5).map(ex=>`<span style="background:var(--cardElev);border:1px solid var(--border);border-radius:5px;padding:2px 7px"><span class="bc" style="font-size:10px;color:var(--ts)">${ex.name}</span></span>`).join('')}
           ${h.exercises.length>5?`<span style="background:var(--cardElev);border:1px solid var(--border);border-radius:5px;padding:2px 7px"><span class="bc" style="font-size:10px;color:var(--tm)">+${h.exercises.length-5}</span></span>`:''}
         </div>
-        ${h.note?`<div style="margin-top:8px;font-size:12px;color:var(--ts);font-style:italic">"${h.note}"</div>`:''}
+        ${h.note?`<div style="margin-top:8px;font-size:12px;color:var(--ts);font-style:italic">"${escapeHTML(h.note)}"</div>`:''}
       </div>`;
     });
 
@@ -2868,7 +2872,7 @@ function openCalendarDay(iso){
       if(cfg.calcFn){const res=cfg.calcFn(e);if(res.length)quickVal=` · ${res[0].v}`;}
       html+=`<div style="background:var(--card);border:1px solid ${cfg.color}30;border-radius:12px;padding:12px 14px;margin-bottom:10px">
         <div class="bc" style="font-size:14px;font-weight:800;color:${cfg.color}">${cfg.icon} ${cfg.label}${detail}</div>
-        <div class="bc" style="font-size:11px;color:var(--tm)">${minsToHMS(e.time)}${e.hr?' · ♥ '+e.hr:''}${quickVal}${e.note?' · '+e.note:''}</div>
+        <div class="bc" style="font-size:11px;color:var(--tm)">${minsToHMS(e.time)}${e.hr?' · ♥ '+e.hr:''}${quickVal}${e.note?' · '+escapeHTML(e.note):''}</div>
       </div>`;
     });
 
@@ -2877,7 +2881,7 @@ function openCalendarDay(iso){
       html+=`<div style="background:var(--card);border:1px solid rgba(37,99,235,.3);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
         <span style="font-size:20px">⚖️</span>
         <div><div class="bc" style="font-size:16px;font-weight:800;color:var(--blue)">${w.kg} kg</div>
-        <div class="bc" style="font-size:11px;color:var(--tm)">${w.bf?`${w.bf}% KF · `:''}${w.note||''}</div></div>
+        <div class="bc" style="font-size:11px;color:var(--tm)">${w.bf?`${w.bf}% KF · `:''}${escapeHTML(w.note)}</div></div>
       </div>`;
     });
 
@@ -3029,8 +3033,8 @@ function renderCalendar(){
         return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openWorkoutDetail('${item.id}')">
           <div style="width:4px;height:36px;border-radius:4px;background:${dd?.color||'var(--blue)'};flex-shrink:0"></div>
           <div style="flex:1">
-            <div class="bc" style="font-size:14px;font-weight:700;color:var(--tp)">${item.name}</div>
-            <div class="bc" style="font-size:11px;color:var(--tm)">${fmtL(item.date)}${item.note?` · <em style="color:var(--ts)">"${item.note}"</em>`:''}</div>
+            <div class="bc" style="font-size:14px;font-weight:700;color:var(--tp)">${escapeHTML(item.name)}</div>
+            <div class="bc" style="font-size:11px;color:var(--tm)">${fmtL(item.date)}${item.note?` · <em style="color:var(--ts)">"${escapeHTML(item.note)}"</em>`:''}</div>
           </div>
           <div style="text-align:right">
             <div class="bc" style="font-size:15px;font-weight:800;color:${dd?.color||'var(--blue)'}">${item.duration} min</div>
@@ -3044,7 +3048,7 @@ function renderCalendar(){
           <div style="width:4px;height:36px;border-radius:4px;background:#10B981;flex-shrink:0"></div>
           <div style="flex:1">
             <div class="bc" style="font-size:14px;font-weight:700;color:var(--tp)">${cfg.icon} ${cfg.label}${distStr}</div>
-            <div class="bc" style="font-size:11px;color:var(--tm)">${fmtL(item.date)}${item.note?` · <em style="color:var(--ts)">"${item.note}"</em>`:''}</div>
+            <div class="bc" style="font-size:11px;color:var(--tm)">${fmtL(item.date)}${item.note?` · <em style="color:var(--ts)">"${escapeHTML(item.note)}"</em>`:''}</div>
           </div>
           <div style="text-align:right">
             <div class="bc" style="font-size:15px;font-weight:800;color:#10B981">${fmtMins(item.time)} min</div>
@@ -3073,7 +3077,7 @@ function renderHistory(){
       <div style="width:32px;height:32px;border-radius:8px;background:${col}25;border:1px solid ${col}50;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         <span class="bc" style="font-size:10px;font-weight:800;color:${col}">${dd?.tag||'?'}</span>
       </div>
-      <div class="bc" style="font-size:13px;font-weight:800;color:var(--tp);line-height:1.2">${h.name}</div>
+      <div class="bc" style="font-size:13px;font-weight:800;color:var(--tp);line-height:1.2">${escapeHTML(h.name)}</div>
       <div class="bc" style="font-size:11px;color:var(--tm)">${fmtS(h.date)}</div>
       <div style="display:flex;gap:8px;margin-top:2px">
         <div style="flex:1;text-align:center">
@@ -3102,9 +3106,9 @@ function renderHistory(){
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div style="flex:1;min-width:0">
             <div class="bc" style="font-size:16px;font-weight:800;color:var(--tp);display:flex;align-items:center;gap:8px">
-              ${h.name}${hasPR?`<svg width="12" height="12" viewBox="0 0 24 24" fill="var(--amber)" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>`:''}
+              ${escapeHTML(h.name)}${hasPR?`<svg width="12" height="12" viewBox="0 0 24 24" fill="var(--amber)" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>`:''}
             </div>
-            <div class="bc" style="font-size:11px;color:var(--tm)">${fmtS(h.date)} · ${h.duration} min · ${h.sets} Sätze${h.note?` · <em style="color:var(--ts)">"${h.note}"</em>`:''}</div>
+            <div class="bc" style="font-size:11px;color:var(--tm)">${fmtS(h.date)} · ${h.duration} min · ${h.sets} Sätze${h.note?` · <em style="color:var(--ts)">"${escapeHTML(h.note)}"</em>`:''}</div>
           </div>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
         </div>
@@ -3228,7 +3232,7 @@ function renderWeight(){
       </div>
       <div style="display:flex;justify-content:space-between"><span class="bc" style="font-size:9px;color:var(--tm)">20%</span><span class="bc" style="font-size:9px;color:var(--blue)">Zielbereich ${MA_MIN}–${MA_MAX}%</span><span class="bc" style="font-size:9px;color:var(--tm)">60%</span></div>
     </div>`:''}`;
-  document.getElementById('weight-log').innerHTML=[...weightLog].reverse().map((e,ri)=>{const idx=weightLog.length-1-ri;return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px"><div style="flex:1"><div class="bc" style="font-size:16px;font-weight:800;color:var(--blue)">${e.kg} kg</div><div class="bc" style="font-size:11px;color:var(--tm)">${fmtS(e.date)}${e.bf?` · ${e.bf}% KF`:''}${e.muscle?` · ${e.muscle}% MA`:''}${e.note?` · ${e.note}`:''}</div></div><button onclick="deleteWeightEntry(${idx})" style="color:var(--red);font-size:18px;padding:4px 8px;line-height:1">×</button></div>`;}).join('');
+  document.getElementById('weight-log').innerHTML=[...weightLog].reverse().map((e,ri)=>{const idx=weightLog.length-1-ri;return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px"><div style="flex:1"><div class="bc" style="font-size:16px;font-weight:800;color:var(--blue)">${e.kg} kg</div><div class="bc" style="font-size:11px;color:var(--tm)">${fmtS(e.date)}${e.bf?` · ${e.bf}% KF`:''}${e.muscle?` · ${e.muscle}% MA`:''}${e.note?` · ${escapeHTML(e.note)}`:''}</div></div><button onclick="deleteWeightEntry(${idx})" style="color:var(--red);font-size:18px;padding:4px 8px;line-height:1">×</button></div>`;}).join('');
 }
 
 function exportCSV(){
@@ -3284,7 +3288,7 @@ function importCSV(file){
   if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
-    const lines=e.target.result.split('\n').filter(l=>l.trim()&&!l.startsWith('#'));
+    const lines=e.target.result.split('\n').filter(l=>l.trim()&&!l.startsWith('# AlexFit Export'));
     let section='';
     let importedW=0,importedC=0,importedR=0,importedH=0;
     const historyDrafts=new Map();
@@ -3343,7 +3347,7 @@ function importCSV(file){
       else if(section==='weight'||(!section&&cols.length>=2&&parseFloat(cols[1])>30&&parseFloat(cols[1])<300)){
         const kg=parseFloat(cols[1]);if(!kg||kg<30||kg>300)return;
         const bf=parseFloat(cols[2])||null;
-        const note=cols[3]?.replace(/"/g,'')||'';
+        const note=cols[4]?.replace(/"/g,'')||'';
         if(!weightLog.find(w=>w.date===date)){
           weightLog.push({date,kg,bf:bf||undefined,note});importedW++;
         }
@@ -4519,7 +4523,7 @@ function openCardioDetail(idx){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">${tiles}</div>
     ${e.note?`<div style="background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.3);border-radius:10px;padding:12px;margin-bottom:16px">
       <div class="bc" style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Notiz</div>
-      <div style="font-size:13px;color:var(--ts)">${e.note}</div>
+      <div style="font-size:13px;color:var(--ts)">${escapeHTML(e.note)}</div>
     </div>`:''}
     <button onclick="showConfirm('Diesen Eintrag löschen?',()=>{cardioLog.splice(${idx},1);saveC();closeCardioDetail();showToast('Gelöscht');renderCardio();},'Löschen','var(--red)')" style="width:100%;padding:12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:10px;color:var(--red);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
@@ -4571,7 +4575,7 @@ function startEditCardio(idx){
       </div>
       <div style="margin-bottom:10px">
         <div class="bc" style="font-size:10px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Notiz</div>
-        <input id="edit-note" class="weight-inp" type="text" value="${e.note||''}" style="font-size:15px;">
+        <input id="edit-note" class="weight-inp" type="text" value="${escapeHTML(e.note)}" style="font-size:15px;">
       </div>
       <button onclick="saveCardioEdit(${idx})" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--blue),#1D4ED8);color:#fff;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.08em">Speichern</button>
     </div>
@@ -4741,7 +4745,7 @@ function showWorkoutSummary(entry){
     <div style="text-align:center">
       <div style="font-size:40px;margin-bottom:4px">🎉</div>
       <div class="bc" style="font-size:22px;font-weight:900;color:var(--tp)">Training abgeschlossen!</div>
-      <div class="bc" style="font-size:13px;color:${col};margin-top:3px">${entry.name}</div>
+      <div class="bc" style="font-size:13px;color:${col};margin-top:3px">${escapeHTML(entry.name)}</div>
     </div>`;
 
   document.getElementById('workout-summary-body').innerHTML=`
@@ -4798,7 +4802,7 @@ function showWorkoutSummary(entry){
 
     ${entry.note?`<div style="margin-top:12px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:8px;padding:10px">
       <div class="bc" style="font-size:10px;color:var(--blue);font-weight:700;margin-bottom:3px">NOTIZ</div>
-      <div style="font-size:13px;color:var(--ts);font-style:italic">"${entry.note}"</div>
+      <div style="font-size:13px;color:var(--ts);font-style:italic">"${escapeHTML(entry.note)}"</div>
     </div>`:''}`;
 
   overlay.classList.add('show');
@@ -4848,9 +4852,9 @@ function openWorkoutDetail(historyId){
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
       <div>
         <div class="bc" style="font-size:11px;font-weight:700;color:${col};text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">${fmtL(h.date)}</div>
-        <div class="bc" style="font-size:20px;font-weight:900;color:var(--tp)">${h.name}</div>
+        <div class="bc" style="font-size:20px;font-weight:900;color:var(--tp)">${escapeHTML(h.name)}</div>
         <div class="bc" style="font-size:11px;color:var(--tm);margin-top:2px">${h.duration} min · ${h.sets} Sätze${hasPR?' · 🏆 PR':''}</div>
-        ${h.note?`<div style="font-size:12px;color:var(--ts);margin-top:4px;font-style:italic">"${h.note}"</div>`:''}
+        ${h.note?`<div style="font-size:12px;color:var(--ts);margin-top:4px;font-style:italic">"${escapeHTML(h.note)}"</div>`:''}
       </div>
       <button onclick="closeWorkoutDetail()" style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--tp);font-size:22px">×</button>
     </div>`;
@@ -4977,7 +4981,7 @@ function showRecoveryModal(){
     </div>
     <div style="margin-bottom:16px">
       <div class="bc" style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Notiz (optional)</div>
-      <input id="recov-note" class="weight-inp" type="text" value="${today?.note||''}" placeholder="z.B. schlechter Schlaf..." style="font-size:15px;">
+      <input id="recov-note" class="weight-inp" type="text" value="${escapeHTML(today?.note)}" placeholder="z.B. schlechter Schlaf..." style="font-size:15px;">
     </div>
     <button onclick="submitRecovery()" style="width:100%;padding:16px;border-radius:12px;background:linear-gradient(135deg,var(--blue),#1D4ED8);color:#fff;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.08em">Speichern</button>`;
 
@@ -5367,15 +5371,15 @@ function renderTemplatesInSettings(){
     return`<div style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <div style="flex:1;min-width:0">
-          <div class="bc" style="font-size:13px;font-weight:700;color:var(--tp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</div>
-          <div class="bc" style="font-size:10px;color:var(--tm)">${t.exercises.length} Übungen · ${t.createdAt}${dd?` · <span style="color:${dd.color}">📌 ${dd.tag} ${dd.name}</span>`:''}</div>
+          <div class="bc" style="font-size:13px;font-weight:700;color:var(--tp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHTML(t.name)}</div>
+          <div class="bc" style="font-size:10px;color:var(--tm)">${t.exercises.length} Übungen · ${escapeHTML(t.createdAt)}${dd?` · <span style="color:${dd.color}">📌 ${dd.tag} ${dd.name}</span>`:''}</div>
         </div>
-        <button onclick="loadTemplate('${t.id}')" style="background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);border-radius:7px;padding:6px 10px"><span class="bc" style="font-size:11px;font-weight:700;color:var(--blue)">Laden</span></button>
-        <button onclick="deleteTemplate('${t.id}')" style="background:var(--cardElev);border:1px solid var(--border);border-radius:7px;padding:6px 8px;color:var(--red);font-size:14px">×</button>
+        <button onclick="loadTemplate(${htmlJSArg(t.id)})" style="background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);border-radius:7px;padding:6px 10px"><span class="bc" style="font-size:11px;font-weight:700;color:var(--blue)">Laden</span></button>
+        <button onclick="deleteTemplate(${htmlJSArg(t.id)})" style="background:var(--cardElev);border:1px solid var(--border);border-radius:7px;padding:6px 8px;color:var(--red);font-size:14px">×</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <span class="bc" style="font-size:10px;color:var(--tm);flex-shrink:0">Einplanen für:</span>
-        <select onchange="scheduleTemplate('${t.id}',this.value)" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:4px 8px;color:var(--tp);font-size:11px;font-family:inherit">
+        <select onchange="scheduleTemplate(${htmlJSArg(t.id)},this.value)" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:4px 8px;color:var(--tp);font-size:11px;font-family:inherit">
           <option value="none"${!scheduledDay?' selected':''}>— Kein Tag —</option>
           ${['d1','d4','d2','d3','d5'].map(id=>{const d=WORKOUT_DAYS.find(x=>x.id===id);return`<option value="${id}"${scheduledDay===id?' selected':''}>${d?.tag} ${d?.name}</option>`;}).join('')}
         </select>
@@ -5462,9 +5466,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 if('serviceWorker' in navigator){
-  const sw=`const C='af-v10';const ASSETS=['.','manifest.webmanifest','icons/icon.svg','https://unpkg.com/body-muscles@1.0.0/dist/umd/body-muscles.umd.min.js'];self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS)));self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!=='af-v10').map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).then(r=>r).catch(()=>caches.match(e.request).then(r=>r||caches.match('.'))));});`;
-  const blob=new Blob([sw],{type:'application/javascript'});
-  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+  navigator.serviceWorker.register('./sw.js').catch(error=>console.warn('AlexFit: Offline-Modus nicht verfügbar',error));
 }
 </script>
 <div id="photo-viewer" style="display:none"></div>
