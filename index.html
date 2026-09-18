@@ -258,6 +258,10 @@
         <span id="weight-display" class="bc" style="font-size:14px;font-weight:700">95 kg</span>
         <span id="goal-weight-display" class="bc" style="font-size:10px;color:var(--tm)">→ 77 kg</span>
       </div>
+      <button onclick="toggleGymMode()" id="gym-toggle-btn" class="glass-chip" style="padding:5px 9px;display:flex;align-items:center;gap:4px;flex-shrink:0" title="Home/Gym wechseln">
+        <span id="gym-toggle-icon" style="font-size:13px">🏠</span>
+        <span class="bc" id="gym-toggle-label" style="font-size:9px;font-weight:800;color:var(--ts)">HOME</span>
+      </button>
       <button onclick="switchTab('settings')" class="glass-chip" style="width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Einstellungen">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ts)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
@@ -299,6 +303,14 @@
     <!-- WORKOUT SELECT -->
     <div id="screen-workout-select" class="screen">
       <div class="slabel">Trainingstag wählen</div>
+      <div id="gym-mode-banner" style="display:none;background:linear-gradient(135deg,rgba(139,92,246,.15),var(--cardElev));border:1.5px solid rgba(139,92,246,.4);border-radius:14px;padding:20px 16px;margin-bottom:16px;text-align:center">
+        <div style="font-size:40px;margin-bottom:10px">🏋️</div>
+        <div class="bc" style="font-size:18px;font-weight:800;color:#8B5CF6;margin-bottom:6px">Gym-Modus</div>
+        <div class="bc" style="font-size:13px;color:var(--tm);line-height:1.5">Das Gym-Programm wird vom Coach vorbereitet.<br>Bald verfügbar — bleib dran!</div>
+        <div style="margin-top:14px;padding:10px;background:rgba(139,92,246,.1);border-radius:10px">
+          <div class="bc" style="font-size:11px;color:#8B5CF6;font-weight:700">Bis dahin: Home-Trainings sind weiter aktiv</div>
+        </div>
+      </div>
       <div id="workout-resume-banner"></div>
       <div id="workout-select-list"></div>
     </div>
@@ -602,6 +614,17 @@
           </div>
         </div>
         <button onclick="saveSettingsForm()" style="width:100%;padding:16px;border-radius:12px;background:linear-gradient(135deg,var(--blue),#1D4ED8);color:#fff;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;box-shadow:0 4px 16px rgba(37,99,235,.35)">Speichern</button>
+      </div>
+      <div class="slabel">Neustart</div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px">
+          <div style="font-size:28px;flex-shrink:0">🔄</div>
+          <div>
+            <div class="bc" style="font-size:14px;font-weight:800;color:var(--tp);margin-bottom:3px">Programm neu starten</div>
+            <div class="bc" style="font-size:12px;color:var(--tm);line-height:1.4">Startet Phase 1 ab heute neu. Trainingshistorie und Gewichtsdaten bleiben erhalten.</div>
+          </div>
+        </div>
+        <button onclick="restartProgram()" style="width:100%;padding:14px;border-radius:12px;background:rgba(239,68,68,.15);border:1.5px solid rgba(239,68,68,.4);color:var(--red);font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.05em">Neu starten — Phase 1 heute</button>
       </div>
       <!-- Benachrichtigungen -->
       <div class="slabel">Benachrichtigungen</div>
@@ -1109,6 +1132,7 @@ function loadSettings(){
       defaultRestTime:120,
       streakPaused:false,
       streakFrozenAt:0,
+      gymMode:false,
     };
     needsSave=true;
   }
@@ -1973,6 +1997,9 @@ function renderDashboard(){
       </div>`;
     }else sickEl.innerHTML='';
   }
+  const gymIcon=document.getElementById('gym-toggle-icon');const gymLabel=document.getElementById('gym-toggle-label');
+  if(gymIcon)gymIcon.textContent=settings.gymMode?'🏋️':'🏠';
+  if(gymLabel)gymLabel.textContent=settings.gymMode?'GYM':'HOME';
   const sdChip=document.getElementById('sick-days-chip');
   const sdText=document.getElementById('sick-days-chip-text');
   if(sdChip&&sdText){const sc=settings.sickDays?.length||0;if(sc>0){sdText.textContent=`+${sc}T`;sdChip.style.display='flex';}else sdChip.style.display='none';}
@@ -2137,6 +2164,9 @@ function renderWeekStrip(){
   document.getElementById('week-strip-wrap').innerHTML=html;
 }
 function renderWorkoutSelect(){
+  // Gym mode placeholder
+  const gymBanner=document.getElementById('gym-mode-banner');
+  if(gymBanner)gymBanner.style.display=settings.gymMode?'block':'none';
   const todayDayId=PLAN_DOW[new Date().getDay()];
   const resumeEl=document.getElementById('workout-resume-banner');
   if(resumeEl){
@@ -5170,6 +5200,29 @@ function saveSettingsForm(){
   // Re-apply sick day extensions so they're not lost when weeks are changed
   const sc=settings.sickDays?.length||0;if(sc>0)settings.programEnd=addDaysISO(settings.programEnd,sc);
   saveSettings();currentWeight=weightLog.length?weightLog[weightLog.length-1].kg:startKg;updateWeightDisplay();showToast('Einstellungen gespeichert ✓');switchTab('dashboard');
+}
+function restartProgram(){
+  showConfirm('Programm neu starten?\n\nPhase 1 beginnt heute. Alle Trainings- und Gewichtsdaten bleiben erhalten.',()=>{
+    const plan=WORKOUT_PLANS['p1'];
+    settings.activePhase='p1';
+    settings.programStart=dateToISO(new Date());
+    settings.programEnd=addDaysISO(dateToISO(new Date()),plan.weeks*7);
+    settings.streakPaused=false;
+    delete settings.streakFrozenAt;delete settings.streakPauseReason;delete settings.sickDays;delete settings.sickStart;
+    applyActivePlan();saveSettings();
+    showToast('Neustart! Phase 1 beginnt heute 💪');switchTab('dashboard');
+  },'Neu starten','var(--blue)');
+}
+function toggleGymMode(){
+  settings.gymMode=!settings.gymMode;
+  saveSettings();
+  const icon=document.getElementById('gym-toggle-icon');
+  const label=document.getElementById('gym-toggle-label');
+  if(icon)icon.textContent=settings.gymMode?'🏋️':'🏠';
+  if(label)label.textContent=settings.gymMode?'GYM':'HOME';
+  renderDashboard();
+  if(document.getElementById('screen-workout-select')?.classList.contains('active'))renderWorkoutSelect();
+  showToast(settings.gymMode?'Gym-Modus aktiv 🏋️':'Home-Modus aktiv 🏠');
 }
 function exportAllData(){exportCSV();}
 
