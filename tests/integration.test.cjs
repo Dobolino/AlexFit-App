@@ -29,7 +29,7 @@ test(
       a.document.getElementById("screen-nutrition").textContent,
       /Yazio/,
     );
-    assert.equal(a.document.querySelectorAll("#bottomnav .navbtn").length, 4);
+    assert.equal(a.document.querySelectorAll("#bottomnav .navbtn").length, 5);
   }),
 );
 test(

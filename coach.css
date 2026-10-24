@@ -515,3 +515,91 @@ body {
     display: none !important;
   }
 }
+
+/* Keep mobile form controls inside their grid cells, including iOS dates. */
+.af-grid {
+  align-items: stretch;
+  column-gap: 16px;
+  row-gap: 4px;
+}
+.af-grid > .af-field {
+  justify-content: space-between;
+}
+.af-field input,
+.af-field select,
+.af-field textarea,
+.weight-inp {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+input[type="date"] {
+  display: block;
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+}
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.4em;
+}
+.af-card,
+.af-exercise,
+.af-pagehead > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.af-toolbar > .af-btn {
+  max-width: 100%;
+}
+#nav-container {
+  max-width: 560px;
+}
+#bottomnav .navbtn {
+  color: var(--ts);
+  gap: 4px;
+}
+#bottomnav .nlabel {
+  font-family: Barlow, system-ui, sans-serif;
+  font-size: 10px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+#bottomnav .navbtn.active {
+  color: var(--tp);
+}
+#bottomnav .navbtn.active .nlabel {
+  color: var(--tp);
+}
+#nav-glass-indicator {
+  left: 0;
+}
+#screen-cardio > .af-note {
+  margin-bottom: 24px !important;
+}
+#screen-cardio > div:has(> #cardio-range-ctrl) {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+#af-cardio-energy {
+  margin-top: 16px;
+  padding: 16px;
+}
+@media (max-width: 430px) {
+  .af-grid {
+    grid-template-columns: 1fr;
+  }
+  .af-field {
+    margin-bottom: 12px;
+  }
+  .af-card {
+    padding: 18px;
+  }
+  #bottomnav .nlabel {
+    font-size: 9px;
+  }
+  .af-metrics {
+    gap: 8px;
+  }
+}

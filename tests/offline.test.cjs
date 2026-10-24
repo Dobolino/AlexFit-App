@@ -34,7 +34,7 @@ function worker() {
     clients: { matchAll: async () => [], openWindow: async () => {} },
     caches: {
       open: async () => cache,
-      keys: async () => ["af-v11", "unrelated-cache", "af-v12-coach-20261024"],
+      keys: async () => ["af-v11", "unrelated-cache", "af-v13-cardio-ui-20261024"],
       delete: async (k) => deleted.push(k),
     },
     fetch: async () => {

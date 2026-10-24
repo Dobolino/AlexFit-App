@@ -11,7 +11,6 @@
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon.svg">
 <title>AlexFit</title>
-<link rel="stylesheet" href="coach.css">
 <script src="coach-core.js"></script>
 <script src="coach.js" defer></script>
 <script src="coach-recipes.js" defer></script>
@@ -240,6 +239,7 @@
   #rest-timer-bar.active{display:block;}
   .ex-video-badge{display:inline-flex;align-items:center;gap:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:4px;padding:1px 5px;vertical-align:middle;margin-left:4px;}
 </style>
+<link rel="stylesheet" href="coach.css">
 </head>
 <body>
 <div id="app">
@@ -474,7 +474,7 @@
 
     <!-- CARDIO (config-driven) -->
     <div id="screen-cardio" class="screen">
-      <div class="slabel">Cardio eintragen</div>
+      <div class="af-pagehead"><div><p class="af-eyebrow">AUSDAUER & BEWEGUNG</p><h1>Cardio</h1></div></div><p class="af-note">Halte deine Einheiten fest und verfolge Zeit, Strecke und Entwicklung.</p><div class="slabel">Neue Einheit</div>
       <div style="margin-bottom:14px">
         <div class="bc" style="font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Sportart</div>
         <div id="cardio-type-row" style="display:flex;gap:6px;flex-wrap:wrap"></div>

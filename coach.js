@@ -501,8 +501,8 @@
       ) +
         `<div class="af-toolbar">${button("Profil", "profile")}${button("14-Tage-Check", "checkin")}${button("Sonntagskochen", "cooking")}</div>` +
         card(
-          "Aus Yazio übernehmen",
-          `<form data-af-form="nutrition"><div class="af-grid">${field("Datum", "af-food-date", date, "date", "required")}${C.NUTRIENTS.map((k) => field({ kcal: "Kalorien (kcal)", protein_g: "Protein (g)", carbs_g: "Kohlenhydrate (g)", fat_g: "Fett (g)", fiber_g: "Ballaststoffe (g)", sodium_mg: "Natrium (mg)" }[k], "af-food-" + k, entry[k], "number", 'min="0" step="0.1" ' + (k === "kcal" ? "required" : ""))).join("")}</div>${field("Notiz", "af-food-note", entry.note, "text")}<button class="af-btn af-primary" type="submit">Tageswerte speichern</button></form>`,
+          "Tageswerte aus Yazio",
+          `${note("Übernimm deine Tagessummen manuell aus Yazio. Hier behältst du Ernährung und Training gemeinsam im Blick.")}<form data-af-form="nutrition"><div class="af-grid">${field("Datum", "af-food-date", date, "date", "required")}${C.NUTRIENTS.map((k) => field({ kcal: "Kalorien (kcal)", protein_g: "Protein (g)", carbs_g: "Kohlenhydrate (g)", fat_g: "Fett (g)", fiber_g: "Ballaststoffe (g)", sodium_mg: "Natrium (mg)" }[k], "af-food-" + k, entry[k], "number", 'min="0" step="0.1" ' + (k === "kcal" ? "required" : ""))).join("")}</div>${field("Notiz", "af-food-note", entry.note, "text")}<button class="af-btn af-primary" type="submit">Tageswerte speichern</button></form>`,
         ) +
         card(
           "Deine Routine",
@@ -1710,7 +1710,7 @@
   document.getElementById("gym-toggle-btn")?.setAttribute("hidden", "");
   const nav = document.getElementById("bottomnav");
   if (nav) {
-    nav.innerHTML = `<div id="nav-glass-indicator"></div><button class="navbtn active" id="nav-dashboard" data-af-action="home"><span class="nicon">⌂</span><span>HEUTE</span></button><button class="navbtn" id="nav-workout" onclick="switchTab('workout')"><span class="nicon">🏋</span><span>TRAINING</span></button><button class="navbtn" id="nav-nutrition" data-af-action="nutrition"><span class="nicon">◉</span><span>ERNÄHRUNG</span></button><button class="navbtn" id="nav-stats" onclick="switchTab('stats')"><span class="nicon">↗</span><span>FORTSCHRITT</span></button>`;
+    nav.innerHTML = `<div id="nav-glass-indicator" aria-hidden="true"></div><button class="navbtn active" id="nav-dashboard" data-af-action="home"><span class="nicon">⌂</span><span class="nlabel">Heute</span></button><button class="navbtn" id="nav-workout" onclick="switchTab('workout')"><span class="nicon">🏋</span><span class="nlabel">Training</span></button><button class="navbtn" id="nav-cardio" onclick="switchTab('cardio')"><span class="nicon">♡</span><span class="nlabel">Cardio</span></button><button class="navbtn" id="nav-nutrition" data-af-action="nutrition"><span class="nicon">◉</span><span class="nlabel">Ernährung</span></button><button class="navbtn" id="nav-stats" onclick="switchTab('stats')"><span class="nicon">↗</span><span class="nlabel">Fortschritt</span></button>`;
   }
   setInterval(tickInterval, 500);
   if (!workoutExercises.length) restoreSession();
