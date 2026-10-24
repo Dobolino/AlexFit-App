@@ -1,0 +1,334 @@
+{
+  "schemaVersion": "1.3",
+  "week": "2026-W43",
+  "weekNote": "Zwei frei skalierbare Rezeptbasen. Mengen und Etikettwerte vor dem Kochen prüfen; kein automatisch personalisierter Ernährungsplan.",
+  "recipes": [
+    {
+      "id": "linsen-tofu-tomatenreis",
+      "name": "Linsen-Tofu-Ragout mit Tomatenreis",
+      "servings": 5,
+      "freezable": true,
+      "notes": [
+        "Etikettwerte und Preise sind Richtwerte mit Stand 24.10.2026. Tatsächliche Produkte vergleichen.",
+        "Vorgekochten Reis verwenden; bei trockenem Reis Menge und Nährwerte vollständig ändern.",
+        "Nach dem Kochen rasch abkühlen, Endgewicht erfassen und portionsweise einfrieren. Im Kühlschrank auftauen und vollständig durcherhitzen.",
+        "Gewürze nach Wunsch als zusätzliche Zutaten mit genauen Mengen im Rezepteditor ergänzen."
+      ],
+      "ingredients": [
+        {
+          "name": "Grüne Linsen, trocken",
+          "productName": "Migros Bio Linsen grün",
+          "unit": "g",
+          "category": "trockenes",
+          "nutritionPer100g": {
+            "kcal": 304,
+            "protein_g": 23,
+            "carbs_g": 41,
+            "fat_g": 1.6,
+            "fiber_g": 17,
+            "sodium_mg": 8
+          },
+          "packageGrams": 500,
+          "packagePriceCHF": null,
+          "nutritionSource": "https://migipedia.migros.ch/de/bio-linsen-gruen?community=details",
+          "verifiedAt": "2026-10-24",
+          "id": "a-linsen",
+          "amount": 250
+        },
+        {
+          "name": "Tofu natur",
+          "productName": "M-Budget Tofu Bio Nature vegan",
+          "unit": "g",
+          "category": "milch_ei",
+          "nutritionPer100g": {
+            "kcal": 145,
+            "protein_g": 16,
+            "carbs_g": 1.2,
+            "fat_g": 8.3,
+            "fiber_g": 0.7,
+            "sodium_mg": 120
+          },
+          "packageGrams": 300,
+          "packagePriceCHF": 1.15,
+          "nutritionSource": "https://www.migros.ch/de/product/130927400000",
+          "verifiedAt": "2026-10-24",
+          "id": "a-tofu",
+          "amount": 900
+        },
+        {
+          "name": "Passata",
+          "productName": "M-Budget Passata 680 g",
+          "unit": "g",
+          "category": "konserven",
+          "nutritionPer100g": {
+            "kcal": 24,
+            "protein_g": 1.1,
+            "carbs_g": 4.2,
+            "fat_g": 0.5,
+            "fiber_g": 0.8,
+            "sodium_mg": 40
+          },
+          "packageGrams": 680,
+          "packagePriceCHF": 0.9,
+          "nutritionSource": "https://migipedia.migros.ch/de/m-budget-passata?community=details",
+          "nutritionNote": "Fett <0.5 g als Obergrenze 0.5 g.",
+          "verifiedAt": "2026-10-24",
+          "id": "a-passata",
+          "amount": 680
+        },
+        {
+          "name": "Langkornreis, bereits gekocht",
+          "productName": "M-Budget Langkornreis 250 g (vorgekocht)",
+          "unit": "g",
+          "category": "trockenes",
+          "nutritionPer100g": {
+            "kcal": 143,
+            "protein_g": 2.8,
+            "carbs_g": 29,
+            "fat_g": 1.6,
+            "fiber_g": 0.5,
+            "sodium_mg": 76
+          },
+          "packageGrams": 250,
+          "packagePriceCHF": 1.6,
+          "nutritionSource": "https://migipedia.migros.ch/de/m-budget-langkornreis?community=details",
+          "nutritionNote": "Ballaststoffe <0.5 g als Obergrenze 0.5 g. Dies ist vorgekochter Reis, kein Trockengewicht.",
+          "verifiedAt": "2026-10-24",
+          "id": "a-reis",
+          "amount": 750
+        }
+      ],
+      "misEnPlace": [
+        {
+          "id": "a-prep",
+          "text": "Linsen abspülen. Tofu abtupfen und klein würfeln. Zutaten abwiegen.",
+          "shortLabel": "Abwiegen und schneiden",
+          "category": "schneiden",
+          "timerMinutes": 5,
+          "uses": [
+            {
+              "ingredientId": "a-linsen"
+            },
+            {
+              "ingredientId": "a-tofu"
+            }
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "id": "a-step1",
+          "recipeId": "linsen-tofu-tomatenreis",
+          "order": 1,
+          "text": "Linsen in reichlich Wasser aufkochen und nach Packungsangabe etwa 25 Minuten garen.",
+          "shortLabel": "Linsen garen",
+          "timeMinutes": 25,
+          "activeMinutes": 2,
+          "device": "Topf",
+          "tip": "Während der passiven Garzeit das zweite Gericht beginnen.",
+          "uses": [
+            {
+              "ingredientId": "a-linsen"
+            }
+          ]
+        },
+        {
+          "id": "a-step2",
+          "recipeId": "linsen-tofu-tomatenreis",
+          "order": 2,
+          "text": "Linsen abgiessen. Mit Tofu und Passata zurück in den Topf geben, aufkochen und 10 Minuten sanft köcheln.",
+          "shortLabel": "Ragout köcheln",
+          "timeMinutes": 10,
+          "activeMinutes": 3,
+          "device": "Topf",
+          "uses": [
+            {
+              "ingredientId": "a-tofu"
+            },
+            {
+              "ingredientId": "a-passata"
+            }
+          ]
+        },
+        {
+          "id": "a-step3",
+          "recipeId": "linsen-tofu-tomatenreis",
+          "order": 3,
+          "text": "Vorgekochten Reis nach Packungsangabe erwärmen und unter das Ragout heben.",
+          "shortLabel": "Reis unterheben",
+          "timeMinutes": 5,
+          "activeMinutes": 3,
+          "device": "Topf",
+          "uses": [
+            {
+              "ingredientId": "a-reis"
+            }
+          ]
+        },
+        {
+          "id": "a-step4",
+          "recipeId": "linsen-tofu-tomatenreis",
+          "order": 4,
+          "text": "Fertiges Gericht wiegen, das Endgewicht in AlexFit eintragen und gleichmässig auf die gewählte Anzahl flacher Behälter verteilen.",
+          "shortLabel": "Wiegen und portionieren",
+          "timeMinutes": 5,
+          "activeMinutes": 5,
+          "device": "Arbeitsplatte",
+          "uses": []
+        }
+      ]
+    },
+    {
+      "id": "spinat-tofu-reis",
+      "name": "Ofen-Tofu mit Spinat-Reis",
+      "servings": 5,
+      "freezable": true,
+      "notes": [
+        "Diese einfache Rezeptbasis kann im Editor mit abgemessenen Gewürzen erweitert werden.",
+        "Tofu wird auf Backpapier gegart; zusätzliches Öl muss als Zutat erfasst werden.",
+        "Tiefgekühlten Spinat direkt vollständig garen. Fertige Portionen rasch abkühlen und einfrieren; Produktangaben beachten.",
+        "Vorgekochten Reis verwenden. Endgewicht nach dem Kochen tatsächlich wiegen."
+      ],
+      "ingredients": [
+        {
+          "name": "Tofu natur",
+          "productName": "M-Budget Tofu Bio Nature vegan",
+          "unit": "g",
+          "category": "milch_ei",
+          "nutritionPer100g": {
+            "kcal": 145,
+            "protein_g": 16,
+            "carbs_g": 1.2,
+            "fat_g": 8.3,
+            "fiber_g": 0.7,
+            "sodium_mg": 120
+          },
+          "packageGrams": 300,
+          "packagePriceCHF": 1.15,
+          "nutritionSource": "https://www.migros.ch/de/product/130927400000",
+          "verifiedAt": "2026-10-24",
+          "id": "b-tofu",
+          "amount": 1200
+        },
+        {
+          "name": "Spinat gehackt, ungewürzt",
+          "productName": "M-Budget Spinat gehackt ungewürzt",
+          "unit": "g",
+          "category": "gemuese",
+          "nutritionPer100g": {
+            "kcal": 19,
+            "protein_g": 2.5,
+            "carbs_g": 1,
+            "fat_g": 0.5,
+            "fiber_g": 2.5,
+            "sodium_mg": 12
+          },
+          "packageGrams": null,
+          "packagePriceCHF": null,
+          "nutritionSource": "https://www.migros.ch/de/product/mo/148167?context=ecommerce",
+          "nutritionNote": "Fett <0.5 g und Kohlenhydrate <1 g als Obergrenzen. Spinat direkt garen; Produktangaben beachten.",
+          "verifiedAt": "2026-10-24",
+          "id": "b-spinat",
+          "amount": 1000
+        },
+        {
+          "name": "Langkornreis, bereits gekocht",
+          "productName": "M-Budget Langkornreis 250 g (vorgekocht)",
+          "unit": "g",
+          "category": "trockenes",
+          "nutritionPer100g": {
+            "kcal": 143,
+            "protein_g": 2.8,
+            "carbs_g": 29,
+            "fat_g": 1.6,
+            "fiber_g": 0.5,
+            "sodium_mg": 76
+          },
+          "packageGrams": 250,
+          "packagePriceCHF": 1.6,
+          "nutritionSource": "https://migipedia.migros.ch/de/m-budget-langkornreis?community=details",
+          "nutritionNote": "Ballaststoffe <0.5 g als Obergrenze 0.5 g. Dies ist vorgekochter Reis, kein Trockengewicht.",
+          "verifiedAt": "2026-10-24",
+          "id": "b-reis",
+          "amount": 1000
+        }
+      ],
+      "misEnPlace": [
+        {
+          "id": "b-prep",
+          "text": "Ofen auf 200 °C Ober-/Unterhitze vorheizen. Tofu abtupfen, würfeln und auf Backpapier verteilen.",
+          "shortLabel": "Ofen und Tofu",
+          "category": "schneiden",
+          "timerMinutes": 5,
+          "uses": [
+            {
+              "ingredientId": "b-tofu"
+            }
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "id": "b-step1",
+          "recipeId": "spinat-tofu-reis",
+          "order": 1,
+          "text": "Tofuwürfel in den vorgeheizten Ofen geben und etwa 25 Minuten backen; nach der Hälfte wenden.",
+          "shortLabel": "Tofu backen",
+          "timeMinutes": 25,
+          "activeMinutes": 3,
+          "device": "Ofen",
+          "temperatureC": 200,
+          "uses": [
+            {
+              "ingredientId": "b-tofu"
+            }
+          ]
+        },
+        {
+          "id": "b-step2",
+          "recipeId": "spinat-tofu-reis",
+          "order": 2,
+          "text": "Spinat mit wenig Wasser nach Packungsangabe vollständig garen. Regelmässig umrühren.",
+          "shortLabel": "Spinat garen",
+          "timeMinutes": 12,
+          "activeMinutes": 3,
+          "device": "Pfanne",
+          "uses": [
+            {
+              "ingredientId": "b-spinat"
+            }
+          ]
+        },
+        {
+          "id": "b-step3",
+          "recipeId": "spinat-tofu-reis",
+          "order": 3,
+          "text": "Vorgekochten Reis zum Spinat geben und vollständig erhitzen. Gebackenen Tofu darauf verteilen.",
+          "shortLabel": "Reis erhitzen",
+          "timeMinutes": 5,
+          "activeMinutes": 3,
+          "device": "Pfanne",
+          "uses": [
+            {
+              "ingredientId": "b-reis"
+            },
+            {
+              "ingredientId": "b-tofu"
+            }
+          ]
+        },
+        {
+          "id": "b-step4",
+          "recipeId": "spinat-tofu-reis",
+          "order": 4,
+          "text": "Fertiges Gericht wiegen, Endgewicht eintragen und gleichmässig auf die gewählte Anzahl flacher Behälter verteilen.",
+          "shortLabel": "Wiegen und portionieren",
+          "timeMinutes": 5,
+          "activeMinutes": 5,
+          "device": "Arbeitsplatte",
+          "uses": []
+        }
+      ]
+    }
+  ]
+}
