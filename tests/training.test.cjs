@@ -121,7 +121,7 @@ test("dashboard progression remains wired and finished sessions retain their exa
     a.run(
       "history=[{date:'2026-10-20',exercises:[{name:'Dumbbell Bench Press',plannedSets:2,targetReps:'8–12',sets:[{weight:20,reps:12,rpe:8},{weight:20,reps:12,rpe:8}]}]},{date:'2026-10-23',exercises:[{name:'Dumbbell Bench Press',plannedSets:2,targetReps:'8–12',sets:[{weight:20,reps:12,rpe:8},{weight:20,reps:12,rpe:8}]}]}]",
     );
-    assert.equal(a.run("getProgressionSuggestions()[0].suggestedW"), 22);
+    assert.equal(a.run("getProgressionSuggestions()[0].suggestedW"), 20.5);
     a.run(
       "doStartWorkout('d1');workoutExercises[0].setData[0]={weight:'20',reps:'12',rpe:8,done:true};doFinishWorkout()",
     );

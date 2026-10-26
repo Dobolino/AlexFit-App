@@ -19,6 +19,9 @@
     "Pike Push-ups",
     "Dumbbell Shrugs",
   ];
+  const DEFAULT_DUMBBELL_WEIGHTS = [
+    2.5, 3.5, 4.5, 5.5, 6.5, 8, 9, 10, 11.5, 13.5, 16, 18, 20.5, 22.5, 24,
+  ];
   const SOURCES = {
     mifflin: "https://pubmed.ncbi.nlm.nih.gov/2305711/",
     activity: "https://pacompendium.com/",
@@ -73,7 +76,7 @@
         neckSensitive: true,
         restrictionsConfirmed: false,
         goalMode: "recomp",
-        dumbbellWeights: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24],
+        dumbbellWeights: [...DEFAULT_DUMBBELL_WEIGHTS],
         targetWeeklyChange: null,
         energyAdjustmentKcal: null,
         bikePerWeek: null,
@@ -756,13 +759,16 @@
     if (replace) return b;
     const out = {
       ...a,
-      profile: a.profile.restrictionsConfirmed
-        ? { ...b.profile, ...a.profile }
-        : b.profile,
+      profile:
+        a.profile.configured || a.profile.restrictionsConfirmed
+          ? { ...b.profile, ...a.profile }
+          : b.profile,
       blockedExercises: [
         ...new Set([...a.blockedExercises, ...b.blockedExercises]),
       ],
     };
+    if (a.weightStagesVersion === "custom-2026-10-26")
+      out.profile.dumbbellWeights = [...a.profile.dumbbellWeights];
     for (const k of [
       "painLog",
       "measurements",
@@ -790,6 +796,7 @@
   return {
     NUTRIENTS,
     DEFAULT_BLOCKED,
+    DEFAULT_DUMBBELL_WEIGHTS,
     SOURCES,
     finite,
     round,

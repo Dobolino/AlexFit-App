@@ -13,11 +13,15 @@ Mit Node.js 24:
 
 Anschliessend http://127.0.0.1:8778 öffnen. Für eine installierbare App auf dem Handy HTTPS verwenden. Das Repository wird durch einen Pull Request nicht automatisch veröffentlicht.
 
-## Persönliches Profil
+## Körperdaten (optional)
 
 Gewicht und Ziel haben keine persönlichen Vorgabewerte im veröffentlichten Code. Persönliche Werte werden ausschliesslich lokal eingegeben und gespeichert.
 
-Vor dem ersten neuen Training Erfahrung, verfügbare Zeit, Einschränkungen und Hantelstufen ergänzen. Alter und Grösse werden für die Energieformel benötigt. Ein unbekannter Körperfettanteil wird nicht geraten. Individuelle Kalorienanpassung und gewünschte wöchentliche Gewichtsänderung bleiben offen, bis sie festgelegt wurden.
+Training und Vorlagen starten ohne Profil-Pflichtformular. Unter Körperdaten lassen sich Gewicht und Körperfett unabhängig von Erfahrung, Trainingszeit oder einer Bestätigungs-Checkbox speichern. Bestehende Berechnungsdaten bleiben erhalten; zusätzliche Angaben für die Energieformel sind separat und optional eingeklappt. Ein unbekannter Körperfettanteil wird nicht geraten.
+
+Hantelgewicht direkt pro Satz über die native Auswahl wählen: 2.5, 3.5, 4.5, 5.5, 6.5, 8, 9, 10, 11.5, 13.5, 16, 18, 20.5, 22.5 und 24 kg. Diese Liste wird einmalig auch für bestehende Installationen übernommen und für Steigerungsvorschläge genutzt. Historische oder laufende Lasten ausserhalb der Liste werden nicht gerundet, sondern als «bisher» beibehalten. Körpergewicht und Körperfett werden dadurch nicht verändert.
+
+Die installierte App nutzt für ihren Rahmen die stabile Viewporthöhe (100vh), der normale Browser-Tab weiterhin die dynamische Höhe. Der untere Sicherheitsabstand wird einmalig an der Navigation reserviert, nicht zusätzlich am Inhalt. Darstellung und Systemauswahl müssen auf einem echten iPhone bestätigt werden.
 
 Nackenempfindlichkeit, Übungssperren sowie Beschwerden vor, während, nach und am Folgetag können dokumentiert werden. Sperren gelten auch für Vorlagen, Übungsalternativen und Progression. Neue neurologische Symptome pausieren die Trainingsfreigabe; die App ersetzt keine ärztliche oder physiotherapeutische Beurteilung.
 

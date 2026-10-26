@@ -14,6 +14,16 @@
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
 }
+/* Installed iOS apps can report a dynamic viewport shorter by the status-bar
+   inset. Keep the standalone shell on the stable viewport, not that reduced
+   dvh value. Safari tabs still use dvh to follow their browser controls. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  html,
+  body,
+  #app {
+    height: 100vh;
+  }
+}
 body {
   font-family: Barlow, system-ui, sans-serif;
 }
@@ -301,7 +311,7 @@ body {
 .af-sethead,
 .af-setrow {
   display: grid;
-  grid-template-columns: 24px minmax(44px, 1fr) 49px 49px 57px 40px;
+  grid-template-columns: 24px minmax(34px, 1fr) 64px 49px 50px 40px;
   gap: 5px;
   align-items: center;
   text-align: center;
@@ -331,6 +341,12 @@ body {
 .af-setrow .af-previous {
   font-size: 12px;
   color: var(--ts);
+}
+.af-setrow .af-weight-picker {
+  min-height: 44px;
+  font-size: 14px;
+  padding: 6px 2px;
+  text-align-last: center;
 }
 .af-donebtn {
   min-height: 44px;
@@ -508,7 +524,7 @@ body {
   }
   .af-sethead,
   .af-setrow {
-    grid-template-columns: 20px minmax(34px, 1fr) 42px 42px 50px 36px;
+    grid-template-columns: 20px minmax(24px, 1fr) 60px 42px 44px 36px;
     gap: 4px;
   }
   .af-card {
@@ -627,7 +643,7 @@ input[type="date"]::-webkit-date-and-time-value {
   transform: none;
   width: 100%;
   max-width: 560px;
-  padding: 8px 10px calc(10px + var(--safe-bot));
+  padding: 8px 10px max(8px, var(--safe-bot));
   background: var(--bg);
 }
 #bottomnav .navbtn {
