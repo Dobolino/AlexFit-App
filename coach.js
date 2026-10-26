@@ -800,7 +800,50 @@
           ? "Rekomposition"
           : "→ " + settings.goalKg + " kg";
   }
+  function applyPersonalTemplates() {
+    const templates = getTemplates();
+    const names = {
+      d1: "Brust / Trizeps",
+      d4: "Beine / Core",
+      d2: "Rücken / Bizeps",
+      d3: "Schulter / Core",
+    };
+    const found = Object.entries(names).map(([dayId, name]) => [
+      dayId,
+      templates
+        .filter((t) => t.dayId === dayId && t.dayName === name)
+        .sort((a, b) =>
+          String(b.updatedAt || b.createdAt || "").localeCompare(
+            String(a.updatedAt || a.createdAt || ""),
+          ),
+        )[0],
+    ]);
+    if (found.some(([, t]) => !t)) return;
+    if (!settings.personalTemplatesRestored) {
+      settings.templateSchedule = { ...(settings.templateSchedule || {}) };
+      for (const [id, t] of found)
+        if (!settings.templateSchedule[id])
+          settings.templateSchedule[id] = t.id;
+      settings.personalTemplatesRestored = true;
+      saveSettings();
+    }
+    for (const plan of Object.values(WORKOUT_PLANS))
+      for (const [id, t] of found) {
+        if (settings.templateSchedule?.[id] !== t.id) continue;
+        const day = plan.days.find((d) => d.id === id);
+        day.name = t.dayName;
+        day.muscles = [
+          ...new Set(t.exercises.map((e) => e.muscle).filter(Boolean)),
+        ];
+        day.exercises = t.exercises.map((e, i) => ({
+          ...e,
+          id: "personal_" + id + "_" + i,
+          restTimer: /Core|Bizeps|Trizeps|Waden/.test(e.muscle) ? 90 : 120,
+        }));
+      }
+  }
   function applyWeekSchedule() {
+    applyPersonalTemplates();
     const start = C.monday(todayISO()),
       days = state.weekPlans.filter(
         (p) =>
@@ -850,6 +893,9 @@
     el.className = "af-card";
     el.innerHTML = `<h2>Dein 12-Wochen-Plan</h2><p>Mo Oberkörper A · Di Unterkörper A · Mi Oberkörper B · Fr Unterkörper B · Sa Cardio nach Wahl. Donnerstag und Sonntag frei.</p>${note("Vier Krafttage, je etwa 45–60 Minuten inklusive Aufwärmen. Vorher fünf Minuten locker gehen und 1–2 leichte Aufwärmsätze der ersten Übungen; diese zählen nicht als Arbeitssätze.")}<h3>${esc(plan.label)} · ${esc(plan.subtitle)}</h3><p>${esc(plan.guidance)}</p>${note(`Reserve: ${plan.rir} saubere Wiederholungen. Pausen je Übung: ${plan.restLabel}. Bei zwei erfolgreichen Einheiten am oberen Wiederholungsziel und RPE höchstens 8 die nächstkleine passende Hantelstufe prüfen.`)}${note("Samstag: Bike, WaterRower oder WalkingPad frei wählen und im Cardio-Tab erfassen. Nach viel Bike unter der Woche ist keine weitere harte Einheit nötig. Vor einer harten Samstagstour am Freitag je Übung einen Satz weniger; bei stark müden Beinen verschieben.")}${note("Der neue Plan beginnt einmalig mit Phase 1. Vorherige Programm-Einstellungen und zukünftige Kraft-Zuordnungen sind im JSON-Backup unter coach.trainingPlanArchives archiviert. Vorlagen selbst, Trainingshistorie und laufende Einheiten bleiben erhalten.")}${button("Cardio erfassen", "cardio")}`;
     document.getElementById("screen-workout-select").prepend(el);
+    if (settings.personalTemplatesRestored)
+      el.innerHTML =
+        "<h2>Deine eigenen Templates</h2><p>Mo Brust / Trizeps · Di Beine / Core · Mi Rücken / Bizeps · Fr Schulter / Core · Sa Cardio nach Wahl.</p><p>Deine gespeicherten Vorlagen sind wieder zugeordnet und bleiben unverändert erhalten.</p><details><summary>Coaching-Hinweise</summary><p>Wiedereinstieg: In den ersten zwei Wochen werden pro Übung höchstens zwei Arbeitssätze geladen. Anschliessend den Umfang nach Erholung beurteilen, nicht automatisch mehr Intensitätstechniken ergänzen.</p><p>Core bleibt an zwei Tagen integriert. Bei 60 Minuten zuerst optionale Isolationen kürzen, nicht alle Core-Übungen zusätzlich stapeln. Beim Beintag können Glute Bridge oder Russian Twist entfallen; beim Schultertag eine Crunch-Variante statt beider wählen.</p><p>Überkopf-Trizepsstrecken und Schulterdrücken bleiben bei aktiver Übungssperre gesperrt. Nicht gesperrt bedeutet nicht automatisch beschwerdefrei. Ab Wheel nur kontrolliert, mit kurzem Bewegungsweg; sonst Dead Bug wählen.</p><p>Alte Trainingslasten sind Referenzen, keine Einstiegsvorgabe nach der Pause. Etwa drei Wiederholungen Reserve lassen; grosse Übungen 120 Sekunden, Isolationen/Core 60–90 Sekunden pausieren.</p></details>";
   };
   const originalPreview = openWorkoutPreview;
   openWorkoutPreview = function (dayId) {
@@ -882,7 +928,17 @@
       renderPain();
       return;
     }
+    applyPersonalTemplates();
     originalStart(dayId);
+    if (settings.personalTemplatesRestored && getScheduledTemplate(dayId)) {
+      workoutExercises = workoutExercises.map((ex) => ({
+        ...ex,
+        restTimer: /Core|Bizeps|Trizeps|Waden/.test(ex.muscle) ? 90 : 120,
+        setData:
+          getActivePhaseId() === "p1" ? ex.setData.slice(0, 2) : ex.setData,
+      }));
+      workoutBaselineSignature = getWorkoutPlanSignature(workoutExercises);
+    }
     activeWorkoutDay = { ...activeWorkoutDay, phaseId: getActivePhaseId() };
     workoutExercises = workoutExercises.map((ex) => ({
       ...C.definition(ex.name, ex),
