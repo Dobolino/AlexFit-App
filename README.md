@@ -27,6 +27,16 @@ Nackenempfindlichkeit, Übungssperren sowie Beschwerden vor, während, nach und 
 
 ## Training und Fortschritt
 
+### Flexible Woche und Trainingshilfen
+
+- Training → «Heute nicht → verschieben»: einzelner Termin oder diese und folgende Einheiten. Die Wochenplanung zeigt die Standardtage statt einer leeren Erholungswoche. Standard-Cardio folgt bei einer Kettenverschiebung mit, zusätzliche Bike-Einträge bleiben stehen. Nur bereits geplante Termine werden verschoben. Belegte Ziele und absolvierte Einheiten werden nicht überschrieben.
+- Samstag/Reserve: bewusste Wahl einer bestehenden Krafteinheit, freiem Cardio oder Erholung. Nachholen über die Verschiebefunktion verhindert doppelte Termine; kein automatischer fünfter Krafttag.
+- Vorbelegung aus der letzten Einheit mit derselben Tages-ID und demselben Namen: Gewicht und Wiederholungen, ohne Wochen zu vermischen oder die Last zu steigern. Aktuelle Satzzahl und Zielbereiche bleiben erhalten; zusätzliche frühere Sätze werden nicht automatisch angehängt. Häkchen und RPE bleiben leer, das Quelldatum wird angezeigt.
+- «Letzten Satz übernehmen» kopiert den letzten abgeschlossenen Satz einer Übung in den nächsten offenen Satz. Abgeschlossene Sätze bleiben unverändert, RPE wird nicht kopiert.
+- Wochenrückblick: protokollierte Einheiten/Minuten, Cardio, Verschiebungen und vergleichbare Laständerungen zur Vorwoche. Kein Misserfolgs-Score wegen verschobener Wochentage. Höheres Gewicht allein ist kein Qualitätsurteil.
+- Einstellungen: Versionsnummer und manuelle Updateprüfung. Keine Löschung der Appdaten; vor bestätigtem Neuladen wird der laufende Entwurf gespeichert. Ohne Verbindung ist keine aktuelle Serverversion garantiert; die Release-Auskunft ist als möglicherweise gecacht gekennzeichnet.
+- Aufwärm-/Phasenhinweise sind im Training eingeklappt. Ein echter iPhone-Visualtest steht aus.
+
 - Gemeinsame Progressionsberechnung für alle Anzeigen: zwei vollständige Einheiten am oberen Wiederholungsziel, dokumentierte RPE höchstens 8, keine gemeldeten Beschwerden und eine tatsächlich verfügbare Hantelstufe.
 - Steigerungen über 10 % werden nicht automatisch vorgeschlagen. Am Ende der Hantelspanne erfolgt keine erfundene Laststeigerung.
 - Halteübungen und Rudern erfassen Sekunden. Ruderintervalle wechseln zwischen Belastung und Pause.

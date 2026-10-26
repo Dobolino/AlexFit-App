@@ -59,7 +59,7 @@ function boot(stored = {}) {
   run(fs.readFileSync(path.join(root, "training-plans.js"), "utf8"));
   for (const s of [...w.document.scripts].filter((s) => !s.src))
     run(s.textContent);
-  for (const name of ["coach.js", "coach-recipes.js"])
+  for (const name of ["coach.js", "coach-recipes.js", "coach-tools.js"])
     run(fs.readFileSync(path.join(root, name), "utf8"));
   return {
     window: w,

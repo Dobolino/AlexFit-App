@@ -89,6 +89,8 @@ test("offline install includes every local runtime dependency", async () => {
     "training-plans.js",
     "coach.js",
     "coach-recipes.js",
+    "coach-tools.js",
+    "release.json",
     "coach.css",
     "recipe-library.json",
     "manifest.webmanifest",
