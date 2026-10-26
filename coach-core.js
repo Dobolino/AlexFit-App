@@ -204,26 +204,31 @@
     const sets = sessions.map(
         (h) => h.exercises.find((e) => e.name === name).sets || [],
       ),
-      required = Math.max(
-        Number(def.sets) || 3,
-        ...sessions.map(
-          (h) =>
-            Number(h.exercises.find((e) => e.name === name).plannedSets) || 0,
-        ),
+      required = sessions.map(
+        (h) =>
+          Number(h.exercises.find((e) => e.name === name).plannedSets) ||
+          Number(def.sets) ||
+          3,
+      ),
+      ranges = sessions.map(
+        (h) =>
+          repRange(h.exercises.find((e) => e.name === name).targetReps) ||
+          range,
       ),
       current = Number(sets[1][0]?.weight) || 0;
-    if (!current || sets.some((a) => a.length < required))
+    if (!current || sets.some((a, i) => a.length < required[i]))
       return {
         action: "hold",
         currentW: current,
         reason: "Noch nicht alle geplanten Arbeitssätze erreicht.",
       };
     if (
-      sets.some((a) =>
+      sets.some((a, i) =>
         a
-          .slice(0, required)
+          .slice(0, required[i])
           .some(
-            (s) => Number(s.weight) !== current || Number(s.reps) < range.max,
+            (s) =>
+              Number(s.weight) !== current || Number(s.reps) < ranges[i].max,
           ),
       )
     )
@@ -234,8 +239,10 @@
           "Erst in zwei Einheiten alle Arbeitssätze am oberen Wiederholungsziel schaffen.",
       };
     if (
-      sets.some((a) =>
-        a.slice(0, required).some((s) => !finite(s.rpe) || Number(s.rpe) > 8),
+      sets.some((a, i) =>
+        a
+          .slice(0, required[i])
+          .some((s) => !finite(s.rpe) || Number(s.rpe) > 8),
       )
     )
       return {

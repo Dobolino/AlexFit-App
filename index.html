@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="icons/icon.svg">
 <title>AlexFit</title>
 <script src="coach-core.js"></script>
+<script src="training-plans.js"></script>
 <script src="coach.js" defer></script>
 <script src="coach-recipes.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -873,7 +874,7 @@
 // Jede Phase hat: label, weeks, restTimer (Sekunden), eigene Trainingstage
 // schedule: JavaScript Wochentag (0=So,1=Mo,...) → Tag-ID
 // ══════════════════════════════════════════════════════════════════════════════
-const WORKOUT_PLANS = {
+const LEGACY_WORKOUT_PLANS = {
 
   // ── PHASE 1: Technik & Grundlagen (Woche 1–4) ────────────────────────────
   // 3 Sätze, 60–90s Pause, Fokus Technik, Gewichte moderat
@@ -1073,6 +1074,8 @@ const WORKOUT_PLANS = {
   },
 };
 
+const WORKOUT_PLANS = AlexFitTraining.buildPlans();
+
 // ── Aktive Phase Helpers ──────────────────────────────────────────────────────
 function getActivePlan(){ return WORKOUT_PLANS[settings.activePhase||'p1']; }
 function getActivePhaseId(){ return settings.activePhase||'p1'; }
@@ -1096,7 +1099,7 @@ const COOLDOWN=["Brust dehnen 30s je Seite","Schulter Stretch 30s","Nackenmobili
 const GOAL_KG=null;
 const BF_MIN=12,BF_MAX=18;
 const SCHEMA_VERSION=4;
-const APP_BUILD='2026.10.24';
+const APP_BUILD='2026.10.26';
 const BACKUP_FORMAT_VERSION=2;
 const SESSION_KEY='af_active_session';
 const PROGRAM_WEEKS=12;
@@ -1300,7 +1303,7 @@ function getTrainedDayForDate(iso){
   for(let i=entries.length-1;i>=0;i--){
     const h=entries[i];
     let d=WORKOUT_DAYS.find(x=>x.id===h.dayId);
-    if(d)return d;
+    if(d)return {...d,name:h.name||d.name};
     const plan=WORKOUT_PLANS[h.phaseId||'p1'];
     if(plan) d=plan.days.find(x=>x.id===h.dayId);
     if(d)return d;
@@ -1692,7 +1695,7 @@ function switchPhase(phaseId){
     `Zu ${plan.label} wechseln? — ${plan.subtitle}`,
     ()=>{
       settings.activePhase=phaseId;
-      // Neue Phase-Zeitraum berechnen (ab heute, 6 Wochen)
+      // Phasenwechsel bleibt eine bewusste Entscheidung; kein Lastsprung.
       settings.programStart=dateToISO(new Date());
       settings.programEnd=addDaysISO(settings.programStart, plan.weeks*7);
       saveSettings();
@@ -1710,7 +1713,7 @@ function switchPhase(phaseId){
 }
 
 function checkPhaseAdvance(){
-  // Prüft ob 6 Wochen der aktuellen Phase abgelaufen sind → zeigt Banner
+  // Zeitplan ist eine Orientierung, kein automatischer Belastungssprung.
   const plan=getActivePlan();
   const endDate=parseISODateLocal(settings.programEnd);
   const today=new Date();today.setHours(0,0,0,0);
@@ -1744,7 +1747,8 @@ function openPhasePicker(){
           <span class="bc" style="font-size:16px;font-weight:800;color:var(--tp)">${plan.label}</span>
           ${isActive?`<span style="background:${plan.color};border-radius:4px;padding:1px 7px"><span class="bc" style="font-size:9px;font-weight:700;color:#fff;text-transform:uppercase">Aktiv</span></span>`:''}
         </div>
-        <div class="bc" style="font-size:12px;color:var(--tm)">${plan.subtitle} · ${plan.weeks} Wochen · ${plan.restTimer}s Pause</div>
+        <div class="bc" style="font-size:12px;color:var(--tm)">${plan.subtitle} · ${plan.weeks} Wochen · ${plan.restLabel}</div>
+        <div style="font-size:12px;color:var(--ts);margin-top:6px">${escapeHTML(plan.guidance)} Reserve: ${plan.rir} Wiederholungen.</div>
         <div class="bc" style="font-size:11px;color:var(--ts);margin-top:2px">${histCount} Trainings absolviert</div>
       </div>
       ${isActive?`<svg width="18" height="18" viewBox="0 0 24 24" fill="${plan.color}" stroke="none"><path d="M20 6L9 17l-5-5" stroke="${plan.color}" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`:
@@ -2026,7 +2030,7 @@ function renderDashboard(){
       advanceBannerEl.innerHTML=`<div style="background:linear-gradient(135deg,${adv.nextPlan.color}25,var(--cardElev));border:2px solid ${adv.nextPlan.color}60;border-radius:14px;padding:14px 16px;margin-bottom:16px">
         <div class="bc" style="font-size:11px;font-weight:700;color:${adv.nextPlan.color};text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">🎉 Phase abgeschlossen!</div>
         <div class="bc" style="font-size:17px;font-weight:800;color:var(--tp);margin-bottom:4px">${adv.nextPlan.label} bereit</div>
-        <div style="font-size:12px;color:var(--tm);margin-bottom:10px">${adv.nextPlan.subtitle} · ${adv.nextPlan.restTimer}s Pause · mehr Volumen</div>
+        <div style="font-size:12px;color:var(--tm);margin-bottom:10px">${escapeHTML(adv.nextPlan.guidance)} Nur bei guter Erholung wechseln; andernfalls die aktuelle Phase verlängern.</div>
         <button onclick="switchPhase('${adv.nextPhaseId}')" style="width:100%;padding:12px;border-radius:10px;background:${adv.nextPlan.color};color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.06em">Jetzt zu ${adv.nextPlan.label} wechseln →</button>
       </div>`;
     }else{
@@ -2670,7 +2674,7 @@ function doFinishWorkout(){
       dayId:finishedDay.id,
       dayName:finishedDay.name,
       exercises:workoutExercises.map(ex=>({
-        name:ex.name,muscle:ex.muscle,sets:ex.setData.length,reps:ex.reps,bw:ex.bw||false,_added:ex._added||false,note:ex.note
+        name:ex.name,muscle:ex.muscle,sets:ex.setData.length,reps:ex.reps,bw:ex.bw||false,_added:ex._added||false,note:ex.note,restTimer:ex.restTimer,weightBasis:ex.weightBasis
       }))
     };
   }else _pendingPlanSave=null;
@@ -2679,7 +2683,7 @@ function doFinishWorkout(){
     exercises:workoutExercises.map(ex=>{
       const bw=!!ex.bw;const done=ex.setData.filter(s=>s.done).map(s=>({weight:parseFloat(s.weight)||0,reps:parseInt(s.reps)||0,...(ex.unit==='seconds'?{seconds:parseInt(s.reps)||0}:{}),...(s.rpe?{rpe:s.rpe}:{}),...(s.leverageDrop?{leverageDrop:true,drop2reps:parseInt(s.drop2reps)||0,drop3reps:parseInt(s.drop3reps)||0}:{})}));
       let isPR=false;if(done.length>0){const prev=prMap[ex.name];if(bw){const mx=Math.max(...done.map(s=>s.reps));isPR=!prev||mx>prev.reps;}else{const mx=Math.max(...done.map(s=>s.weight));isPR=!prev||mx>prev.weight;}}
-      return{name:ex.name,plannedSets:ex.setData.length,unit:ex.unit||'reps',bw:!!ex.bw,muscle:ex.muscle,weightBasis:ex.weightBasis,sets:done,isPR};
+      return{name:ex.name,plannedSets:ex.setData.length,targetReps:ex.reps,unit:ex.unit||'reps',bw:!!ex.bw,muscle:ex.muscle,weightBasis:ex.weightBasis,sets:done,isPR};
     }).filter(ex=>ex.sets.length>0),
   };
   history.push(entry);save();renderDashboard();workoutExercises=[];activeWorkoutDay=null;timerRunning=false;workoutBaselineSignature='';clearSession();dismissRestTimer();
@@ -5129,7 +5133,8 @@ function renderSettings(){
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div>
           <div class="bc" style="font-size:16px;font-weight:800;color:${plan.color}">${plan.label}</div>
-          <div class="bc" style="font-size:12px;color:var(--tm)">${plan.subtitle} · ${plan.restTimer}s Pause</div>
+          <div class="bc" style="font-size:12px;color:var(--tm)">${plan.subtitle} · ${plan.restLabel}</div>
+          <div style="font-size:12px;color:var(--ts);margin-top:6px">${escapeHTML(plan.guidance)}</div>
         </div>
         <button onclick="openPhasePicker()" style="background:${plan.color}25;border:1px solid ${plan.color}50;border-radius:8px;padding:6px 12px">
           <span class="bc" style="font-size:12px;font-weight:700;color:${plan.color}">Wechseln</span>
@@ -5324,7 +5329,7 @@ function persistWorkoutPlanForDay(dayId,exercises,dayName){
   const existingId=settings.templateSchedule?.[dayId];
   const existing=existingId?templates.find(t=>t.id===existingId):null;
   const tmplExercises=(exercises||[]).map(ex=>({
-    name:ex.name,muscle:ex.muscle,sets:ex.sets||3,reps:ex.reps,bw:ex.bw||false,_added:ex._added||false
+    name:ex.name,muscle:ex.muscle,sets:ex.sets||3,reps:ex.reps,bw:ex.bw||false,_added:ex._added||false,note:ex.note,restTimer:ex.restTimer,weightBasis:ex.weightBasis
   }));
   if(existing){
     existing.exercises=tmplExercises;
@@ -5361,7 +5366,7 @@ function saveCurrentAsTemplate(){
     dayName:activeWorkoutDay?.name||'Custom',
     exercises:workoutExercises.map(ex=>({
       name:ex.name,muscle:ex.muscle,sets:ex.sets||ex.setData.length,
-      reps:ex.reps,bw:ex.bw||false,_added:ex._added||false
+      reps:ex.reps,bw:ex.bw||false,_added:ex._added||false,note:ex.note,restTimer:ex.restTimer,weightBasis:ex.weightBasis
     }))
   };
   templates.push(tmpl);

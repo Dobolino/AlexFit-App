@@ -47,9 +47,10 @@ test(
   "blocked exercises are disabled in the actual workout UI and cannot be checked",
   withApp((a) => {
     ready(a);
+    a.window.AF.state.blockedExercises.push("Dumbbell Bench Press");
     a.run("doStartWorkout('d1')");
     const index = a.run(
-      "workoutExercises.findIndex(e=>e.name==='Overhead Triceps Extension')",
+      "workoutExercises.findIndex(e=>e.name==='Dumbbell Bench Press')",
     );
     assert.ok(index >= 0);
     assert.ok(
@@ -88,7 +89,9 @@ test(
   "rowing and holds render second inputs and persist typed units",
   withApp((a) => {
     ready(a);
-    a.run("doStartWorkout('d5')");
+    a.run(
+      "doStartWorkout('d1');workoutExercises=LEGACY_WORKOUT_PLANS.p1.days.find(d=>d.id==='d5').exercises.map(ex=>({...AlexFitCore.definition(ex.name,ex),setData:createSetDataForExercise(ex)}));renderWorkoutActive()",
+    );
     assert.match(
       a.document.getElementById("exercise-list").textContent,
       /Sek\./,
@@ -297,7 +300,14 @@ test(
   withApp(
     (a) => {
       assert.equal(a.run("settings.goalKg"), 82);
-      assert.equal(a.run("settings.programEnd"), "2026-11-30");
+      assert.equal(
+        a.window.AF.state.trainingPlanArchives[0].settings.programEnd,
+        "2026-11-30",
+      );
+      assert.equal(
+        a.run("settings.programEnd"),
+        a.run("addDaysISO(todayISO(),14)"),
+      );
       assert.equal(a.run("history.length"), 1);
       assert.equal(a.run("weightLog[0].kg"), 100);
     },
@@ -388,10 +398,11 @@ test(
   "locked sets do not count as unfinished work in the progress display",
   withApp((a) => {
     ready(a);
+    a.window.AF.state.blockedExercises.push("Dumbbell Bench Press");
     a.run("doStartWorkout('d1');updateProgress()");
     assert.equal(
       a.document.getElementById("workout-prog-txt").textContent,
-      "0/15 Sätze",
+      "0/8 Sätze",
     );
   }),
 );
@@ -400,7 +411,7 @@ test(
   withApp(async (a) => {
     ready(a);
     a.run(
-      "doStartWorkout('d5');workoutExercises[1].setData[0].reps='1';renderExerciseList()",
+      "doStartWorkout('d1');workoutExercises=LEGACY_WORKOUT_PLANS.p1.days.find(d=>d.id==='d5').exercises.map(ex=>({...AlexFitCore.definition(ex.name,ex),setData:createSetDataForExercise(ex)}));workoutExercises[1].setData[0].reps='1';renderExerciseList()",
     );
     a.document
       .querySelector('[data-af-action="interval"][data-ei="1"][data-si="0"]')

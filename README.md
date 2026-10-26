@@ -4,7 +4,7 @@ Persönliche, lokal gespeicherte Fitness-App mit Krafttraining, Cardio, Rekompos
 
 ## Starten
 
-Die Dateien über einen lokalen Webserver oder statisches HTTPS-Hosting ausliefern. Nicht nur index.html herunterladen: coach-core.js, coach.js, coach-recipes.js, coach.css, recipe-library.json, sw.js, manifest.webmanifest und icons/ gehören dazu.
+Die Dateien über einen lokalen Webserver oder statisches HTTPS-Hosting ausliefern. Nicht nur index.html herunterladen: coach-core.js, training-plans.js, coach.js, coach-recipes.js, coach.css, recipe-library.json, sw.js, manifest.webmanifest und icons/ gehören dazu.
 
 Mit Node.js 24:
 
@@ -27,7 +27,10 @@ Nackenempfindlichkeit, Übungssperren sowie Beschwerden vor, während, nach und 
 - Steigerungen über 10 % werden nicht automatisch vorgeschlagen. Am Ende der Hantelspanne erfolgt keine erfundene Laststeigerung.
 - Halteübungen und Rudern erfassen Sekunden. Ruderintervalle wechseln zwischen Belastung und Pause.
 - Laufende Einheiten werden dauerhaft zwischengespeichert. Beim Wiederöffnen werden Uhr und Intervallfolge pausiert wiederhergestellt.
-- Das Gesamtprogramm ist von den Phasen getrennt. Neue Standardphasen dauern vier Wochen; bestehende Phasenzeiträume bleiben bei der Migration erhalten.
+- Vier Krafttage: Montag Oberkörper A, Dienstag Unterkörper A, Mittwoch Oberkörper B, Freitag Unterkörper B. Donnerstag und Sonntag frei; Samstag Cardio nach Wahl über den Cardio-Tab, ohne vorgeschriebene Intervalle.
+- Zwölf Wochen: Phase 1 Wiedereinstieg (2 Wochen, zwei Arbeitssätze je Übung), Phase 2 Aufbau (4 Wochen), Phase 3 Festigen (6 Wochen, gleicher Umfang wie Phase 2). Stabile Übungen und 60–120 Sekunden übungsabhängige Pausen statt automatisch kürzerer Pausen, Dropsätze oder Muskelversagen. Phasenwechsel bleibt manuell und von Erholung und Technik abhängig.
+- Beim ersten Laden der neuen Planversion startet Phase 1 ab diesem Tag. Vorherige Programmeinstellungen inklusive Vorlagen-Zuordnungen und zukünftige primäre Trainingszuordnungen werden unter `coach.trainingPlanArchives` im vollständigen JSON-Backup archiviert. Die Vorlagen selbst, historische Einträge, Bike-/Ruhetagplanung und aktive Trainingsentwürfe bleiben erhalten. Nachfolgende Starts setzen die Phase nicht erneut zurück.
+- Wiederkehrende Übungen dürfen an A-/B-Tagen unterschiedliche Zielbereiche und Satzzahlen haben. Neue Historieneinträge speichern dafür `targetReps` und `plannedSets`; Steigerungen prüfen jeweils das Ziel der damaligen Einheit.
 - Bei Rekomposition werden Wochenmittel, Umfang und Kraft gemeinsam betrachtet; ein niedrigeres Zielgewicht ist keine Voraussetzung.
 
 Die Trainings-/Bike-Woche lässt sich frei belegen und verschieben. Einheiten bei hoher Belastung an aufeinanderfolgenden Tagen werden zur Prüfung markiert. Erholung bleibt ein geplanter Teil der Woche.

@@ -1,5 +1,5 @@
-const CACHE_NAME='af-v13-cardio-ui-20261024';
-const APP_FILES=['./','./index.html','./coach-core.js','./coach.js','./coach-recipes.js','./coach.css','./recipe-library.json','./manifest.webmanifest','./icons/icon.svg'];
+const CACHE_NAME='af-v14-training-20261026';
+const APP_FILES=['./','./index.html','./coach-core.js','./training-plans.js','./coach.js','./coach-recipes.js','./coach.css','./recipe-library.json','./manifest.webmanifest','./icons/icon.svg'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_FILES)).then(()=>self.skipWaiting()));
 });
