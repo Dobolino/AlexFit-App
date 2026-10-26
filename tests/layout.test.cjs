@@ -75,3 +75,16 @@ test("preview stylesheet reserves all safe edges and constrains chart size", () 
     /\.muscle-chart-slot svg\s*\{[^}]*max-width:\s*100%[^}]*max-height:\s*100%/,
   );
 });
+
+test("installed shell uses stable viewport height and reserves the bottom safe area only once", () => {
+  const css = fs.readFileSync(path.join(root, "coach.css"), "utf8");
+  assert.match(
+    css,
+    /@media \(display-mode: standalone\), \(display-mode: fullscreen\)\s*\{\s*html,\s*body,\s*#app\s*\{\s*height: 100vh;/,
+  );
+  assert.match(
+    css,
+    /#nav-container\s*\{[^}]*padding: 8px 10px max\(8px, var\(--safe-bot\)\)/,
+  );
+  assert.doesNotMatch(css, /#content\s*\{[^}]*safe-bot/);
+});

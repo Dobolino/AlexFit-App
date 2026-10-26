@@ -4,6 +4,11 @@
     KEY = "af_coach",
     esc = escapeHTML;
   let state = C.normalizeState(safeParse(KEY, null));
+  if (state.weightStagesVersion !== "custom-2026-10-26") {
+    state.profile.dumbbellWeights = [...C.DEFAULT_DUMBBELL_WEIGHTS];
+    state.weightStagesVersion = "custom-2026-10-26";
+    persist();
+  }
   // Activate the requested replacement once, without deleting logs, templates
   // or an in-progress session. Previous assignments remain in the JSON backup.
   if (settings.trainingPlanVersion !== AlexFitTraining.VERSION) {
@@ -114,14 +119,6 @@
   function blocked(name) {
     return state.blockedExercises.includes(name);
   }
-  function trainingContext() {
-    return (
-      !!state.profile.experience &&
-      state.profile.sessionMinutes > 0 &&
-      state.profile.restrictionsConfirmed &&
-      Number(latestWeight()) >= 30
-    );
-  }
   function progression(name, definition = getExDef(name)) {
     return C.progression({
       name,
@@ -192,20 +189,64 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   function renderProfile() {
-    const p = state.profile,
-      all = [
-        ...new Set([
-          ...DEFAULT_NAMES(),
-          ...EXERCISE_LIBRARY.map((e) => e.name),
-        ]),
-      ].sort();
+    const p = state.profile;
+    const all = [
+      ...new Set([...DEFAULT_NAMES(), ...EXERCISE_LIBRARY.map((e) => e.name)]),
+    ].sort();
     screen(
       "coach-profile",
-      "Dein Profil",
+      "Körperdaten",
       note(
-        "Diese Angaben bleiben auf diesem Gerät und in deinen JSON-Backups. Empfehlungen benötigen ein vollständiges Profil.",
+        "Optionales Tracking: Körpergewicht und Körperfett. Zum Training musst du hier nichts ausfüllen. Deine Daten bleiben auf diesem Gerät und in deinen JSON-Backups.",
       ) +
-        `<form data-af-form="profile"><div class="af-grid">${field("Aktuelles Gewicht (kg)", "af-profile-weight", latestWeight() ?? "", "number", 'min="30" max="300" step="0.1" required')}${field("Alter", "af-age", p.age, "number", 'min="18" max="100" required')}${field("Grösse (cm)", "af-height", p.heightCm, "number", 'min="120" max="230" required')}${select(
+        '<form data-af-form="profile"><div class="af-grid">' +
+        field(
+          "Körpergewicht (kg)",
+          "af-profile-weight",
+          latestWeight() ?? "",
+          "number",
+          'min="30" max="300" step="0.1"',
+        ) +
+        field(
+          "Körperfett (%) – falls bekannt",
+          "af-bf",
+          p.bodyFatPct,
+          "number",
+          'min="5" max="60" step="0.1"',
+        ) +
+        '</div><button class="af-btn af-primary" type="submit">Körperdaten speichern</button>' +
+        '<details class="af-card"><summary>Übungssperren (optional)</summary>' +
+        note(
+          "Vorhandene Sperren bleiben aktiv. Eine Freigabe ist keine medizinische Beurteilung.",
+        ) +
+        '<div class="af-blocklist">' +
+        all
+          .map(
+            (n) =>
+              '<label class="af-check"><input type="checkbox" name="af-blocked" value="' +
+              esc(n) +
+              '" ' +
+              (blocked(n) ? "checked" : "") +
+              ">" +
+              esc(n) +
+              "</label>",
+          )
+          .join("") +
+        "</div></details></form>" +
+        '<details class="af-card"><summary>Ernährungsberechnung (optional)</summary>' +
+        note(
+          "Nur für Kalorien- und Proteinberechnungen. Diese Angaben blockieren nie dein Training.",
+        ) +
+        '<form data-af-form="calculations"><div class="af-grid">' +
+        field("Alter", "af-age", p.age, "number", 'min="18" max="100"') +
+        field(
+          "Grösse (cm)",
+          "af-height",
+          p.heightCm,
+          "number",
+          'min="120" max="230"',
+        ) +
+        select(
           "Berechnungsformel",
           "af-sex",
           [
@@ -213,17 +254,15 @@
             ["female", "Weiblich"],
           ],
           p.sex,
-        )}${select(
-          "Trainingserfahrung",
-          "af-experience",
-          [
-            ["", "Bitte wählen"],
-            ["beginner", "Anfänger"],
-            ["returning", "Wiedereinstieg"],
-            ["regular", "Regelmässiges Krafttraining"],
-          ],
-          p.experience,
-        )}${field("Zeit je Training (Minuten)", "af-session", p.sessionMinutes, "number", 'min="10" max="180" required')}${field("Bike-Ausfahrten pro Woche", "af-bike", p.bikePerWeek, "number", 'min="0" max="14"')}${field("Körperfett (%) – falls bekannt", "af-bf", p.bodyFatPct, "number", 'min="5" max="60" step="0.1"')}${select(
+        ) +
+        field(
+          "Bike-Ausfahrten pro Woche",
+          "af-bike",
+          p.bikePerWeek,
+          "number",
+          'min="0" max="14"',
+        ) +
+        select(
           "Ziel",
           "af-goal",
           [
@@ -233,77 +272,127 @@
             ["gain", "Muskelaufbau"],
           ],
           p.goalMode,
-        )}${field("Individuelles Wochenziel (kg/Woche)", "af-weekchange", p.targetWeeklyChange, "number", 'min="-1" max="0.5" step="0.05" placeholder="Mit dem Coach festlegen"')}${field("Kalorienanpassung zum Erhalt (kcal/Tag)", "af-adjust", p.energyAdjustmentKcal, "number", 'min="-500" max="300" step="50" placeholder="Mit dem Coach festlegen"')}</div>` +
-        `<label class="af-field">Verfügbare Gewichte pro Hantel (kg, mit Komma trennen)<input id="af-weights" value="${esc(p.dumbbellWeights.join(", "))}" required></label>` +
-        `<label class="af-check"><input id="af-neck" type="checkbox" ${p.neckSensitive ? "checked" : ""}>Nackenbeschwerden bei der Übungsauswahl berücksichtigen</label>` +
-        `<label class="af-check"><input id="af-confirm" type="checkbox" ${p.restrictionsConfirmed ? "checked" : ""}>Meine Einschränkungen und gesperrten Übungen sind geprüft. Bei ungeklärten Beschwerden kläre ich geeignete Belastungen mit Arzt oder Physiotherapie.</label>` +
-        `<details class="af-card"><summary>Übungen sperren / freigeben</summary>${note("Diese Sperren gelten für Standardplan, Vorlagen, Alternativen und Steigerungsvorschläge. Eine Freigabe durch die App ist keine medizinische Beurteilung.")}<div class="af-blocklist">${all.map((n) => `<label class="af-check"><input type="checkbox" name="af-blocked" value="${esc(n)}" ${blocked(n) ? "checked" : ""}>${esc(n)}</label>`).join("")}</div></details><button class="af-btn af-primary" type="submit">Profil speichern</button></form>` +
-        card(
-          "Programm und Phasen",
-          `<form data-af-form="cycle"><div class="af-grid">${field("Gesamtprogramm beginnt", "af-cycle-start", settings.cycleStart, "date", "required")}${field("Gesamtdauer (Wochen)", "af-cycle-weeks", settings.cycleWeeks || 12, "number", 'min="3" max="52" required')}</div>${note("Die Phasen werden beim Wechsel separat gestartet. Bestehende Phasenzeiträume wurden übernommen; neue Phasen dauern standardmässig vier Wochen.")}<button class="af-btn" type="submit">Programmzeitraum speichern</button></form>`,
-        ),
+        ) +
+        field(
+          "Wochenziel (kg/Woche)",
+          "af-weekchange",
+          p.targetWeeklyChange,
+          "number",
+          'min="-1" max="0.5" step="0.05"',
+        ) +
+        field(
+          "Kalorienanpassung (kcal/Tag)",
+          "af-adjust",
+          p.energyAdjustmentKcal,
+          "number",
+          'min="-500" max="300" step="50"',
+        ) +
+        '</div><button class="af-btn" type="submit">Berechnungsdaten speichern</button></form></details>' +
+        '<details class="af-card"><summary>Programmzeitraum (optional)</summary><form data-af-form="cycle"><div class="af-grid">' +
+        field(
+          "Gesamtprogramm beginnt",
+          "af-cycle-start",
+          settings.cycleStart,
+          "date",
+          "required",
+        ) +
+        field(
+          "Gesamtdauer (Wochen)",
+          "af-cycle-weeks",
+          settings.cycleWeeks || 12,
+          "number",
+          'min="3" max="52" required',
+        ) +
+        "</div>" +
+        note(
+          "Standard: 2 Wochen Wiedereinstieg, 4 Wochen Aufbau, 6 Wochen Festigen. Phasenwechsel bleibt manuell.",
+        ) +
+        '<button class="af-btn" type="submit">Programmzeitraum speichern</button></form></details>',
     );
   }
   function DEFAULT_NAMES() {
     return C.DEFAULT_BLOCKED;
   }
   function saveProfile() {
-    const weights = val("af-weights")
-      .split(/[,;]+/)
-      .map((v) => Number(v.trim()))
-      .filter((v) => Number.isFinite(v) && v > 0 && v <= 100);
-    if (!weights.length || !val("af-experience") || !checked("af-confirm")) {
-      showToast("Trainingserfahrung, Hantelstufen und Einschränkungen prüfen.");
+    const kg = num("af-profile-weight"),
+      bf = num("af-bf");
+    if (kg !== null && !(kg >= 30 && kg <= 300)) {
+      showToast("Körpergewicht zwischen 30 und 300 kg eingeben.");
       return;
     }
-    const kg = num("af-profile-weight");
-    if (!(kg >= 30 && kg <= 300)) {
-      showToast("Aktuelles Gewicht lokal eintragen.");
+    if (bf !== null && !(bf >= 5 && bf <= 60)) {
+      showToast("Körperfett zwischen 5 und 60 % eingeben.");
       return;
     }
-    const before = state.profile.bikePerWeek;
+    const before = state.profile,
+      previousBlocked = state.blockedExercises;
+    state.profile = { ...state.profile, bodyFatPct: bf, configured: true };
+    state.blockedExercises = [
+      ...document.querySelectorAll('input[name="af-blocked"]:checked'),
+    ].map((e) => e.value);
+    if (!persist()) {
+      state.profile = before;
+      state.blockedExercises = previousBlocked;
+      return;
+    }
+    if (kg !== null) {
+      if (!settings.startKg) {
+        settings.startKg = kg;
+        settings.goalKg = kg;
+      }
+      const date = todayISO();
+      let entry = weightLog.find((e) => e.date === date);
+      if (!entry) {
+        entry = { date, kg };
+        weightLog.push(entry);
+      }
+      entry.kg = kg;
+      if (bf !== null) entry.bf = bf;
+      else delete entry.bf;
+      weightLog.sort((a, b) => a.date.localeCompare(b.date));
+      saveW();
+      currentWeight = kg;
+      saveSettings();
+      updateWeightDisplay();
+    }
+    showToast("Körperdaten gespeichert ✓");
+    switchTab("dashboard");
+  }
+  function saveCalculations() {
+    const fields = [
+      ["af-age", 18, 100],
+      ["af-height", 120, 230],
+      ["af-bike", 0, 14],
+      ["af-weekchange", -1, 0.5],
+      ["af-adjust", -500, 300],
+    ];
+    if (
+      fields.some(
+        ([id, min, max]) =>
+          num(id) !== null && !(num(id) >= min && num(id) <= max),
+      )
+    ) {
+      showToast("Berechnungsdaten prüfen.");
+      return;
+    }
+    const before = state.profile;
     state.profile = {
       ...state.profile,
       age: num("af-age"),
       heightCm: num("af-height"),
       sex: val("af-sex"),
-      experience: val("af-experience"),
-      sessionMinutes: num("af-session"),
-      bodyFatPct: num("af-bf"),
       bikePerWeek: num("af-bike"),
       goalMode: val("af-goal"),
       targetWeeklyChange: num("af-weekchange"),
       energyAdjustmentKcal: num("af-adjust"),
-      neckSensitive: checked("af-neck"),
-      restrictionsConfirmed: checked("af-confirm"),
-      dumbbellWeights: [...new Set(weights)].sort((a, b) => a - b),
+      configured: true,
     };
-    state.blockedExercises = [
-      ...document.querySelectorAll('input[name="af-blocked"]:checked'),
-    ].map((e) => e.value);
-    if (!settings.startKg) {
-      settings.startKg = kg;
-      settings.goalKg = kg;
+    if (!persist()) {
+      state.profile = before;
+      return;
     }
-    if (!weightLog.length || Number(latestWeight()) !== kg) {
-      const date = todayISO(),
-        existing = weightLog.find((e) => e.date === date);
-      if (existing) existing.kg = kg;
-      else weightLog.push({ date, kg });
-      weightLog.sort((a, b) => a.date.localeCompare(b.date));
-      saveW();
-    }
-    currentWeight = kg;
-    saveSettings();
-    updateWeightDisplay();
-    if (persist()) {
-      showToast(
-        before !== null && before !== state.profile.bikePerWeek
-          ? "Bike-Umfang geändert: Energie und Wochenplanung neu prüfen."
-          : "Profil gespeichert ✓",
-      );
-      switchTab("dashboard");
-    }
+    showToast("Berechnungsdaten gespeichert ✓");
+    switchTab("dashboard");
   }
   function renderPain() {
     const names = [
@@ -550,9 +639,11 @@
         "Dein Tagesrahmen",
         bmr
           ? `<div class="af-metrics"><div><strong>${bmr}</strong><span>kcal Grundumsatz</span></div><div><strong>${base}</strong><span>kcal sitzender Alltag</span></div><div><strong>+${extra.kcal}</strong><span>aktive kcal erfasst</span></div></div>${note("Mifflin–St Jeor × 1,2; Training und Bike separat. Aktivitätswerte sind Schätzungen oder als aktiv gekennzeichnete Gerätewerte. Fehlende Intensitäten werden nicht ergänzt.")}<p>Erhaltung heute: etwa <strong>${base + extra.kcal} kcal</strong></p>${p.energyAdjustmentKcal !== null ? `<p>Mit eingestellter Anpassung: <strong>${base + extra.kcal + p.energyAdjustmentKcal} kcal</strong></p>` : note("Ein individuelles Kalorienziel ist noch offen. Gemeinsam mit dem Coach festlegen.")}<p>${protein ? `Protein: <strong>${protein.min}–${protein.max} g</strong> aus ${protein.leanKg} kg geschätzter Magermasse.` : "Körperfettanteil ergänzen, um das Proteinziel aus der Magermasse zu berechnen."}</p><p>Ballaststoff-Richtwert: mindestens 30 g täglich.</p>`
-          : note("Alter, Grösse und Berechnungsformel im Profil ergänzen."),
+          : note(
+              "Für die Energieformel optional Alter und Grösse unter Körperdaten → Ernährungsberechnung ergänzen.",
+            ),
       ) +
-        `<div class="af-toolbar">${button("Profil", "profile")}${button("14-Tage-Check", "checkin")}${button("Sonntagskochen", "cooking")}</div>` +
+        `<div class="af-toolbar">${button("Körperdaten", "profile")}${button("14-Tage-Check", "checkin")}${button("Sonntagskochen", "cooking")}</div>` +
         card(
           "Tageswerte aus Yazio",
           `${note("Übernimm deine Tagessummen manuell aus Yazio. Hier behältst du Ernährung und Training gemeinsam im Blick.")}<form data-af-form="nutrition"><div class="af-grid">${field("Datum", "af-food-date", date, "date", "required")}${C.NUTRIENTS.map((k) => field({ kcal: "Kalorien (kcal)", protein_g: "Protein (g)", carbs_g: "Kohlenhydrate (g)", fat_g: "Fett (g)", fiber_g: "Ballaststoffe (g)", sodium_mg: "Natrium (mg)" }[k], "af-food-" + k, entry[k], "number", 'min="0" step="0.1" ' + (k === "kcal" ? "required" : ""))).join("")}</div>${field("Notiz", "af-food-note", entry.note, "text")}<button class="af-btn af-primary" type="submit">Tageswerte speichern</button></form>`,
@@ -699,7 +790,7 @@
     if (el)
       el.innerHTML = card(
         "Heute für dich",
-        `${!trainingContext() ? `<p>Profil und Einschränkungen ergänzen, bevor du eine neue Einheit startest.</p>${button("Profil vervollständigen", "profile")}` : `<p>${planned.length ? planned.map((p) => esc(WORKOUT_DAYS.find((d) => d.id === p.type)?.name || CARDIO_TYPES[p.type]?.label || (p.type === "rest" ? "Erholung" : p.type))).join(" + ") : "Deine Woche individuell planen."}</p>${rec && calcRecoveryScore(rec) < 3 ? note("Erholung heute niedrig: Intensität und Umfang vor dem Training prüfen.") : ""}${prs[0] ? `<p>${esc(prs[0].name)}: ${prs[0].currentW} → ${prs[0].suggestedW} kg möglich.</p>` : note("Last steigern, wenn Wiederholungsziel und Anstrengung es bestätigen.")}`}<div class="af-toolbar">${button("Training & Bike", "week")}${button("Nacken-Check", "pain")}${button("Gewicht", "weight")}${button("Cardio", "cardio")}</div>${check.due ? button("Fortschrittscheck ansehen", "checkin") : ""}`,
+        `<p>${planned.length ? planned.map((p) => esc(WORKOUT_DAYS.find((d) => d.id === p.type)?.name || CARDIO_TYPES[p.type]?.label || (p.type === "rest" ? "Erholung" : p.type))).join(" + ") : "Deine Woche individuell planen."}</p>${rec && calcRecoveryScore(rec) < 3 ? note("Erholung heute niedrig: Intensität und Umfang vor dem Training prüfen.") : ""}${prs[0] ? `<p>${esc(prs[0].name)}: ${prs[0].currentW} → ${prs[0].suggestedW} kg möglich.</p>` : note("Last steigern, wenn Wiederholungsziel und Anstrengung es bestätigen.")}<div class="af-toolbar">${button("Training & Bike", "week")}${button("Nacken-Check", "pain")}${button("Körperdaten", "profile")}${button("Cardio", "cardio")}</div>${check.due ? button("Fortschrittscheck ansehen", "checkin") : ""}`,
       );
     document.getElementById("grace-skip-banner")?.setAttribute("hidden", "");
     const topGoal = document.getElementById("goal-weight-display");
@@ -791,11 +882,6 @@
       renderPain();
       return;
     }
-    if (!trainingContext()) {
-      showToast("Zuerst Profil und Einschränkungen prüfen.");
-      renderProfile();
-      return;
-    }
     originalStart(dayId);
     activeWorkoutDay = { ...activeWorkoutDay, phaseId: getActivePhaseId() };
     workoutExercises = workoutExercises.map((ex) => ({
@@ -807,8 +893,8 @@
   };
   const originalTemplate = loadTemplate;
   loadTemplate = function (id) {
-    if (!trainingContext()) {
-      renderProfile();
+    if (safetyHold()) {
+      renderPain();
       return;
     }
     originalTemplate(id);
@@ -921,6 +1007,51 @@
     }
     n?.addEventListener("input", saveSession);
   };
+  function weightPicker(ex, set, ei, si, locked) {
+    const weights = state.profile.dumbbellWeights;
+    const current = Number(set.weight);
+    const legacy =
+      current > 0 && !weights.includes(current)
+        ? '<option value="' +
+          current +
+          '" selected>' +
+          current +
+          " kg (bisher)</option>"
+        : "";
+    const label =
+      ex.weightBasis === "perHand" ? "kg pro Hantel" : "kg Zusatzgewicht";
+    return (
+      '<select class="af-weight-picker" aria-label="' +
+      esc(ex.name) +
+      " Satz " +
+      (si + 1) +
+      " " +
+      label +
+      '" data-af-set="weight" data-ei="' +
+      ei +
+      '" data-si="' +
+      si +
+      '" ' +
+      (locked ? "disabled" : "") +
+      '><option value="" ' +
+      (!(current > 0) ? "selected" : "") +
+      ">kg wählen</option>" +
+      legacy +
+      weights
+        .map(
+          (w) =>
+            '<option value="' +
+            w +
+            '" ' +
+            (current === w ? "selected" : "") +
+            ">" +
+            w +
+            " kg</option>",
+        )
+        .join("") +
+      "</select>"
+    );
+  }
   renderExerciseList = function () {
     document.getElementById("exercise-list").innerHTML = workoutExercises
       .map((raw, ei) => {
@@ -940,7 +1071,7 @@
               previous = prev
                 ? `${prev.weight ? prev.weight + "×" : ""}${prev.seconds ?? prev.reps}${timed ? " s" : ""}`
                 : "—";
-            return `<div class="af-setrow ${s.done ? "af-done" : ""}" id="sr-${ei}-${si}"><span>${si + 1}</span><span class="af-previous">${esc(previous)}</span>${ex.bw ? "<span>BW</span>" : `<input aria-label="${esc(ex.name)} Satz ${si + 1} kg pro Hantel" type="number" inputmode="decimal" min="0" step="0.5" data-af-set="weight" data-ei="${ei}" data-si="${si}" value="${esc(s.weight)}" ${locked ? "disabled" : ""}>`}<input aria-label="${esc(ex.name)} Satz ${si + 1} ${timed ? "Sekunden" : "Wiederholungen"}" type="number" inputmode="numeric" min="1" data-af-set="reps" data-ei="${ei}" data-si="${si}" placeholder="${timed ? ex.targetSeconds || "Sek." : esc(ex.reps)}" value="${esc(s.reps)}" ${locked ? "disabled" : ""}><select aria-label="RPE Satz ${si + 1}" data-af-set="rpe" data-ei="${ei}" data-si="${si}" ${locked ? "disabled" : ""}><option value="">—</option>${[5, 6, 7, 8, 9, 10].map((n) => `<option value="${n}" ${Number(s.rpe) === n ? "selected" : ""}>${n}</option>`).join("")}</select><button type="button" class="af-donebtn" data-af-action="set-done" data-ei="${ei}" data-si="${si}" aria-label="Satz ${si + 1} abschliessen" ${locked ? "disabled" : ""}>${s.done ? "✓" : "○"}</button></div>${timed && !locked ? button("▶ " + (ex.targetSeconds || 30) + " s starten", "interval", `data-ei="${ei}" data-si="${si}"`) : ""}`;
+            return `<div class="af-setrow ${s.done ? "af-done" : ""}" id="sr-${ei}-${si}"><span>${si + 1}</span><span class="af-previous">${esc(previous)}</span>${ex.bw ? "<span>BW</span>" : weightPicker(ex, s, ei, si, locked)}<input aria-label="${esc(ex.name)} Satz ${si + 1} ${timed ? "Sekunden" : "Wiederholungen"}" type="number" inputmode="numeric" min="1" data-af-set="reps" data-ei="${ei}" data-si="${si}" placeholder="${timed ? ex.targetSeconds || "Sek." : esc(ex.reps)}" value="${esc(s.reps)}" ${locked ? "disabled" : ""}><select aria-label="RPE Satz ${si + 1}" data-af-set="rpe" data-ei="${ei}" data-si="${si}" ${locked ? "disabled" : ""}><option value="">—</option>${[5, 6, 7, 8, 9, 10].map((n) => `<option value="${n}" ${Number(s.rpe) === n ? "selected" : ""}>${n}</option>`).join("")}</select><button type="button" class="af-donebtn" data-af-action="set-done" data-ei="${ei}" data-si="${si}" aria-label="Satz ${si + 1} abschliessen" ${locked ? "disabled" : ""}>${s.done ? "✓" : "○"}</button></div>${timed && !locked ? button("▶ " + (ex.targetSeconds || 30) + " s starten", "interval", `data-ei="${ei}" data-si="${si}"`) : ""}`;
           })
           .join(
             "",
@@ -1141,7 +1272,7 @@
     }
     box.innerHTML = card(
       "Persönliches Coaching",
-      `<div class="af-toolbar">${button("Profil & Übungssperren", "profile")}${button("Wochenplanung", "week")}${button("Kalender-Erinnerungen", "calendar-export")}</div>`,
+      `<div class="af-toolbar">${button("Körperdaten & Übungssperren", "profile")}${button("Wochenplanung", "week")}${button("Kalender-Erinnerungen", "calendar-export")}</div>`,
     );
     const text = el.querySelector("#s-reminder-time")?.closest(".card");
     if (text) {
@@ -1674,6 +1805,7 @@
     if (!type) return;
     e.preventDefault();
     if (type === "profile") saveProfile();
+    if (type === "calculations") saveCalculations();
     if (type === "pain") savePain();
     if (type === "week") saveWeek();
     if (type === "nutrition") saveNutrition();
@@ -1704,6 +1836,14 @@
     if (t.id?.startsWith("af-cardio-")) updateCardioCalc();
   });
   document.addEventListener("change", (e) => {
+    const t = e.target;
+    if (t.matches("select[data-af-set]"))
+      setVal(
+        Number(t.dataset.ei),
+        Number(t.dataset.si),
+        t.dataset.afSet,
+        t.value,
+      );
     if (e.target.id === "session-intensity" && activeWorkoutDay) {
       activeWorkoutDay.intensity = e.target.value;
       saveSession();

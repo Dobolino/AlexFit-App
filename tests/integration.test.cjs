@@ -33,14 +33,14 @@ test(
   }),
 );
 test(
-  "a new training is gated by personal context",
+  "a new training starts without a required profile",
   withApp((a) => {
     a.run("doStartWorkout('d1')");
     assert.equal(
       a.document.querySelector(".screen.active").id,
-      "screen-coach-profile",
+      "screen-workout-active",
     );
-    assert.equal(a.run("workoutExercises.length"), 0);
+    assert.ok(a.run("workoutExercises.length") > 0);
   }),
 );
 test(
@@ -439,11 +439,6 @@ test(
   withApp((a) => {
     a.click("profile");
     a.set("af-profile-weight", 100);
-    a.set("af-age", 36);
-    a.set("af-height", 180);
-    a.set("af-experience", "regular");
-    a.set("af-session", 45);
-    a.document.getElementById("af-confirm").checked = true;
     a.submit("profile");
     assert.equal(a.run("settings.startKg"), 100);
     assert.equal(a.run("settings.goalKg"), 100);
