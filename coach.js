@@ -463,6 +463,7 @@
   }
   function renderWeek() {
     const start = window.AF.weekStart || C.monday(todayISO());
+    window.AF.tools?.ensureWeek(start);
     window.AF.weekStart = start;
     const rows = Array.from({ length: 7 }, (_, i) => C.addDays(start, i));
     const planned = state.weekPlans.filter(
@@ -505,6 +506,13 @@
         `<div class="af-toolbar">${button("Kalenderdatei (.ics)", "calendar-export")}${button("Bisherigen Kalender ansehen", "legacy-calendar")}${button("Cardio erfassen", "cardio")}</div>` +
         card("Wochenbelastung", weekSummary(start)),
     );
+    document
+      .querySelector("#screen-coach-week .af-toolbar")
+      ?.insertAdjacentHTML(
+        "beforeend",
+        button("Training verschieben", "tools-move") +
+          button("Wochenrückblick", "tools-review"),
+      );
   }
   function weekSummary(start) {
     const plans = state.weekPlans.filter(
@@ -1871,6 +1879,7 @@
         .join("");
   };
   window.AF = {
+    renderWeek,
     C,
     get state() {
       return state;
