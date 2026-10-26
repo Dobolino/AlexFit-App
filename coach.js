@@ -1052,6 +1052,49 @@
       "</select>"
     );
   }
+  function repsPicker(ex, set, ei, si, locked) {
+    if (ex.unit === "seconds")
+      return (
+        '<input aria-label="Sekunden Satz ' +
+        (si + 1) +
+        '" type="number" inputmode="numeric" min="1" data-af-set="reps" data-ei="' +
+        ei +
+        '" data-si="' +
+        si +
+        '" value="' +
+        esc(set.reps) +
+        '" ' +
+        (locked ? "disabled" : "") +
+        ">"
+      );
+    const current = Number(set.reps),
+      values = Array.from({ length: 50 }, (_, i) => i + 1);
+    if (current > 50 && Number.isInteger(current)) values.push(current);
+    return (
+      '<select aria-label="Wiederholungen Satz ' +
+      (si + 1) +
+      '" data-af-set="reps" data-ei="' +
+      ei +
+      '" data-si="' +
+      si +
+      '" ' +
+      (locked ? "disabled" : "") +
+      '><option value="">—</option>' +
+      values
+        .map(
+          (v) =>
+            '<option value="' +
+            v +
+            '" ' +
+            (current === v ? "selected" : "") +
+            ">" +
+            v +
+            "</option>",
+        )
+        .join("") +
+      "</select>"
+    );
+  }
   renderExerciseList = function () {
     document.getElementById("exercise-list").innerHTML = workoutExercises
       .map((raw, ei) => {
@@ -1065,13 +1108,13 @@
             : ex.weightBasis === "perHand"
               ? "kg pro Hantel"
               : "kg Zusatzgewicht";
-        return `<section class="af-exercise ${locked ? "af-locked" : ""}"><div class="af-exhead"><button type="button" class="af-link" data-af-action="exercise-info" data-name="${esc(ex.name)}">${esc(ex.name)}</button>${button("Variante", "variant", `data-ei="${ei}"`)}</div><p class="af-note">${esc(ex.reps || "")} ${ex.perSide ? "· je Seite" : ""} · ${basis} · ${ex.restTimer || 120} s Pause${locked ? " · GESPERRT" : ""}</p>${ex.note ? note(esc(ex.note)) : ""}${locked ? note("Im Profil gesperrt. Eine individuell geeignete Variante wählen oder diese Übung auslassen.") : note(esc(p.reason))}<div class="af-sethead"><span>Satz</span><span>Letztes Mal</span><span>${ex.bw ? "BW" : "kg"}</span><span>${timed ? "Sek." : "Wdh"}</span><span>RPE</span><span>✓</span></div>${ex.setData
+        return `<section class="af-exercise ${locked ? "af-locked" : ""}"><div class="af-exhead"><button type="button" class="af-link" data-af-action="exercise-info" data-name="${esc(ex.name)}">${esc(ex.name)}</button>${button(EXERCISE_VIDEOS[ex.name] ? "▶ Video & Technik" : "ⓘ Technik", "exercise-info", `data-name="${esc(ex.name)}"`)}${button("Variante", "variant", `data-ei="${ei}"`)}</div><p class="af-note">${esc(ex.reps || "")} ${ex.perSide ? "· je Seite" : ""} · ${basis} · ${ex.restTimer || 120} s Pause${locked ? " · GESPERRT" : ""}</p><details class="af-ex-hints"><summary>Technik & Steigerung</summary>${ex.note ? note(esc(ex.note)) : ""}${locked ? note("Im Profil gesperrt. Eine individuell geeignete Variante wählen oder diese Übung auslassen.") : note(esc(p.reason))}</details><div class="af-sethead"><span>Satz</span><span>Letztes Mal</span><span>${ex.bw ? "BW" : "kg"}</span><span>${timed ? "Sek." : "Wdh"}</span><span>RPE</span><span>✓</span></div>${ex.setData
           .map((s, si) => {
             const prev = getLastSetValues(ex.name, si),
               previous = prev
                 ? `${prev.weight ? prev.weight + "×" : ""}${prev.seconds ?? prev.reps}${timed ? " s" : ""}`
                 : "—";
-            return `<div class="af-setrow ${s.done ? "af-done" : ""}" id="sr-${ei}-${si}"><span>${si + 1}</span><span class="af-previous">${esc(previous)}</span>${ex.bw ? "<span>BW</span>" : weightPicker(ex, s, ei, si, locked)}<input aria-label="${esc(ex.name)} Satz ${si + 1} ${timed ? "Sekunden" : "Wiederholungen"}" type="number" inputmode="numeric" min="1" data-af-set="reps" data-ei="${ei}" data-si="${si}" placeholder="${timed ? ex.targetSeconds || "Sek." : esc(ex.reps)}" value="${esc(s.reps)}" ${locked ? "disabled" : ""}><select aria-label="RPE Satz ${si + 1}" data-af-set="rpe" data-ei="${ei}" data-si="${si}" ${locked ? "disabled" : ""}><option value="">—</option>${[5, 6, 7, 8, 9, 10].map((n) => `<option value="${n}" ${Number(s.rpe) === n ? "selected" : ""}>${n}</option>`).join("")}</select><button type="button" class="af-donebtn" data-af-action="set-done" data-ei="${ei}" data-si="${si}" aria-label="Satz ${si + 1} abschliessen" ${locked ? "disabled" : ""}>${s.done ? "✓" : "○"}</button></div>${timed && !locked ? button("▶ " + (ex.targetSeconds || 30) + " s starten", "interval", `data-ei="${ei}" data-si="${si}"`) : ""}`;
+            return `<div class="af-setrow ${s.done ? "af-done" : ""}" id="sr-${ei}-${si}"><span>${si + 1}</span><span class="af-previous">${esc(previous)}</span>${ex.bw ? "<span>BW</span>" : weightPicker(ex, s, ei, si, locked)}${repsPicker(ex, s, ei, si, locked)}<select aria-label="RPE Satz ${si + 1}" data-af-set="rpe" data-ei="${ei}" data-si="${si}" ${locked ? "disabled" : ""}><option value="">—</option>${[5, 6, 7, 8, 9, 10].map((n) => `<option value="${n}" ${Number(s.rpe) === n ? "selected" : ""}>${n}</option>`).join("")}</select><button type="button" class="af-donebtn" data-af-action="set-done" data-ei="${ei}" data-si="${si}" aria-label="Satz ${si + 1} abschliessen" ${locked ? "disabled" : ""}>${s.done ? "✓" : "○"}</button></div>${timed && !locked ? button("▶ " + (ex.targetSeconds || 30) + " s starten", "interval", `data-ei="${ei}" data-si="${si}"`) : ""}`;
           })
           .join(
             "",
