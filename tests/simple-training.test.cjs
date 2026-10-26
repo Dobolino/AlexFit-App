@@ -109,6 +109,20 @@ test("native weight selection uses exact stages and persists change events to th
   }
 });
 
+test("repetitions have a native picker and video actions are explicit", () => {
+  const a = boot();
+  try {
+    a.run("doStartWorkout('d1')");
+    const picker = a.document.querySelector('select[data-af-set="reps"]');
+    assert.ok(picker);
+    picker.value = "12";
+    picker.dispatchEvent(new a.window.Event("change", { bubbles: true }));
+    assert.equal(a.run("workoutExercises[0].setData[0].reps"), "12");
+    assert.match(a.document.querySelector('.af-exhead [data-af-action="exercise-info"].af-btn').textContent, /Video/);
+    assert.equal(a.document.querySelector('.af-ex-hints').open, false);
+    assert.deepEqual(a.errors, []);
+  } finally { a.close(); }
+});
 test("old nonstandard weights are retained rather than silently snapped to a new stage", () => {
   const a = boot();
   try {

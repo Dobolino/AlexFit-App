@@ -676,6 +676,84 @@ input[type="date"]::-webkit-date-and-time-value {
   margin-top: 16px;
   padding: 16px;
 }
+#workout-header > .af-toolbar {
+  align-items: center;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+}
+#workout-header > .af-toolbar .af-btn {
+  min-height: 44px;
+  padding: 10px;
+  font-size: 13px;
+}
+#workout-header > .af-toolbar .af-field {
+  margin: 0;
+  font-size: 12px;
+}
+#workout-header > .af-note {
+  font-size: 12px !important;
+  margin: 6px 0 !important;
+}
+.af-exhead {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.af-exhead .af-link {
+  flex: 1 1 100%;
+  text-align: left;
+  font-size: 18px;
+  font-weight: 700;
+}
+.af-exhead .af-btn {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.af-exhead [data-af-action="exercise-info"] {
+  color: #a8caff;
+  border-color: #365d91;
+}
+.af-ex-hints {
+  margin: 10px 0;
+  font-size: 13px;
+  color: var(--ts);
+}
+.af-ex-hints summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.af-ex-hints .af-note {
+  font-size: 12px !important;
+}
+.af-setrow input,
+.af-setrow select,
+.af-setrow .af-weight-picker,
+.af-setrow .af-donebtn {
+  height: 46px;
+  min-height: 46px;
+  max-height: 46px;
+  font-size: 16px;
+  padding: 4px 2px;
+  margin: 0;
+  color-scheme: dark;
+}
+.af-setrow select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none;
+}
+.af-setrow .af-donebtn {
+  font-size: 23px;
+}
+.af-setrow {
+  min-height: 62px;
+}
+.af-exercise > .af-note {
+  font-size: 12px !important;
+  margin: 8px 0 !important;
+}
 @media (max-width: 430px) {
   .af-grid {
     grid-template-columns: 1fr;

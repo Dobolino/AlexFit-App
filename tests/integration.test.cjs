@@ -54,7 +54,7 @@ test(
     );
     assert.ok(index >= 0);
     assert.ok(
-      a.document.querySelectorAll(".af-locked input:disabled").length > 0,
+      a.document.querySelectorAll(".af-locked select:disabled").length > 0,
     );
     a.run(
       "workoutExercises[" +
