@@ -1,13 +1,18 @@
 :root {
   --tm: #a3adbf;
   --ts: #bbc5d6;
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 [hidden] {
   display: none !important;
 }
 #app {
   max-width: 560px;
+  height: 100vh;
   height: 100dvh;
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 body {
   font-family: Barlow, system-ui, sans-serif;
@@ -23,7 +28,66 @@ body {
   font-size: 22px;
 }
 #content {
-  padding: 16px 18px calc(120px + env(safe-area-inset-bottom, 0px));
+  padding: 24px 18px 24px;
+  scroll-padding-block: 24px;
+}
+/* The dialog lives outside #app and must reserve its own system safe areas.
+   Give the flex body a zero minimum so a tall SVG cannot push out the header. */
+#workout-preview-overlay {
+  inset: 0;
+  height: 100vh;
+  height: 100dvh;
+  padding: calc(var(--safe-top) + 16px) calc(var(--safe-right) + 12px)
+    calc(var(--safe-bot) + 12px) calc(var(--safe-left) + 12px);
+}
+#workout-preview-sheet {
+  width: 100%;
+  height: 100%;
+  max-height: 760px;
+  min-height: 0;
+}
+#workout-preview-header {
+  min-width: 0;
+}
+#workout-preview-header > div > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#workout-preview-header button {
+  min-width: 44px;
+  min-height: 44px;
+}
+#workout-preview-body {
+  overscroll-behavior-y: contain;
+}
+#workout-preview-body .muscle-diagram-panel {
+  min-height: 0;
+}
+#workout-preview-body .muscle-chart-slot {
+  height: clamp(120px, 24dvh, 200px);
+  min-height: 0;
+}
+#workout-preview-body .muscle-chart-slot > *,
+#workout-preview-body .muscle-chart-slot svg {
+  max-width: 100%;
+  max-height: 100%;
+}
+#workout-preview-body .muscle-chart-slot svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+@media (max-height: 500px) {
+  #workout-preview-overlay {
+    padding-top: calc(var(--safe-top) + 8px);
+    padding-bottom: calc(var(--safe-bot) + 8px);
+  }
+  #workout-preview-header {
+    padding-block: 8px !important;
+  }
+  #workout-preview-footer {
+    padding-block: 8px !important;
+  }
 }
 .af-pagehead {
   display: flex;
@@ -468,6 +532,7 @@ body {
     padding: 0 !important;
   }
   #topbar,
+  #nav-container,
   #bottomnav,
   .af-no-print,
   .af-btn,
@@ -554,7 +619,16 @@ input[type="date"]::-webkit-date-and-time-value {
   max-width: 100%;
 }
 #nav-container {
+  /* Part of the app's flex column: content ends ABOVE the navigation. */
+  position: relative;
+  flex: 0 0 auto;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  width: 100%;
   max-width: 560px;
+  padding: 8px 10px calc(10px + var(--safe-bot));
+  background: var(--bg);
 }
 #bottomnav .navbtn {
   color: var(--ts);

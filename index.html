@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="AlexFit">
 <meta name="theme-color" content="#080B10">
 <link rel="manifest" href="manifest.webmanifest">
@@ -51,7 +51,7 @@
   ::-webkit-scrollbar{width:3px;}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
   .bc{font-family:'Barlow Condensed',sans-serif;}
-  #app{display:flex;flex-direction:column;height:100dvh;height:100vh;max-width:480px;margin:0 auto;overflow:hidden;position:relative;padding-top:env(safe-area-inset-top,0px);}
+  #app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:480px;margin:0 auto;overflow:hidden;position:relative;padding-top:env(safe-area-inset-top,0px);}
   #topbar{
     background:color-mix(in srgb,var(--bg) 72%,transparent);
     -webkit-backdrop-filter:blur(24px) saturate(180%);
@@ -729,8 +729,6 @@
       </div>
     </div>
   </div>
-</div>
-
 <div id="nav-container">
   <nav id="bottomnav" aria-label="Hauptnavigation">
     <div id="nav-glass-indicator" aria-hidden="true"></div>
@@ -759,6 +757,7 @@
       <span class="nlabel">Stats</span>
     </button>
   </nav>
+</div>
 </div>
 
 <div id="ex-info-overlay" onclick="if(event.target===this)closeExerciseInfo()">
@@ -815,10 +814,10 @@
     </div>
   </div>
 </div>
-<div id="workout-preview-overlay" onclick="if(event.target===this)closeWorkoutPreview()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9992;display:none;align-items:flex-end;justify-content:center;padding-bottom:calc(16px + var(--safe-bot));">
-  <div id="workout-preview-sheet" style="background:var(--card);border:1px solid var(--border);border-top:3px solid var(--blue);border-radius:20px 20px 16px 16px;width:calc(100% - 32px);max-width:440px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">
+<div id="workout-preview-overlay" role="dialog" aria-modal="true" aria-labelledby="workout-preview-header" onclick="if(event.target===this)closeWorkoutPreview()" style="position:fixed;background:rgba(0,0,0,.75);z-index:9992;display:none;align-items:flex-end;justify-content:center;">
+  <div id="workout-preview-sheet" style="background:var(--card);border:1px solid var(--border);border-top:3px solid var(--blue);border-radius:20px 20px 16px 16px;max-width:440px;display:flex;flex-direction:column;overflow:hidden;">
     <div id="workout-preview-header" style="flex-shrink:0;padding:16px;border-bottom:1px solid var(--border);"></div>
-    <div id="workout-preview-body" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px;"></div>
+    <div id="workout-preview-body" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px;"></div>
     <div id="workout-preview-footer" style="flex-shrink:0;padding:14px 16px;border-top:1px solid var(--border);"></div>
   </div>
 </div>
