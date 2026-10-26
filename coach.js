@@ -4,6 +4,59 @@
     KEY = "af_coach",
     esc = escapeHTML;
   let state = C.normalizeState(safeParse(KEY, null));
+  // Activate the requested replacement once, without deleting logs, templates
+  // or an in-progress session. Previous assignments remain in the JSON backup.
+  if (settings.trainingPlanVersion !== AlexFitTraining.VERSION) {
+    const previous = {
+      activatedAt: todayISO(),
+      settings: { ...settings },
+      weekPlans: state.weekPlans.filter(
+        (p) =>
+          p.date >= todayISO() &&
+          /^d[1-5]$/.test(p.type) &&
+          p.slot === "primary",
+      ),
+    };
+    state.trainingPlanArchives = [
+      ...(state.trainingPlanArchives || []),
+      previous,
+    ];
+    state.weekPlans = state.weekPlans.filter(
+      (p) => !previous.weekPlans.includes(p),
+    );
+    if (persist()) {
+      settings.trainingPlanVersion = AlexFitTraining.VERSION;
+      settings.templateSchedule = {};
+      settings.activePhase = "p1";
+      settings.programStart = todayISO();
+      settings.programEnd = C.addDays(todayISO(), WORKOUT_PLANS.p1.weeks * 7);
+      settings.cycleStart = todayISO();
+      settings.cycleWeeks = 12;
+      saveSettings();
+      applyActivePlan();
+    }
+  }
+  // Register the new variants in the existing picker and anatomy view, without
+  // inventing video links or renaming the user's historical exercises.
+  const anatomyAliases = {
+    "Reverse Dumbbell Lunges": "Dumbbell Lunges",
+    "Stationary Dumbbell Split Squat": "Bulgarian Split Squat",
+    "Neutral-Grip Dumbbell Bench Press": "Dumbbell Bench Press",
+    "Close-Grip Dumbbell Floor Press": "Close-Grip Bench Press",
+    "Weighted Glute Bridge": "Glute Bridge",
+  };
+  for (const ex of WORKOUT_PLANS.p2.days.flatMap((d) => d.exercises)) {
+    if (!EXERCISE_LIBRARY.some((e) => e.name === ex.name))
+      EXERCISE_LIBRARY.push({ ...ex, id: "coach_" + ex.id });
+    if (!EXERCISE_INFO[ex.name])
+      EXERCISE_INFO[ex.name] = {
+        tip: esc(
+          ex.note || "Kontrolliert im schmerzfreien Bewegungsumfang ausführen.",
+        ),
+      };
+    if (anatomyAliases[ex.name])
+      EXERCISE_MUSCLES[ex.name] = EXERCISE_MUSCLES[anatomyAliases[ex.name]];
+  }
   const val = (id) => document.getElementById(id)?.value ?? "";
   const num = (id) => (C.finite(val(id)) ? Number(val(id)) : null);
   const checked = (id) => !!document.getElementById(id)?.checked;
@@ -69,11 +122,11 @@
       Number(latestWeight()) >= 30
     );
   }
-  function progression(name) {
+  function progression(name, definition = getExDef(name)) {
     return C.progression({
       name,
       history,
-      definition: getExDef(name),
+      definition,
       weights: state.profile.dumbbellWeights,
       blocked: blocked(name),
       pain: hasPain(name),
@@ -372,7 +425,7 @@
       train = plans.filter((e) => /^d[1-5]$/.test(e.type)),
       minutes = plans.reduce((a, e) => a + (Number(e.minutes) || 0), 0);
     let warnings = [];
-    for (const p of plans.filter((e) => e.type === "d4"))
+    for (const p of plans.filter((e) => e.type === "d4" || e.type === "d3"))
       if (
         plans.some(
           (e) =>
@@ -690,10 +743,34 @@
   renderWorkoutSelect = function () {
     applyWeekSchedule();
     originalSelect();
+    const cardioButton = [
+      ...document.querySelectorAll("#workout-select-list button"),
+    ].find((b) => b.getAttribute("onclick")?.includes("'d5'"));
+    const cardioSubtitle = [
+      ...(cardioButton?.querySelectorAll("div") || []),
+    ].find((d) => d.textContent === "0 Übungen · 0 Sätze");
+    if (cardioSubtitle)
+      cardioSubtitle.textContent =
+        "Bike · WaterRower · WalkingPad · frei wählbar";
+    document.getElementById("af-training-guidance")?.remove();
+    const el = document.createElement("section"),
+      plan = getActivePlan();
+    el.id = "af-training-guidance";
+    el.className = "af-card";
+    el.innerHTML = `<h2>Dein 12-Wochen-Plan</h2><p>Mo Oberkörper A · Di Unterkörper A · Mi Oberkörper B · Fr Unterkörper B · Sa Cardio nach Wahl. Donnerstag und Sonntag frei.</p>${note("Vier Krafttage, je etwa 45–60 Minuten inklusive Aufwärmen. Vorher fünf Minuten locker gehen und 1–2 leichte Aufwärmsätze der ersten Übungen; diese zählen nicht als Arbeitssätze.")}<h3>${esc(plan.label)} · ${esc(plan.subtitle)}</h3><p>${esc(plan.guidance)}</p>${note(`Reserve: ${plan.rir} saubere Wiederholungen. Pausen je Übung: ${plan.restLabel}. Bei zwei erfolgreichen Einheiten am oberen Wiederholungsziel und RPE höchstens 8 die nächstkleine passende Hantelstufe prüfen.`)}${note("Samstag: Bike, WaterRower oder WalkingPad frei wählen und im Cardio-Tab erfassen. Nach viel Bike unter der Woche ist keine weitere harte Einheit nötig. Vor einer harten Samstagstour am Freitag je Übung einen Satz weniger; bei stark müden Beinen verschieben.")}${note("Der neue Plan beginnt einmalig mit Phase 1. Vorherige Programm-Einstellungen und zukünftige Kraft-Zuordnungen sind im JSON-Backup unter coach.trainingPlanArchives archiviert. Vorlagen selbst, Trainingshistorie und laufende Einheiten bleiben erhalten.")}${button("Cardio erfassen", "cardio")}`;
+    document.getElementById("screen-workout-select").prepend(el);
+  };
+  const originalPreview = openWorkoutPreview;
+  openWorkoutPreview = function (dayId) {
+    if (WORKOUT_DAYS.find((d) => d.id === dayId)?.flexibleCardio) {
+      switchTab("cardio");
+      return;
+    }
+    originalPreview(dayId);
   };
   getProgressionSuggestions = function () {
     return [...new Set(history.flatMap((h) => h.exercises.map((e) => e.name)))]
-      .map(progression)
+      .map((name) => progression(name))
       .filter((p) => p.action === "increase")
       .slice(0, 3);
   };
@@ -703,6 +780,10 @@
   };
   const originalStart = doStartWorkout;
   doStartWorkout = function (dayId) {
+    if (WORKOUT_DAYS.find((d) => d.id === dayId)?.flexibleCardio) {
+      switchTab("cardio");
+      return;
+    }
     if (safetyHold()) {
       showToast(
         "Training pausiert: gemeldete neurologische Symptome medizinisch abklären.",
@@ -821,7 +902,7 @@
     if (h)
       h.insertAdjacentHTML(
         "beforeend",
-        `<div class="af-toolbar">${button("Beschwerden melden", "pain")}${select(
+        `${note(esc(getActivePlan().guidance))}${note("5 Minuten locker aufwärmen, dann leichte Aufwärmsätze. Arbeitssätze mit " + esc(getActivePlan().rir) + " Wiederholungen Reserve. Beschwerden nicht übergehen.")}<div class="af-toolbar">${button("Beschwerden melden", "pain")}${select(
           "Intensität für die Energieschätzung",
           "session-intensity",
           [
@@ -846,14 +927,14 @@
         const ex = C.definition(raw.name, raw),
           locked = blocked(ex.name),
           timed = ex.unit === "seconds",
-          p = progression(ex.name),
+          p = progression(ex.name, ex),
           last = getLastPerf(ex.name),
           basis = ex.bw
             ? "Körpergewicht"
             : ex.weightBasis === "perHand"
               ? "kg pro Hantel"
               : "kg Zusatzgewicht";
-        return `<section class="af-exercise ${locked ? "af-locked" : ""}"><div class="af-exhead"><button type="button" class="af-link" data-af-action="exercise-info" data-name="${esc(ex.name)}">${esc(ex.name)}</button>${button("Variante", "variant", `data-ei="${ei}"`)}</div><p class="af-note">${esc(ex.reps || "")} ${ex.perSide ? "· je Seite" : ""} · ${basis}${locked ? " · GESPERRT" : ""}</p>${locked ? note("Im Profil gesperrt. Eine individuell geeignete Variante wählen oder diese Übung auslassen.") : note(esc(p.reason))}<div class="af-sethead"><span>Satz</span><span>Letztes Mal</span><span>${ex.bw ? "BW" : "kg"}</span><span>${timed ? "Sek." : "Wdh"}</span><span>RPE</span><span>✓</span></div>${ex.setData
+        return `<section class="af-exercise ${locked ? "af-locked" : ""}"><div class="af-exhead"><button type="button" class="af-link" data-af-action="exercise-info" data-name="${esc(ex.name)}">${esc(ex.name)}</button>${button("Variante", "variant", `data-ei="${ei}"`)}</div><p class="af-note">${esc(ex.reps || "")} ${ex.perSide ? "· je Seite" : ""} · ${basis} · ${ex.restTimer || 120} s Pause${locked ? " · GESPERRT" : ""}</p>${ex.note ? note(esc(ex.note)) : ""}${locked ? note("Im Profil gesperrt. Eine individuell geeignete Variante wählen oder diese Übung auslassen.") : note(esc(p.reason))}<div class="af-sethead"><span>Satz</span><span>Letztes Mal</span><span>${ex.bw ? "BW" : "kg"}</span><span>${timed ? "Sek." : "Wdh"}</span><span>RPE</span><span>✓</span></div>${ex.setData
           .map((s, si) => {
             const prev = getLastSetValues(ex.name, si),
               previous = prev

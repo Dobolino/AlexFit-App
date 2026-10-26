@@ -86,6 +86,7 @@ test("offline install includes every local runtime dependency", async () => {
   for (const name of [
     "index.html",
     "coach-core.js",
+    "training-plans.js",
     "coach.js",
     "coach-recipes.js",
     "coach.css",
@@ -122,5 +123,5 @@ test("unknown offline assets do not receive HTML as JavaScript", async () => {
 test("activation removes old AlexFit caches and preserves other apps", async () => {
   const w = worker();
   await w.activate();
-  assert.deepEqual(w.deleted, ["af-v11"]);
+  assert.deepEqual(w.deleted, ["af-v11", "af-v13-cardio-ui-20261024"]);
 });
