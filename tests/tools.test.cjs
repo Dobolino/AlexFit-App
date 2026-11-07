@@ -143,9 +143,8 @@ test("Saturday reserve form is explicit and rejects replacing a booked strength 
 test("settings exposes installed version and week review avoids missed-day scoring", () =>
   app((a) => {
     a.run("renderSettings()");
-    assert.match(
-      a.document.getElementById("screen-settings").textContent,
-      /2026.10.26.19/,
+    assert.ok(
+      a.document.getElementById("screen-settings").textContent.includes(require("../release.json").version),
     );
     a.window.AF.tools.review();
     assert.match(

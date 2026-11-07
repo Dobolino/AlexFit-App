@@ -1,10 +1,10 @@
 # AlexFit
 
-Persönliche, lokal gespeicherte Fitness-App mit Krafttraining, Cardio, Rekomposition, Wochenplanung und Sonntagskochen. Schweizer Hochdeutsch. Die Laufzeit benötigt keinen Account, API-Schlüssel oder Build-Schritt.
+Persönliche, lokal gespeicherte Fitness-App mit Krafttraining, Cardio, Rekomposition und Wochenplanung. Ernährung wird separat in Yazio geführt. Schweizer Hochdeutsch. Die Laufzeit benötigt keinen Account, API-Schlüssel oder Build-Schritt.
 
 ## Starten
 
-Die Dateien über einen lokalen Webserver oder statisches HTTPS-Hosting ausliefern. Nicht nur index.html herunterladen: coach-core.js, training-plans.js, coach.js, coach-recipes.js, coach.css, recipe-library.json, sw.js, manifest.webmanifest und icons/ gehören dazu.
+Die Dateien über einen lokalen Webserver oder statisches HTTPS-Hosting ausliefern. Das gesamte Repository ausliefern: Neben index.html gehören alle lokalen JS-/CSS-Dateien, JSON-Dateien, sw.js, manifest.webmanifest und icons/ dazu.
 
 Mit Node.js 24:
 
@@ -17,7 +17,7 @@ Anschliessend http://127.0.0.1:8778 öffnen. Für eine installierbare App auf de
 
 Gewicht und Ziel haben keine persönlichen Vorgabewerte im veröffentlichten Code. Persönliche Werte werden ausschliesslich lokal eingegeben und gespeichert.
 
-Training und Vorlagen starten ohne Profil-Pflichtformular. Unter Körperdaten lassen sich Gewicht und Körperfett unabhängig von Erfahrung, Trainingszeit oder einer Bestätigungs-Checkbox speichern. Bestehende Berechnungsdaten bleiben erhalten; zusätzliche Angaben für die Energieformel sind separat und optional eingeklappt. Ein unbekannter Körperfettanteil wird nicht geraten.
+Training und Vorlagen starten ohne Profil-Pflichtformular. Unter Körperdaten lassen sich Gewicht und Körperfett unabhängig von Erfahrung, Trainingszeit oder einer Bestätigungs-Checkbox speichern. Bestehende Berechnungsdaten bleiben als Bestandsdaten erhalten; das frühere Ernährungsformular ist aus der normalen Bedienung entfernt. Ein unbekannter Körperfettanteil wird nicht geraten.
 
 Hantelgewicht direkt pro Satz über die native Auswahl wählen: 2.5, 3.5, 4.5, 5.5, 6.5, 8, 9, 10, 11.5, 13.5, 16, 18, 20.5, 22.5 und 24 kg. Diese Liste wird einmalig auch für bestehende Installationen übernommen und für Steigerungsvorschläge genutzt. Historische oder laufende Lasten ausserhalb der Liste werden nicht gerundet, sondern als «bisher» beibehalten. Körpergewicht und Körperfett werden dadurch nicht verändert.
 
@@ -49,25 +49,13 @@ Nackenempfindlichkeit, Übungssperren sowie Beschwerden vor, während, nach und 
 
 Die Trainings-/Bike-Woche lässt sich frei belegen und verschieben. Einheiten bei hoher Belastung an aufeinanderfolgenden Tagen werden zur Prüfung markiert. Erholung bleibt ein geplanter Teil der Woche.
 
-## Ernährung
+## Oberfläche und Live-Cardio
 
-Mifflin–St Jeor mit sitzendem Alltag (Faktor 1,2) plus separat erfasster aktiver Energie. MET-Werte sind grobe, gekennzeichnete Schätzungen. Gerätewerte können als aktive oder gesamte Energie eingegeben werden; bei Gesamtenergie wird der Ruheanteil abgezogen. Verknüpfte Cardio-/Workout-Einträge werden nur einmal berücksichtigt. Ohne Intensität oder Gerätewert wird kein Verbrauch erfunden.
+Vier Tabs mit eigener Akzentfarbe: Heute (Blau), Krafttraining (Violett), Cardio (Türkis) und Fortschritt (Orange). Ernährung und Sonntagskochen sind aus der Navigation entfernt; vorhandene Daten bleiben im JSON-Backup erhalten. Es gibt keine automatische Yazio-Verbindung. Der Fortschrittscheck wertet Gewicht, Bauchumfang, Kraft und Erholung aus und verlangt keine doppelten Ernährungseinträge.
 
-Protein: konfigurierter Bereich 2,2–2,6 g/kg geschätzter Magermasse. Ballaststoff-Richtwert 30 g/Tag. Tageswerte aus Yazio werden manuell übernommen; keine automatische Yazio-Anbindung.
+Im Krafttraining steht der aktuelle Satz im Mittelpunkt. Gewichte verwenden die eigenen Hantelstufen; Wiederholungen lassen sich aus 1–50 wählen oder über «Andere Zahl» als positive ganze Zahl eingeben. Video- und Muskel-Symbole öffnen Details. Der vollständige Ablauf enthält alle Übungen und Sätze, einschliesslich bearbeitbarer erledigter Sätze. «+ Satz» ergänzt die aktuelle Einheit; Änderungen lassen sich nach Trainingsabschluss als Standardplan speichern. Vorhandene Lasten und Übungssperren bleiben berücksichtigt.
 
-Der Check-in vergleicht zwei Sieben-Tage-Fenster. Für eine Beurteilung sind mindestens drei Gewichtstage je Fenster und zehn Ernährungstage erforderlich. Bei Rekomposition werden zusätzlich Umfangsmessungen berücksichtigt. Änderungen sind prüfbare Vorschläge und werden nicht automatisch auf das Kalorienziel angewandt.
-
-## Sonntagskochen
-
-- Ein oder zwei Gerichte; Portionen pro Gericht frei einstellbar, z.B. ein Gericht mit insgesamt fünf Portionen.
-- Import und Export von recipes.json Schema 1.3, plus optionalen Feldern für Rohmengen, vollständige Nährwerte, Produktquelle, Packungspreis und gewogenes Endgewicht.
-- Rezepteditor mit Schweizer Produktnamen, Mengen, Etikettwerten, Natrium bzw. Salzumrechnung und Kochschritten.
-- Eine gemeinsame Kochsession mit aktiver Arbeit, passiven Garzeiten und Gerätebelegung. Der Scheduler legt aktive Arbeit an den Beginn eines Schritts; zusätzliche Zwischenaktionen müssen als eigene Schritte erfasst werden.
-- Gemeinsame Einkaufsliste, aufgerundete Einkaufspackungen und Budgetprüfung. Fehlende Preise werden sichtbar ausgewiesen. Snacks und Wochenende ergänzen, bevor das Wochenbudget vollständig beurteilt wird.
-- Kalorien, Protein, Kohlenhydrate, Fett, Ballaststoffe und Natrium pro Portion und pro 100 g. Werte pro 100 g bleiben ohne Endgewicht offen.
-- JSON-Einkaufsliste, iPad-Rezeptdatei, kopierbare Yazio-Werte und Druckansicht (im Druckdialog als PDF speichern).
-
-Die zwei mitgelieferten Rezeptbasen sind Beispiele, kein automatisch personalisierter Ernährungsplan. Quellen und Erfassungsdatum sind bei den Zutaten hinterlegt. Etikettangaben mit einer Kleiner-als-Grenze wurden als Obergrenze übernommen; die Ergebnisse sind Näherungen. Preise sind Richtwerte. Produktwechsel und tatsächlich verwendete Mengen müssen nachgeführt werden.
+Cardio bietet freies Zeittraining und konfigurierbare Intervalle mit Ringtimer. Pause/Fortsetzen, Phase überspringen und Beenden ändern nur die laufende Cardio-Einheit. Einträge entstehen erst über «Aktivität speichern»; Distanz und Puls werden nicht erfunden. Trainingszeit schliesst manuelle Unterbrechungen aus und enthält die Erholung zwischen Intervallen. Ohne laufende App ist kein akustischer Alarm garantiert. Nach einem Seitenneustart wird die zuletzt gespeicherte Live-Einheit pausiert wiederhergestellt. Das bisherige Formular samt Verlauf bleibt unter «Aktivität nachtragen» erreichbar.
 
 ## Daten, Backups und Offline-Betrieb
 
@@ -82,7 +70,7 @@ Benachrichtigungen werden auf Mobilgeräten über den Service Worker angezeigt. 
     npm ci
     npm test
 
-coach-core.js enthält die unabhängig testbaren Berechnungen, coach.js die Integration mit der bestehenden App und coach-recipes.js den Rezept-/Kochbereich. Die Tests prüfen Berechnungen, DOM-Abläufe, Bestandsdaten, JSON-Roundtrips, sichere Textdarstellung und den Offline-Cache.
+coach-core.js enthält die Berechnungen, coach.js die bestehende App-Integration. ui-shell.js steuert die Navigation, strength-ui.js die fokussierte Satzansicht und cardio-ui.js den Live-Timer. coach-recipes.js bleibt für Bestandsdaten-Kompatibilität enthalten. Die Tests prüfen Berechnungen, DOM-Abläufe, Bestandsdaten, JSON-Roundtrips, sichere Textdarstellung und den Offline-Cache.
 
 Die automatisierte DOM-Prüfung ersetzt keinen Gerätetest. Installation, Layout, Tastatur, Sperrbildschirm, Audio/Haptik und Benachrichtigungen sollten vor einer Veröffentlichung zusätzlich auf dem Ziel-iPhone/iPad bzw. Android-Gerät geprüft werden.
 

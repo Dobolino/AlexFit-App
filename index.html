@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="AlexFit">
@@ -16,6 +16,9 @@
 <script src="coach.js" defer></script>
 <script src="coach-recipes.js" defer></script>
 <script src="coach-tools.js" defer></script>
+<script src="ui-shell.js" defer></script>
+<script src="strength-ui.js" defer></script>
+<script src="cardio-ui.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <script>(function(){try{
   function drawIcon(sz){
@@ -242,6 +245,9 @@
   .ex-video-badge{display:inline-flex;align-items:center;gap:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:4px;padding:1px 5px;vertical-align:middle;margin-left:4px;}
 </style>
 <link rel="stylesheet" href="coach.css">
+<link rel="stylesheet" href="strength-ui.css">
+<link rel="stylesheet" href="cardio-ui.css">
+<link rel="stylesheet" href="app-ui.css">
 </head>
 <body>
 <div id="app">
@@ -735,19 +741,11 @@
     <div id="nav-glass-indicator" aria-hidden="true"></div>
     <button class="navbtn active" id="nav-dashboard" onclick="switchTab('dashboard')" aria-current="page">
       <div class="nicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div>
-      <span class="nlabel" style="color:var(--blue)">Home</span>
+      <span class="nlabel" style="color:var(--blue)">Heute</span>
     </button>
     <button class="navbtn" id="nav-workout" onclick="switchTab('workout')">
       <div class="nicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5v14M18 5v14M6 12h12M3 5h6M3 19h6M15 5h6M15 19h6"/></svg></div>
       <span class="nlabel">Training</span>
-    </button>
-    <button class="navbtn" id="nav-calendar" onclick="switchTab('calendar')">
-      <div class="nicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z"/></svg></div>
-      <span class="nlabel">Kalender</span>
-    </button>
-    <button class="navbtn" id="nav-weight" onclick="switchTab('weight')">
-      <div class="nicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l9 14L21 6"/><path d="M3 6h18"/></svg></div>
-      <span class="nlabel">Gewicht</span>
     </button>
     <button class="navbtn" id="nav-cardio" onclick="switchTab('cardio')">
       <div class="nicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="M7.5 17l2-5.5 2.5 2 2.5-4 2.5 5.5"/><path d="M3 20h18"/></svg></div>
@@ -755,7 +753,7 @@
     </button>
     <button class="navbtn" id="nav-stats" onclick="switchTab('stats')">
       <div class="nicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
-      <span class="nlabel">Stats</span>
+      <span class="nlabel">Fortschritt</span>
     </button>
   </nav>
 </div>
@@ -1099,7 +1097,7 @@ const COOLDOWN=["Brust dehnen 30s je Seite","Schulter Stretch 30s","Nackenmobili
 const GOAL_KG=null;
 const BF_MIN=12,BF_MAX=18;
 const SCHEMA_VERSION=4;
-const APP_BUILD='2026.10.26';
+const APP_BUILD='2026.11.07.21';
 const BACKUP_FORMAT_VERSION=2;
 const SESSION_KEY='af_active_session';
 const PROGRAM_WEEKS=12;
@@ -4264,13 +4262,13 @@ const EXERCISE_INFO={
   "Incline Dumbbell Press (Reebok Deck)":{primary:["Brust (oberer Teil)"],secondary:["Trizeps","Vordere Schulter"],tip:"Reebok Deck auf mittlere Neigung (30–45°) stellen. Kurzhanteln schräg nach oben drücken, Ellbogen 45–75° vom Körper. Häufigster Fehler: zu steile Neigung verschiebt Belastung zur Schulter statt Brust."},
   "Pike Push-ups":{primary:["Schultern"],secondary:["Trizeps"],tip:"Hüfte hochgestellt wie ein umgekehrtes V, Kopf Richtung Boden absenken. Ähnliche Belastung wie Schulterdrücken, aber mit Körpergewicht. Häufigster Fehler: zu wenig Hüfte anheben, dadurch wird es zum normalen Liegestütz."},
   "Single-Leg Glute Bridge":{primary:["Gesäß"],secondary:["Hinterschenkel","Core"],tip:"Wie normales Glute Bridge, aber ein Bein gestreckt in der Luft halten — deutlich intensiver als beidbeinig. Häufigster Fehler: Hüfte kippt zur Seite, beide Hüftknochen müssen gleich hoch bleiben."},
-  "Single-Leg RDL":{primary:["Hinterschenkel"],secondary:["Gesäß","Core"],tip:"Einbeinig stehen, Kurzhantel in der Hand, Oberkörper nach vorne kippen während das freie Bein nach hinten geht. Standbein bleibt leicht gebeugt. Häufigster Fehler: zu schnell, dadurch Gleichgewichtsverlust — lieber langsam und kontrolliert."},
-  "Straight-Arm Pullover":{primary:["Rücken (Latissimus)"],secondary:["Brust"],tip:"Arme komplett gestreckt halten, Kurzhantel vom Bauch über den Kopf führen und zurück. Trainiert den Latissimus isoliert ohne Bizeps-Beteiligung. Häufigster Fehler: Ellbogen beugen — dann wird daraus ein Pullover statt Straight-Arm."},
+  "Single-Leg RDL":{primary:["Hintere Oberschenkel und Gesäss"],secondary:["Rumpf und Rückenstrecker als Stabilisatoren"],tip:"Einbeinig stehen, Standknie leicht beugen und die Hüfte zurückführen. Becken kontrolliert halten; das freie Bein bewegt sich nach hinten. Nur so tief gehen, wie Gleichgewicht und Rückenposition stabil bleiben."},
+  "Straight-Arm Pullover":{primary:["Latissimus und Brust"],secondary:["Trizeps und Schulterstabilisation"],tip:"Auf einer stabilen Bank liegen, Kurzhantel mit beiden Händen führen. Ellbogen leicht gebeugt halten, Arme kontrolliert nach hinten und wieder zurück bewegen. Latissimus und Brust sind beteiligt; kein isoliertes Latissimus-Training. Bewegungsumfang an Schulterbeweglichkeit anpassen."},
   "Sumo Squat (Dumbbell)":{primary:["Quadrizeps","Gesäß"],secondary:["Adduktoren","Hinterschenkel"],tip:"Breiter Stand, Zehen zeigen nach außen (ca. 30–45°), Kurzhantel zwischen den Beinen hängen lassen. Häufigster Fehler: Knie kollabieren nach innen statt der Fußrichtung zu folgen."},
   "Upright Row (Dumbbell)":{primary:["Schultern"],secondary:["Trapez","Bizeps"],tip:"Kurzhanteln nahe am Körper nach oben ziehen bis Brusthöhe, Ellbogen bleiben höher als die Hände. Häufigster Fehler: zu schwer und zu hoch ziehen — das belastet das Schultergelenk unnötig, lieber leicht und kontrolliert."},
   "Zottman Curls":{primary:["Bizeps"],secondary:["Unterarm"],tip:"Aufwärts mit Handfläche nach oben (Supination) curlen, am oberen Punkt die Hand drehen, abwärts mit Handfläche nach unten (Pronation) absenken — trainiert Bizeps UND Unterarm in einer Bewegung. Häufigster Fehler: die Drehung am oberen Punkt vergessen."},
 
-  "Arnold Press":{primary:["Schulter (alle 3 Köpfe)"],secondary:["Trizeps"],tip:"Start mit Handflächen zum Körper, beim Hochdrücken nach außen rotieren bis Handflächen nach vorne zeigen. Trainiert alle Schulterköpfe durch die Rotation. Häufigster Fehler: Rotation zu schnell, dadurch Schulterinstabilität."},
+  "Arnold Press":{primary:["Vordere und mittlere Schulter"],secondary:["Trizeps, Trapezmuskel"],tip:"Handflächen zu Beginn zum Körper, beim Hochdrücken kontrolliert nach aussen drehen. Vordere und mittlere Schulter sowie Trizeps arbeiten; die Rotation belastet nicht alle drei Schulteranteile gleich. Nur im gut verträglichen Bewegungsumfang ausführen."},
 
   "Goblet Squat":{primary:["Quadrizeps","Gesäß"],secondary:["Core"],tip:"KH mit beiden Händen vor der Brust halten, Ellbogen zeigen nach unten. Aufrechter Oberkörper, Knie nach außen über die Zehen. Häufigster Fehler: Oberkörper fällt nach vorne, Knie kollabieren nach innen."},
   "Mountain Climbers":{primary:["Core"],secondary:["Schultern","Quadrizeps"],tip:"Liegestütz-Position, Knie abwechselnd kontrolliert zur Brust ziehen. Hüfte bleibt stabil und tief. Häufigster Fehler: Hüfte schaukelt hoch-runter statt gerade zu bleiben."},
@@ -4288,9 +4286,9 @@ const EXERCISE_INFO={
   "Face Pulls (Resistance Band)":{primary:["Hintere Schulter"],secondary:["Trapez"],tip:"Auf Schulterhöhe ziehen, Hände neben Ohren"},
   "Reverse Flyes (Dumbbells)":{primary:["Hintere Schulter","Rotatorenmanschette"],secondary:["Trapez"],tip:"Oberkörper 45° vorgebeugt, Arme seitlich bis Schulterhöhe — langsam und kontrolliert. Auf Reebok Deck leicht schräg für bessere Isolation"},
   "Dumbbell Curls":{primary:["Bizeps"],secondary:["Unterarm"],tip:"Ellbogen fixiert, volle Streckung am Ende"},
-  "Hammer Curls":{primary:["Bizeps"],secondary:["Unterarm"],tip:"Neutralgriff — stärkt Unterarm + Bizeps gleichmäßig"},
-  "Dumbbell Shoulder Press":{primary:["Schulter (Deltoid)"],secondary:["Trizeps","Trapez"],tip:"Nicht überstrecken oben, leichte Beugung halten"},
-  "Lateral Raises":{primary:["Schulter (mittlerer Deltoid)"],secondary:["Trapez"],tip:"Arme leicht gebeugt, Daumen leicht nach unten"},
+  "Hammer Curls":{primary:["Armbeuger: Bizeps und Brachialis"],secondary:["Brachioradialis und Griffmuskulatur"],tip:"Im Neutralgriff curlen, Oberarme ruhig halten und ohne Schwung arbeiten. Brachialis und Brachioradialis sind neben dem Bizeps wesentlich beteiligt; die vereinfachte Körpergrafik kann diese nicht einzeln abbilden."},
+  "Dumbbell Shoulder Press":{primary:["Vordere und mittlere Schulter"],secondary:["Trizeps, Trapezmuskel"],tip:"Kurzhanteln kontrolliert nach oben drücken, ohne den unteren Rücken zu überstrecken. Kopf neutral halten und einen gut verträglichen Griff und Bewegungsumfang wählen. Vordere und mittlere Schulter sowie Trizeps sind wesentlich beteiligt."},
+  "Lateral Raises":{primary:["Mittlere Schulter"],secondary:["Trapezmuskel"],tip:"Arme leicht gebeugt kontrolliert seitlich anheben. Hände neutral oder Daumen leicht nach oben, ohne erzwungenes Eindrehen. Schulterblätter dürfen sich natürlich mitbewegen. Leichtes Gewicht wählen und Schwung vermeiden."},
   "Front Raises":{primary:["Schulter (vorderer Deltoid)"],secondary:["Trapez"],tip:"Nicht schwingen, kontrollierte Bewegung"},
   "Ab Wheel Rollouts":{primary:["Core"],secondary:["Latissimus","Schultern"],tip:"Hohlkreuz vermeiden — Bauch aktiv halten"},
   "Plank":{primary:["Core"],secondary:["Schultern","Gesäß"],tip:"Hüfte nicht heben/senken, gleichmäßig atmen"},
@@ -4304,15 +4302,15 @@ const EXERCISE_INFO={
   "Russian Twist":              {primary:["Core (schräge Bauchmuskeln)"],secondary:[],tip:"Oberkörper 45° zurück, Beine leicht angewinkelt oder erhöht, KH mit beiden Händen, kontrollierte Rotation. Häufigster Fehler: zu schnell schwingen statt Muskeln zu nutzen."},
   "Seated Calf Raises":         {primary:["Waden (Soleus)"],secondary:[],tip:"Sitzend, KH auf den Knien, Fersen vollständig absenken und vollständig heben. Trainiert den Soleus (unter dem Gastrocnemius) stärker als stehend. Volle Range of Motion entscheidend."},
   "Single-Leg Calf Raises":      {primary:["Waden"],secondary:[],tip:"Auf einem Bein, freies Bein leicht angebeugt — volle Streckung oben, volle Dehnung unten. Häufigster Fehler: Bewegungsumfang reduzieren. Wenn nötig an Wand abstützen."},
-  "Farmer's Walk (Dumbbells)":{primary:["Trapez","Schultern"],secondary:["Unterarm","Core","Rücken"],tip:"Schulterbreiter Stand, KH seitlich, aufrechte Haltung — Schultern leicht zurückgezogen, Blick geradeaus, gleichmäßige Schritte. Häufigster Fehler: Oberkörper zur Seite neigen oder Schultern nach vorne fallen lassen."},
+  "Farmer's Walk (Dumbbells)":{primary:["Griffmuskulatur und Trapezmuskel"],secondary:["Rumpf und Rücken als Stabilisatoren"],tip:"Kurzhanteln seitlich halten und aufrecht mit kontrollierten Schritten gehen. Rumpf stabil halten, Schultern nicht bewusst hochziehen. Griff, oberer Rücken und Rumpf arbeiten vorwiegend haltend."},
   "Dumbbell Crunch":          {primary:["Core (gerade Bauchmuskulatur)"],secondary:[],tip:"Kurzhantel an die Brust halten, nur Schulterblätter abheben — keine Sit-up Bewegung. Häufigster Fehler: Nacken ziehen, zu weit hochkommen."},
   "Dumbbell Russian Twist":   {primary:["Core (schräge Bauchmuskeln)"],secondary:[],tip:"KH mit beiden Händen, Beine angewinkelt oder erhöht. Kontrollierte Rotation, keine Schwungbewegung."},
-  "Weighted Plank":             {primary:["Core (Transversus abdominis)"],secondary:["Schultern"],tip:"KH auf dem Rücken ablegen lassen (Trainingspartner) oder Rucksack — normaler Plank mit Zusatzlast. Häufigster Fehler: Hüfte hebt sich unter Last."},
+  "Weighted Plank":{primary:["Gerade und seitliche Bauchmuskulatur"],secondary:["Schulter- und Gesässstabilisation"],tip:"Nur mit sicher platzierter Zusatzlast und kontrollierter Körperposition ausführen. Keine ungesicherte Kurzhantel auf den Rücken legen. Zunächst Plank ohne Zusatzlast beherrschen; Bauch aktiv halten und ruhig atmen."},
   "Dumbbell Side Bend":       {primary:["Core (seitliche Rumpfmuskulatur)"],secondary:["Obliques"],tip:"KH in einer Hand, seitlich absenken und aufrichten — nur Lateralflexion, kein Vorneigen. Gleichmäßig beidseitig."},
-  "Pallof Press (Isometric)": {primary:["Core (Transversus abdominis)"],secondary:["Schultern"],tip:"Ohne Band: KH mit beiden Händen vor Brust, seitlich hinhalten und halten — Rumpf verhindert Rotation. Sehr effektiv für Rumpfstabilität."},
+  "Pallof Press (Isometric)":{primary:["Seitliche und gerade Bauchmuskulatur"],secondary:["Schulterstabilisation"],tip:"Pallof Press benötigt seitlichen Zug durch ein Widerstandsband oder einen Kabelzug. Vor der Brust halten und kontrolliert nach vorn drücken, ohne den Rumpf zu drehen. Eine frei gehaltene Kurzhantel ersetzt diesen seitlichen Widerstand nicht."},
   "Dumbbell Windmill":        {primary:["Core (schräge Bauchmuskeln)"],secondary:["Schultern","Gesäß"],tip:"KH hoch halten, andere Hand an Bein entlanggleiten — Blick zur KH oben. Eher fortgeschritten, erst ohne Gewicht üben."},
   "Suitcase Carry":             {primary:["Core (Anti-Lateralflexion)"],secondary:["Trapez","Unterarm"],tip:"Wie Farmer's Walk aber nur eine KH — Rumpf verhindert Seitneigung. Einer der funktionellsten Core-Moves."},
-  "L-Sit Hold":                 {primary:["Core"],secondary:["Trizeps","Hüftbeuger"],tip:"Auf zwei Stühlen oder Boden stützen, Beine waagrecht halten. Extrem schwer — mit angewinkelten Beinen beginnen."},
+  "L-Sit Hold":{primary:["Bauch und Hüftbeuger"],secondary:["Trizeps und Quadrizeps"],tip:"Auf stabilen, geeigneten Auflagen oder am Boden abstützen. Beine nach vorn halten, zunächst mit angewinkelten Knien. Bauch und Hüftbeuger halten die Beinposition; nicht auf kippeligen Stühlen trainieren."},
 
 
   // ── ERWEITERTE TIPPS FÜR BESTEHENDE ÜBUNGEN (Coach-gerecht) ────────────
@@ -4321,23 +4319,23 @@ const EXERCISE_INFO={
   "Push-ups (Reebok Deck)":   {primary:["Brust (Pectoralis)"],secondary:["Trizeps","Vordere Schulter","Core"],tip:"Körper von Kopf bis Ferse gerade wie ein Brett. Ellbogen 45° vom Körper. Häufigste Fehler: Hüfte hängt durch (Hohlkreuz), Hüfte zu hoch, Ellbogen zu weit außen."},
   "Pull-ups / Negative Pull-ups":{primary:["Rücken (Latissimus)"],secondary:["Bizeps","Hintere Schulter"],tip:"Schulterblätter erst zusammenziehen/absenken (Scapular Depression) DANN ziehen. Negativen langsam 3–5s. Häufigster Fehler: Schultern hochziehen, Schwung benutzen."},
   "Dumbbell Squats":      {primary:["Quadrizeps","Gesäß"],secondary:["Hinterschenkel","Waden","Core"],tip:"Knie in Zehen-Richtung, Gewicht in den Fersen, Oberkörper aufrecht. Mindestens bis Oberschenkel parallel. Häufigste Fehler: Knie nach innen kippen (→ Knieprobleme), auf Zehenspitzen, Rücken rund."},
-  "Romanian Deadlift":     {primary:["Hinterschenkel"],secondary:["Gesäß","Rücken (Erector spinae)"],tip:"Hüfte nach hinten schieben (nicht Knie beugen!), Rücken gerade, KH nah am Körper entlang. Häufigste Fehler: Knie beugen → wird zur normalen Kniebeuge, Rundrücken, zu weit nach unten gehen."},
+  "Romanian Deadlift":{primary:["Hintere Oberschenkel und Gesäss"],secondary:["Rückenstrecker und Rumpf als Stabilisatoren"],tip:"Knie leicht gebeugt lassen und die Hüfte nach hinten führen. Kurzhanteln nah am Körper halten; Rücken und Kopf bleiben neutral. Hintere Oberschenkel und Gesäss bewegen die Hüfte, der Rücken stabilisiert. Tiefe nur so weit, wie die Position kontrolliert bleibt."},
   "Ab Wheel Rollouts":          {primary:["Core (gerade Bauchmuskulatur)"],secondary:["Latissimus","Schultern"],tip:"Knie auf dem Boden zu Beginn. Bauch aktiv nach innen ziehen, langsam ausrollen bis Körper fast waagrecht, zurückziehen. Häufigster Fehler: Hohlkreuz — wenn das passiert, Bewegungsumfang reduzieren."},
   "Plank":                      {primary:["Core (Transversus abdominis)"],secondary:["Schultern","Gesäß"],tip:"Hüfte weder heben noch senken — sie soll waagrecht sein. Gesäß leicht anspannen, Bauchkneifen. Häufigste Fehler: Hüfte hängt durch (→ Lendenwirbel), Hüfte zu hoch (→ keine Belastung), Atem anhalten."},
   "Bulgarian Split Squat":      {primary:["Quadrizeps","Gesäß"],secondary:["Hinterschenkel","Waden"],tip:"Hinterer Fuss locker auf der Bank (nur Spann, nicht drücken), Schritt weit genug nach vorne. Knie des Standbeins bleibt über dem Fuss. Häufigste Fehler: zu kleiner Schritt → Knie geht weit über Zehen, vorderes Knie kippt nach innen."},
-  "Lateral Raises":                   {primary:["Schulter (mittlerer Deltoid)"],secondary:["Trapez"],tip:"Arme leicht gebeugt und konstant so, Daumen leicht nach unten (Pronation). NUR bis Schulterhöhe — darüber übernimmt Trapez. Häufigste Fehler: Schwung benutzen, zu schwer, Schultern hochziehen."},
-  "Dumbbell Shoulder Press": {primary:["Schulter (Deltoid)"],secondary:["Trizeps","Trapez"],tip:"Neutral-Position: Ellbogen 90°, auf Schulterhöhe oder leicht darunter starten. Oben NICHT komplett strecken (Ellbogen blockieren). Häufigste Fehler: Lendenwirbel überstrecken durch zu schweres Gewicht, Ellbogen zu weit vorne."},
+  "Lateral Raises":{primary:["Mittlere Schulter"],secondary:["Trapezmuskel"],tip:"Arme leicht gebeugt kontrolliert seitlich anheben. Hände neutral oder Daumen leicht nach oben, ohne erzwungenes Eindrehen. Schulterblätter dürfen sich natürlich mitbewegen. Leichtes Gewicht wählen und Schwung vermeiden."},
+  "Dumbbell Shoulder Press":{primary:["Vordere und mittlere Schulter"],secondary:["Trizeps, Trapezmuskel"],tip:"Kurzhanteln kontrolliert nach oben drücken, ohne den unteren Rücken zu überstrecken. Kopf neutral halten und einen gut verträglichen Griff und Bewegungsumfang wählen. Vordere und mittlere Schulter sowie Trizeps sind wesentlich beteiligt."},
 
   "Oblique Crunch":{primary:["Core (schräge Bauchmuskeln)"],secondary:[],tip:"Schulterblatt heben — nicht Nacken"},
   "Dumbbell Squats":{primary:["Quadrizeps","Gesäß"],secondary:["Hinterschenkel","Waden"],tip:"Knie über Zehen, Rücken aufrecht"},
   "Dumbbell Lunges":{primary:["Quadrizeps","Gesäß"],secondary:["Hinterschenkel","Waden"],tip:"Hinteres Knie fast auf Boden, Oberkörper aufrecht"},
-  "Romanian Deadlift":{primary:["Hinterschenkel"],secondary:["Gesäß","Rücken"],tip:"Knie leicht gebeugt, Hüfte nach hinten schieben"},
+  "Romanian Deadlift":{primary:["Hintere Oberschenkel und Gesäss"],secondary:["Rückenstrecker und Rumpf als Stabilisatoren"],tip:"Knie leicht gebeugt lassen und die Hüfte nach hinten führen. Kurzhanteln nah am Körper halten; Rücken und Kopf bleiben neutral. Hintere Oberschenkel und Gesäss bewegen die Hüfte, der Rücken stabilisiert. Tiefe nur so weit, wie die Position kontrolliert bleibt."},
   "Glute Bridge":{primary:["Gesäß"],secondary:["Hinterschenkel","Core"],tip:"Oben 2 Sek halten, Gesäß aktiv anspannen"},
   "Standing Calf Raises":{primary:["Waden"],secondary:[],tip:"Volle Streckung und volles Absenken"},
   "Dead Bug":{primary:["Core"],secondary:["Hüftbeuger"],tip:"Lendenlordose am Boden halten — kein Hohlkreuz"},
   "WalkingPad Warm-up":{primary:["Ausdauer"],secondary:[],tip:"Lockeres Tempo, Puls auf 100–120 bringen"},
-  "Rowing Intervals":{primary:["Rücken","Beine"],secondary:["Arme","Core"],tip:"Beine drücken zuerst, dann Rücken, dann Arme"},
-  "Rowing Steady-State":{primary:["Ausdauer","Rücken"],secondary:["Beine","Core"],tip:"Gleichmäßiges Tempo, Atemrhythmus finden"},
+  "Rowing Intervals":{primary:["Beine, Gesäss und Rücken"],secondary:["Arme und Rumpf"],tip:"Beim Antrieb zuerst mit den Beinen drücken, dann die Hüfte öffnen, zuletzt die Arme ziehen. Zurück in umgekehrter Reihenfolge. Muskelgruppen wie beim gleichmässigen Rudern; Intensität und Dauer ändern den Belastungsumfang."},
+  "Rowing Steady-State":{primary:["Beine, Gesäss und Rücken"],secondary:["Arme und Rumpf"],tip:"Gleichmässiges, gut kontrollierbares Tempo. Erst Beine drücken, dann Hüfte öffnen, zuletzt Arme ziehen; zurück in umgekehrter Reihenfolge. Gleiche grundlegenden Muskelgruppen wie beim Intervallrudern."},
   "Bulgarian Split Squat":{primary:["Quadrizeps","Gesäß"],secondary:["Hinterschenkel","Waden"],tip:"Hinterer Fuß auf Bank, Knie des vorderen Beins über Zehen, tief absenken"},
   "Concentration Curls":{primary:["Bizeps"],secondary:["Unterarm"],tip:"Ellbogen am Innenschenkel abstützen, langsam und kontrolliert"},
   "Bench Dips":{primary:["Trizeps"],secondary:["Brust","Vordere Schulter"],tip:"Hände schulterbreit, Ellbogen nah am Körper, volle Streckung"},
@@ -4345,15 +4343,15 @@ const EXERCISE_INFO={
   "Superman Hold":{primary:["Rücken (Erector spinae)"],secondary:["Gesäß","Hamstrings"],tip:"Bauchlage, Arme vor dem Kopf — Arme, Brust und Beine gleichzeitig heben, oben 2s halten. Häufigster Fehler: nur Beine oder nur Arme heben. Perfekt als Ergänzung zur Sitzhaltung."},
   "Reverse Snow Angels":{primary:["Rücken (Rhomboids, Trapez)","Hintere Schulter"],secondary:["Rücken (Erector spinae)"],tip:"Bauchlage, Arme gestreckt seitlich — in Schneeengel-Bewegung führen. Langsam und bewusst. Sehr gut für Haltungskorrektur (Büroschulter). Häufigster Fehler: Ellbogen beugen."},
   "Seal Row (Reebok Deck)":{primary:["Rücken (Latissimus, Rhomboids)"],secondary:["Bizeps","Hintere Schulter"],tip:"Auf hohem Reebok Deck bäuchlings liegen, Brust aufgelegt, KH beidseitig hochziehen — kein Schwung möglich. Häufigster Fehler: Kopf abheben, zu schwer wählen."},
-  "Decline Push-ups (Reebok Deck)":{primary:["Brust (unterer Pectoralis)"],secondary:["Trizeps","Vordere Schulter"],tip:"Füsse auf Deck, Hände schulterbreit am Boden — Körper gerade, Ellbogen 45° einwinkeln. Untere Brust wird stärker betont als beim normalen Push-up. Häufigster Fehler: Hüfte durchhängen lassen."},
-  "Dumbbell Squeeze Press":{primary:["Brust (innerer Pectoralis)"],secondary:["Trizeps"],tip:"KH aktiv zusammendrücken (Squeeze) und diese Spannung während der gesamten Bewegung halten — kein Abstand zwischen den KH. Maximale Brust-Kontraktion in der Mitte. Häufigster Fehler: KH trennen sich beim Absenken."},
+  "Decline Push-ups (Reebok Deck)":{primary:["Brust (tendenziell oberer Anteil)"],secondary:["Trizeps, vordere Schulter, Core"],tip:"Füsse auf eine stabile Bank, Hände am Boden. Körper gerade halten und kontrolliert absenken. Erhöhte Füsse können den Schwerpunkt zur oberen Brust und vorderen Schulter verschieben; Höhe und Ausführung beeinflussen dies."},
+  "Dumbbell Squeeze Press":{primary:["Brust"],secondary:["Trizeps, vordere Schulter"],tip:"Kurzhanteln beim Drücken kontrolliert zusammenhalten. Brust, Trizeps und vordere Schulter arbeiten. Ein isoliertes Training einer inneren Brustregion ist damit nicht möglich."},
   "Single-Arm Dumbbell Press":{primary:["Brust"],secondary:["Trizeps","Core (Anti-Rotation)"],tip:"Eine KH pressen, andere Hand gesichert oder am Körper — Körper aktiv stabilisieren, nicht rotieren. Deckt muskuläre Asymmetrien zwischen links/rechts auf. Häufigster Fehler: Hüfte dreht mit zur arbeitenden Seite."},
   "Dumbbell Around the World":{primary:["Brust (Pectoralis)"],secondary:["Vordere Schulter","Serratus anterior"],tip:"Flach liegen, KH von Hüfte in großem Bogen über Boden bis über den Kopf führen — immer leicht gebeugte Ellbogen. Langsam und mit Kontrolle, keine schweren Gewichte. Häufigster Fehler: Ellbogen stark beugen oder Rücken abheben."},
 };
 
 const MUSCLES={CHEST:'chest',TRICEP:'tricep',SHOULDER_FRONT:'shoulder_front',SHOULDER_MID:'shoulder_mid',SHOULDER_REAR:'shoulder_rear',BICEP:'bicep',FOREARM:'forearm',BACK_LAT:'back_lat',BACK_MID:'back_mid',BACK_LOW:'back_low',TRAP:'trap',ABS:'abs',OBLIQUE:'oblique',HIP_FLEXOR:'hip_flexor',QUAD:'quad',HAMSTRING:'hamstring',GLUTE:'glute',CALF:'calf',CARDIO:'cardio'};
 const M=MUSCLES;
-const BODY_MUSCLES_MAP={[M.CHEST]:['chest-upper-left','chest-upper-right','chest-lower-left','chest-lower-right'],[M.TRICEP]:['triceps-long-left','triceps-lateral-left','triceps-long-right','triceps-lateral-right'],[M.SHOULDER_FRONT]:['shoulder-front-left','shoulder-front-right'],[M.SHOULDER_MID]:['shoulder-side-left','shoulder-side-right','shoulder-front-left','shoulder-front-right','deltoid-rear-left','deltoid-rear-right'],[M.SHOULDER_REAR]:['deltoid-rear-left','deltoid-rear-right'],[M.BICEP]:['biceps-left','biceps-right'],[M.FOREARM]:['forearm-left','forearm-right','forearm-flexors-left','forearm-extensors-left','forearm-flexors-right','forearm-extensors-right'],[M.BACK_LAT]:['lats-upper-left','lats-mid-left','lats-lower-left','lats-upper-right','lats-mid-right','lats-lower-right'],[M.BACK_MID]:['traps-mid-left','traps-mid-right','lower-back-ql-left','lower-back-ql-right'],[M.BACK_LOW]:['lower-back-erectors-left','lower-back-erectors-right','spine'],[M.TRAP]:['traps-upper-left','traps-mid-left','traps-lower-left','traps-upper-right','traps-mid-right','traps-lower-right'],[M.ABS]:['abs-upper-left','abs-upper-right','abs-lower-left','abs-lower-right'],[M.OBLIQUE]:['obliques-left','obliques-right'],[M.HIP_FLEXOR]:['hip-flexor-left','hip-flexor-right'],[M.QUAD]:['quads-left','quads-right'],[M.HAMSTRING]:['hamstrings-medial-left','hamstrings-lateral-left','hamstrings-medial-right','hamstrings-lateral-right'],[M.GLUTE]:['gluteus-medius-left','gluteus-maximus-left','gluteus-medius-right','gluteus-maximus-right'],[M.CALF]:['calves-gastroc-medial-left','calves-gastroc-lateral-left','calves-soleus-left','calves-gastroc-medial-right','calves-gastroc-lateral-right','calves-soleus-right','tibialis-anterior-left','tibialis-anterior-right'],[M.CARDIO]:[]};
+const BODY_MUSCLES_MAP={[M.CHEST]:['chest-upper-left','chest-upper-right','chest-lower-left','chest-lower-right'],[M.TRICEP]:['triceps-long-left','triceps-lateral-left','triceps-long-right','triceps-lateral-right'],[M.SHOULDER_FRONT]:['shoulder-front-left','shoulder-front-right'],[M.SHOULDER_MID]:['shoulder-side-left','shoulder-side-right'],[M.SHOULDER_REAR]:['deltoid-rear-left','deltoid-rear-right'],[M.BICEP]:['biceps-left','biceps-right'],[M.FOREARM]:['forearm-left','forearm-right','forearm-flexors-left','forearm-extensors-left','forearm-flexors-right','forearm-extensors-right'],[M.BACK_LAT]:['lats-upper-left','lats-mid-left','lats-lower-left','lats-upper-right','lats-mid-right','lats-lower-right'],[M.BACK_MID]:['traps-mid-left','traps-mid-right'],[M.BACK_LOW]:['lower-back-erectors-left','lower-back-erectors-right','spine'],[M.TRAP]:['traps-upper-left','traps-mid-left','traps-lower-left','traps-upper-right','traps-mid-right','traps-lower-right'],[M.ABS]:['abs-upper-left','abs-upper-right','abs-lower-left','abs-lower-right'],[M.OBLIQUE]:['obliques-left','obliques-right'],[M.HIP_FLEXOR]:['hip-flexor-left','hip-flexor-right'],[M.QUAD]:['quads-left','quads-right'],[M.HAMSTRING]:['hamstrings-medial-left','hamstrings-lateral-left','hamstrings-medial-right','hamstrings-lateral-right'],[M.GLUTE]:['gluteus-medius-left','gluteus-maximus-left','gluteus-medius-right','gluteus-maximus-right'],[M.CALF]:['calves-gastroc-medial-left','calves-gastroc-lateral-left','calves-soleus-left','calves-gastroc-medial-right','calves-gastroc-lateral-right','calves-soleus-right'],[M.CARDIO]:[]};
 
 const WEIGHT_RANGES={
   'Dumbbell Bench Press':    [8,12,14,20,22,32],
@@ -4464,34 +4462,86 @@ const EXERCISE_ALTERNATIVES={
 };
 
 
-const EXERCISE_MUSCLES={"Push-ups (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},"Dumbbell Bench Press":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},"Dumbbell Flyes":{pri:[M.CHEST],sec:[M.SHOULDER_FRONT]},"Close-Grip Bench Press":{pri:[M.TRICEP],sec:[M.CHEST,M.SHOULDER_FRONT]},"Dumbbell Kickbacks":{pri:[M.TRICEP],sec:[]},"Overhead Triceps Extension":{pri:[M.TRICEP],sec:[]},"Pull-ups / Negative Pull-ups":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},"Single-Arm Dumbbell Row":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},"Double-Arm Dumbbell Row":{pri:[M.BACK_MID],sec:[M.BICEP,M.SHOULDER_REAR,M.TRAP]},"Face Pulls (Resistance Band)":{pri:[M.SHOULDER_REAR],sec:[M.TRAP,M.BACK_MID]},
-"Reverse Flyes (Dumbbells)":{pri:[M.SHOULDER_REAR],sec:[M.TRAP,M.BACK_MID]},"Dumbbell Curls":{pri:[M.BICEP],sec:[M.FOREARM]},"Hammer Curls":{pri:[M.BICEP],sec:[M.FOREARM]},"Dumbbell Shoulder Press":{pri:[M.SHOULDER_MID],sec:[M.TRICEP,M.TRAP]},"Lateral Raises":{pri:[M.SHOULDER_MID],sec:[M.TRAP]},"Front Raises":{pri:[M.SHOULDER_FRONT],sec:[M.TRAP,M.CHEST]},"Ab Wheel Rollouts":{pri:[M.ABS],sec:[M.BACK_LAT,M.SHOULDER_FRONT]},"Plank":{pri:[M.ABS],sec:[M.SHOULDER_MID,M.GLUTE]},"Oblique Crunch":{pri:[M.OBLIQUE],sec:[M.ABS]},"Dumbbell Squats":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF,M.ABS]},"Dumbbell Lunges":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},"Romanian Deadlift":{pri:[M.HAMSTRING],sec:[M.GLUTE,M.BACK_LOW]},"Glute Bridge":{pri:[M.GLUTE],sec:[M.HAMSTRING,M.ABS]},"Standing Calf Raises":{pri:[M.CALF],sec:[]},"Dead Bug":{pri:[M.ABS],sec:[M.HIP_FLEXOR,M.BACK_LOW]},"WalkingPad Warm-up":{pri:[M.CARDIO],sec:[M.QUAD,M.CALF]},"Rowing Intervals":{pri:[M.BACK_LAT,M.CARDIO],sec:[M.QUAD,M.BICEP,M.ABS]},"Rowing Steady-State":{pri:[M.BACK_LAT,M.CARDIO],sec:[M.QUAD,M.HAMSTRING]},
-"Bulgarian Split Squat":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},
-"Concentration Curls":{pri:[M.BICEP],sec:[M.FOREARM]},
-"Bench Dips":{pri:[M.TRICEP],sec:[M.CHEST,M.SHOULDER_FRONT]},
-"Dumbbell Crunch":        {pri:[M.ABS],sec:[]},
-"Dumbbell Russian Twist": {pri:[M.OBLIQUE],sec:[M.ABS]},
-"Weighted Plank":           {pri:[M.ABS],sec:[M.SHOULDER_MID]},
-"Dumbbell Side Bend":     {pri:[M.OBLIQUE],sec:[M.ABS]},
-"Pallof Press (Isometric)":{pri:[M.ABS],sec:[M.SHOULDER_MID]},
-"Dumbbell Windmill":      {pri:[M.OBLIQUE],sec:[M.SHOULDER_MID,M.GLUTE]},
-"Suitcase Carry":           {pri:[M.ABS],sec:[M.TRAP,M.FOREARM]},
-"L-Sit Hold":               {pri:[M.ABS],sec:[M.TRICEP,M.HIP_FLEXOR]},
-"Renegade Row":          {pri:[M.BACK_LAT],sec:[M.BICEP,M.ABS,M.SHOULDER_REAR]},
-"Superman Hold":         {pri:[M.BACK_LOW],sec:[M.GLUTE,M.HAMSTRING]},
-"Reverse Snow Angels":   {pri:[M.BACK_MID,M.SHOULDER_REAR],sec:[M.BACK_LOW,M.TRAP]},
-"Seal Row (Reebok Deck)":{pri:[M.BACK_LAT,M.BACK_MID],sec:[M.BICEP,M.SHOULDER_REAR]},
-"Dumbbell Pullover":     {pri:[M.BACK_LAT,M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
-"Arnold Press":          {pri:[M.SHOULDER_FRONT,M.SHOULDER_MID,M.SHOULDER_REAR],sec:[M.TRICEP,M.TRAP]},
-"Zottman Curls":         {pri:[M.BICEP],sec:[M.FOREARM]},
-"Incline Dumbbell Press (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
-"Decline Push-ups (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
-"Dumbbell Squeeze Press":{pri:[M.CHEST],sec:[M.TRICEP]},
-"Single-Arm Dumbbell Press":{pri:[M.CHEST],sec:[M.TRICEP,M.ABS]},
-"Dumbbell Around the World":{pri:[M.CHEST],sec:[M.SHOULDER_FRONT]},
-"Farmer's Walk (Dumbbells)":{pri:[M.TRAP,M.FOREARM],sec:[M.SHOULDER_MID,M.ABS,M.BACK_MID]}};
+// Simplified anatomical regions: supporting regions also include stabilisers.
+// The emphasis varies with technique; these are not activation percentages.
+const EXERCISE_MUSCLES={
+  "Push-ups (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT,M.ABS]},
+  "Dumbbell Bench Press":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
+  "Dumbbell Flyes":{pri:[M.CHEST],sec:[M.SHOULDER_FRONT]},
+  "Close-Grip Bench Press":{pri:[M.TRICEP],sec:[M.CHEST,M.SHOULDER_FRONT]},
+  "Dumbbell Kickbacks":{pri:[M.TRICEP],sec:[]},
+  "Overhead Triceps Extension":{pri:[M.TRICEP],sec:[]},
+  "Pull-ups / Negative Pull-ups":{pri:[M.BACK_LAT],sec:[M.BICEP,M.BACK_MID,M.SHOULDER_REAR]},
+  "Single-Arm Dumbbell Row":{pri:[M.BACK_LAT,M.BACK_MID],sec:[M.BICEP,M.SHOULDER_REAR]},
+  "Double-Arm Dumbbell Row":{pri:[M.BACK_MID,M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},
+  "Face Pulls (Resistance Band)":{pri:[M.SHOULDER_REAR,M.BACK_MID],sec:[M.TRAP]},
+  "Reverse Flyes (Dumbbells)":{pri:[M.SHOULDER_REAR],sec:[M.TRAP,M.BACK_MID]},
+  "Dumbbell Curls":{pri:[M.BICEP],sec:[M.FOREARM]},
+  "Hammer Curls":{pri:[M.BICEP],sec:[M.FOREARM]},
+  "Dumbbell Shoulder Press":{pri:[M.SHOULDER_FRONT,M.SHOULDER_MID],sec:[M.TRICEP,M.TRAP]},
+  "Lateral Raises":{pri:[M.SHOULDER_MID],sec:[M.TRAP]},
+  "Front Raises":{pri:[M.SHOULDER_FRONT],sec:[M.TRAP,M.CHEST]},
+  "Ab Wheel Rollouts":{pri:[M.ABS],sec:[M.OBLIQUE,M.BACK_LAT,M.SHOULDER_FRONT]},
+  "Plank":{pri:[M.ABS],sec:[M.OBLIQUE,M.SHOULDER_FRONT,M.GLUTE]},
+  "Oblique Crunch":{pri:[M.OBLIQUE],sec:[M.ABS]},
+  "Dumbbell Squats":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF,M.ABS]},
+  "Dumbbell Lunges":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},
+  "Romanian Deadlift":{pri:[M.HAMSTRING,M.GLUTE],sec:[M.BACK_LOW,M.ABS]},
+  "Glute Bridge":{pri:[M.GLUTE],sec:[M.HAMSTRING,M.ABS]},
+  "Standing Calf Raises":{pri:[M.CALF],sec:[]},
+  "Dead Bug":{pri:[M.ABS],sec:[M.OBLIQUE,M.HIP_FLEXOR]},
+  "WalkingPad Warm-up":{pri:[M.QUAD,M.GLUTE,M.CALF],sec:[M.HAMSTRING]},
+  "Rowing Intervals":{pri:[M.QUAD,M.GLUTE,M.BACK_LAT,M.BACK_MID],sec:[M.HAMSTRING,M.BICEP,M.ABS,M.BACK_LOW]},
+  "Rowing Steady-State":{pri:[M.QUAD,M.GLUTE,M.BACK_LAT,M.BACK_MID],sec:[M.HAMSTRING,M.BICEP,M.ABS,M.BACK_LOW]},
+  "Bulgarian Split Squat":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},
+  "Concentration Curls":{pri:[M.BICEP],sec:[M.FOREARM]},
+  "Bench Dips":{pri:[M.TRICEP],sec:[M.CHEST,M.SHOULDER_FRONT]},
+  "Dumbbell Crunch":{pri:[M.ABS],sec:[]},
+  "Dumbbell Russian Twist":{pri:[M.OBLIQUE],sec:[M.ABS]},
+  "Weighted Plank":{pri:[M.ABS],sec:[M.OBLIQUE,M.SHOULDER_FRONT,M.GLUTE]},
+  "Dumbbell Side Bend":{pri:[M.OBLIQUE],sec:[M.BACK_LOW,M.ABS]},
+  "Pallof Press (Isometric)":{pri:[M.OBLIQUE,M.ABS],sec:[M.SHOULDER_FRONT]},
+  "Dumbbell Windmill":{pri:[M.OBLIQUE],sec:[M.SHOULDER_MID,M.GLUTE,M.HAMSTRING]},
+  "Suitcase Carry":{pri:[M.OBLIQUE],sec:[M.ABS,M.TRAP,M.FOREARM]},
+  "L-Sit Hold":{pri:[M.ABS,M.HIP_FLEXOR],sec:[M.TRICEP,M.QUAD]},
+  "Renegade Row":{pri:[M.BACK_LAT,M.BACK_MID],sec:[M.BICEP,M.ABS,M.OBLIQUE,M.SHOULDER_REAR]},
+  "Superman Hold":{pri:[M.BACK_LOW],sec:[M.GLUTE,M.HAMSTRING]},
+  "Reverse Snow Angels":{pri:[M.BACK_MID,M.SHOULDER_REAR],sec:[M.BACK_LOW,M.TRAP]},
+  "Seal Row (Reebok Deck)":{pri:[M.BACK_LAT,M.BACK_MID],sec:[M.BICEP,M.SHOULDER_REAR]},
+  "Dumbbell Pullover":{pri:[M.BACK_LAT,M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
+  "Arnold Press":{pri:[M.SHOULDER_FRONT,M.SHOULDER_MID],sec:[M.TRICEP,M.TRAP]},
+  "Zottman Curls":{pri:[M.BICEP],sec:[M.FOREARM]},
+  "Incline Dumbbell Press (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
+  "Decline Push-ups (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT,M.ABS]},
+  "Dumbbell Squeeze Press":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
+  "Single-Arm Dumbbell Press":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT,M.ABS,M.OBLIQUE]},
+  "Dumbbell Around the World":{pri:[M.CHEST],sec:[M.SHOULDER_FRONT]},
+  "Farmer's Walk (Dumbbells)":{pri:[M.TRAP,M.FOREARM],sec:[M.ABS,M.OBLIQUE,M.BACK_MID]},
+  "Floor Dips":{pri:[M.TRICEP],sec:[M.CHEST,M.SHOULDER_FRONT]},
+  "Hollow Body Hold":{pri:[M.ABS],sec:[M.OBLIQUE,M.HIP_FLEXOR]},
+  "Incline Curls (Reebok Deck)":{pri:[M.BICEP],sec:[M.FOREARM]},
+  "Pike Push-ups":{pri:[M.SHOULDER_FRONT],sec:[M.SHOULDER_MID,M.TRICEP,M.TRAP]},
+  "Single-Leg Glute Bridge":{pri:[M.GLUTE],sec:[M.HAMSTRING,M.ABS]},
+  "Single-Leg RDL":{pri:[M.HAMSTRING,M.GLUTE],sec:[M.BACK_LOW,M.ABS]},
+  "Straight-Arm Pullover":{pri:[M.BACK_LAT,M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
+  "Sumo Squat (Dumbbell)":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.ABS]},
+  "Upright Row (Dumbbell)":{pri:[M.SHOULDER_MID,M.TRAP],sec:[M.BICEP]},
+  "Goblet Squat":{pri:[M.QUAD,M.GLUTE],sec:[M.ABS,M.BACK_LOW]},
+  "Mountain Climbers":{pri:[M.ABS,M.HIP_FLEXOR],sec:[M.QUAD,M.SHOULDER_FRONT]},
+  "Side Plank":{pri:[M.OBLIQUE],sec:[M.ABS,M.GLUTE,M.SHOULDER_MID]},
+  "Step-ups (Reebok Deck)":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},
+  "Bicycle Crunches":{pri:[M.ABS,M.OBLIQUE],sec:[M.HIP_FLEXOR]},
+  "Bird Dog":{pri:[M.ABS,M.BACK_LOW],sec:[M.GLUTE,M.OBLIQUE]},
+  "Russian Twist":{pri:[M.OBLIQUE],sec:[M.ABS]},
+  "Donkey Kicks":{pri:[M.GLUTE],sec:[M.HAMSTRING]},
+  "Good Mornings (Dumbbell)":{pri:[M.HAMSTRING,M.GLUTE],sec:[M.BACK_LOW,M.ABS]},
+  "Hip Thrust":{pri:[M.GLUTE],sec:[M.HAMSTRING,M.ABS]},
+  "Reverse Lunges":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},
+  "Seated Calf Raises":{pri:[M.CALF],sec:[]},
+  "Single-Leg Calf Raises":{pri:[M.CALF],sec:[]}
+};
 
-const MUSCLE_LABELS={[M.CHEST]:'Brust',[M.TRICEP]:'Trizeps',[M.SHOULDER_FRONT]:'Vordere Schulter',[M.SHOULDER_MID]:'Mittlere Schulter',[M.SHOULDER_REAR]:'Hintere Schulter',[M.BICEP]:'Bizeps',[M.FOREARM]:'Unterarm',[M.BACK_LAT]:'Latissimus',[M.BACK_MID]:'Mittlerer Rücken',[M.BACK_LOW]:'Unterer Rücken',[M.TRAP]:'Trapezmuskel',[M.ABS]:'Bauch',[M.OBLIQUE]:'Schräge Bauch',[M.HIP_FLEXOR]:'Hüftbeuger',[M.QUAD]:'Quadrizeps',[M.HAMSTRING]:'Hamstrings',[M.GLUTE]:'Gesäß',[M.CALF]:'Waden',[M.CARDIO]:'Ausdauer'};
+const MUSCLE_LABELS={[M.CHEST]:'Brust',[M.TRICEP]:'Trizeps',[M.SHOULDER_FRONT]:'Vordere Schulter',[M.SHOULDER_MID]:'Mittlere Schulter',[M.SHOULDER_REAR]:'Hintere Schulter',[M.BICEP]:'Bizeps',[M.FOREARM]:'Unterarm',[M.BACK_LAT]:'Latissimus',[M.BACK_MID]:'Mittlerer Rücken',[M.BACK_LOW]:'Unterer Rücken',[M.TRAP]:'Trapezmuskel',[M.ABS]:'Bauch',[M.OBLIQUE]:'Seitliche Bauchmuskeln',[M.HIP_FLEXOR]:'Hüftbeuger',[M.QUAD]:'Quadrizeps',[M.HAMSTRING]:'Hintere Oberschenkel',[M.GLUTE]:'Gesäß',[M.CALF]:'Waden',[M.CARDIO]:'Ausdauer'};
 
 let _muscleCharts={front:null,back:null};
 function destroyMuscleCharts(){if(_muscleCharts.front){_muscleCharts.front.destroy();_muscleCharts.front=null;}if(_muscleCharts.back){_muscleCharts.back.destroy();_muscleCharts.back=null;}}
@@ -5538,6 +5588,7 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').catch(error=>console.warn('AlexFit: Offline-Modus nicht verfügbar',error));
 }
 </script>
+<script src="exercise-videos.js"></script>
 <div id="photo-viewer" style="display:none"></div>
 </body>
 </html>
