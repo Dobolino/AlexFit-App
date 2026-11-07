@@ -1,0 +1,805 @@
+From 344771c022b1a649c4c25914b68815fa9e831a6e Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Fri, 18 Sep 2026 05:14:48 +0000
+Subject: [PATCH 1/3] Add Gym Phase 1: equipment selection, exercises, filter &
+ swap
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Add GYM_EQUIPMENT_CATEGORIES (8 categories, ~40 equipment items)
+- Add WORKOUT_PLANS_GYM.p1 with 5 days (Push/Pull/Legs/Upper/Cardio)
+  and ~35 exercises with equipment[], movementPattern, and tip fields
+- Add gym-setup-overlay for tap-to-select equipment tile grid
+- Add openGymSetup(), toggleGymEquipment(), saveGymSetup() functions
+- Add selectAllGymEquipment() and updateGymSetupCount() helpers
+- Add getFilteredExercises() — filters by movementPattern + equipment
+- Update getActivePlan() to return gym plan when gymMode is active
+- Update toggleGymMode() to auto-open setup on first gym activation
+- Add exercise-swap-overlay (bottom sheet) with alternative exercises
+- Add openExerciseSwap(), swapExercise(), closeExerciseSwap()
+- Add Swap button on each gym exercise (same movementPattern alts)
+- Add "Gym-Setup ändern" card in Settings screen
+- settings.gymSetup[] persisted in af_meta
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01DWBYuHZSZZDmMWmwZXX9Bx
+---
+ index.html | 383 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 373 insertions(+), 10 deletions(-)
+
+diff --git a/index.html b/index.html
+index eb07bec..1e371d7 100644
+--- a/index.html
++++ b/index.html
+@@ -670,6 +670,18 @@
+           Aktuelles Training als Template speichern
+         </button>
+       </div>
++      <!-- Gym-Setup -->
++      <div class="slabel">Gym-Setup</div>
++      <div class="card" style="margin-bottom:16px">
++        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
++          <div style="font-size:28px">🏋️</div>
++          <div style="flex:1">
++            <div class="bc" style="font-size:14px;font-weight:800;color:var(--tp);margin-bottom:2px">Gym-Geräteauswahl</div>
++            <div class="bc" id="gym-setup-info" style="font-size:12px;color:var(--tm)">Keine Geräte konfiguriert</div>
++          </div>
++        </div>
++        <button onclick="openGymSetup()" style="width:100%;padding:13px;border-radius:12px;background:rgba(139,92,246,.15);border:1.5px solid rgba(139,92,246,.4);color:#8B5CF6;font-size:14px;font-weight:800">Gym-Setup öffnen / ändern</button>
++      </div>
+       <!-- Daten -->
+       <div class="slabel">Daten</div>
+       <div class="card" style="margin-bottom:16px">
+@@ -774,6 +786,32 @@
+     </div>
+   </div>
+ </div>
++<div id="gym-setup-overlay" onclick="if(event.target===this)closeGymSetup()" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:none;flex-direction:column;overflow:hidden">
++  <div style="background:var(--card);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
++    <div>
++      <div class="bc" style="font-size:18px;font-weight:800;color:var(--tp)">Welche Geräte hat dein Gym?</div>
++      <div class="bc" style="font-size:12px;color:var(--tm);margin-top:2px">Wähle alles aus was vorhanden ist.</div>
++    </div>
++    <button onclick="closeGymSetup()" style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--tm);font-size:20px">×</button>
++  </div>
++  <div id="gym-setup-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 100px"></div>
++  <div style="position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:16px;padding-bottom:calc(16px + var(--safe-bot))">
++    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
++      <span class="bc" id="gym-setup-count" style="font-size:13px;color:var(--tm)">0 Geräte ausgewählt</span>
++      <button onclick="selectAllGymEquipment()" style="background:var(--cardElev);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span class="bc" style="font-size:12px;font-weight:700;color:var(--ts)">Alle auswählen</span></button>
++    </div>
++    <button onclick="saveGymSetup()" style="width:100%;padding:16px;border-radius:12px;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.08em">Fertig — Plan anpassen</button>
++  </div>
++</div>
++<div id="exercise-swap-overlay" onclick="if(event.target===this)closeExerciseSwap()" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9998;display:none;align-items:flex-end;justify-content:center">
++  <div style="background:var(--card);border:1px solid var(--border);border-top:3px solid #8B5CF6;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden">
++    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
++      <div class="bc" style="font-size:16px;font-weight:800;color:var(--tp)">Übung tauschen</div>
++      <button onclick="closeExerciseSwap()" style="color:var(--tm);font-size:22px;padding:0 4px">×</button>
++    </div>
++    <div id="exercise-swap-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px"></div>
++  </div>
++</div>
+ <div id="sick-start-overlay" onclick="if(event.target===this)closeSickStartDialog()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;display:none;align-items:center;justify-content:center;padding:24px">
+   <div style="background:var(--card);border:1px solid rgba(245,158,11,.5);border-radius:20px;padding:24px;width:calc(100% - 16px);max-width:380px">
+     <div style="text-align:center;margin-bottom:20px">
+@@ -1069,8 +1107,188 @@ const WORKOUT_PLANS = {
+   },
+ };
+ 
++// ── Gym Equipment & Plans ─────────────────────────────────────────────────────
++const GYM_EQUIPMENT_CATEGORIES=[
++  {key:'freie-gewichte',label:'Freie Gewichte',icon:'🏋️',items:[
++    {id:'kurzhantel',label:'Kurzhantel'},{id:'langhantel',label:'Langhantel'},
++    {id:'ez-bar',label:'EZ-Bar'},{id:'kettlebell',label:'Kettlebell'},
++    {id:'gewichtsscheiben',label:'Gewichtsscheiben'},
++  ]},
++  {key:'stationen',label:'Stationen & Racks',icon:'🏗️',items:[
++    {id:'squat-rack',label:'Squat Rack'},{id:'smith-machine',label:'Smith Machine'},
++    {id:'dip-station',label:'Dip-Station'},{id:'klimmzugstange',label:'Klimmzugstange'},
++    {id:'preacher-bank',label:'Preacher Curl Bank'},
++  ]},
++  {key:'baenke',label:'Bänke',icon:'🛋️',items:[
++    {id:'flachbank',label:'Flachbank'},{id:'schraegbank',label:'Schrägbank'},
++    {id:'verstellbare-bank',label:'Verstellbare Bank'},
++  ]},
++  {key:'kabelzug',label:'Kabelzug & Seilzug',icon:'🔗',items:[
++    {id:'kabelzug-hoch',label:'Kabelzug hoch'},{id:'kabelzug-tief',label:'Kabelzug tief'},
++    {id:'funktionsturm',label:'Funktionsturm (beide Seiten)'},
++  ]},
++  {key:'maschinen-ob',label:'Maschinen — Oberkörper',icon:'💪',items:[
++    {id:'chest-press-maschine',label:'Chest Press'},{id:'pec-deck',label:'Pec Deck'},
++    {id:'latzug-maschine',label:'Latzug Maschine'},{id:'seated-row-maschine',label:'Seated Row'},
++    {id:'assisted-pullup-maschine',label:'Assisted Pull-Up/Dip'},{id:'shoulder-press-maschine',label:'Shoulder Press'},
++    {id:'reverse-pec-deck',label:'Reverse Pec Deck'},{id:'bizeps-maschine',label:'Bizeps Maschine'},
++    {id:'trizeps-maschine',label:'Trizeps Maschine'},
++  ]},
++  {key:'maschinen-ub',label:'Maschinen — Unterkörper',icon:'🦵',items:[
++    {id:'leg-press',label:'Leg Press'},{id:'leg-extension',label:'Leg Extension'},
++    {id:'leg-curl',label:'Leg Curl'},{id:'hip-thrust-maschine',label:'Hip Thrust'},
++    {id:'abduktor',label:'Abduktor'},{id:'adduktor',label:'Adduktor'},
++    {id:'calf-raise-maschine',label:'Calf Raise Maschine'},{id:'hack-squat',label:'Hack Squat'},
++  ]},
++  {key:'cardio',label:'Cardio',icon:'🏃',items:[
++    {id:'laufband',label:'Laufband'},{id:'crosstrainer',label:'Crosstrainer'},
++    {id:'ruderergometer',label:'Ruderergometer'},{id:'fahrradergometer',label:'Fahrradergometer'},
++    {id:'liegefahrrad',label:'Liegefahrrad'},{id:'stairmaster',label:'Stairmaster'},
++    {id:'ski-erg',label:'Ski Erg'},
++  ]},
++  {key:'kleingeraete',label:'Kleingeräte',icon:'🔧',items:[
++    {id:'ab-wheel',label:'Ab Wheel'},{id:'widerstandsband',label:'Widerstandsband'},
++    {id:'trx',label:'TRX / Schlingentrainer'},{id:'medizinball',label:'Medizinball'},
++    {id:'foam-roller',label:'Foam Roller'},
++  ]},
++];
++
++const WORKOUT_PLANS_GYM={
++  p1:{
++    label:'Gym Phase 1',subtitle:'Technik & Grundlagen',weeks:4,restTimer:90,color:'#8B5CF6',
++    days:[
++      {id:'gd1',label:'Tag 1',name:'Push — Brust & Schultern',tag:'MO',color:'#8B5CF6',
++       muscles:['Brust','Schultern','Trizeps'],exercises:[
++        {id:'ge1',name:'Bankdrücken',muscle:'Brust',sets:3,reps:'10',bw:false,
++         equipment:['langhantel','flachbank','squat-rack'],movementPattern:'chest-press',
++         tip:'Schulterblätter zusammenziehen, Ellbogen 45–75° vom Körper.'},
++        {id:'ge1b',name:'Kurzhantel Bankdrücken',muscle:'Brust',sets:3,reps:'10–12',bw:false,
++         equipment:['kurzhantel','flachbank','verstellbare-bank'],movementPattern:'chest-press',
++         tip:'Handflächen einander zugewandt, volle Bewegungsamplitude.'},
++        {id:'ge2',name:'Schrägbank KH Drücken',muscle:'Brust oben',sets:3,reps:'10–12',bw:false,
++         equipment:['kurzhantel','schraegbank','verstellbare-bank'],movementPattern:'incline-chest-press',
++         tip:'Bank auf 30–45°, Schulterblätter aktiv halten.'},
++        {id:'ge3',name:'Shoulder Press Maschine',muscle:'Schultern',sets:3,reps:'12',bw:false,
++         equipment:['shoulder-press-maschine'],movementPattern:'overhead-press',
++         tip:'Nicht ins Hohlkreuz fallen, Bauch anspannen.'},
++        {id:'ge3b',name:'KH Schulterdrücken',muscle:'Schultern',sets:3,reps:'12',bw:false,
++         equipment:['kurzhantel','verstellbare-bank'],movementPattern:'overhead-press',
++         tip:'Handflächen nach vorne, Ellbogen leicht nach vorne geneigt.'},
++        {id:'ge4',name:'Kabelzug Seitheben',muscle:'Schultern seitl.',sets:3,reps:'15',bw:false,
++         equipment:['kabelzug-tief','funktionsturm'],movementPattern:'lateral-raise',
++         tip:'Arm leicht gebeugt, Bewegung aus der Schulter initiieren.'},
++        {id:'ge4b',name:'KH Seitheben',muscle:'Schultern seitl.',sets:3,reps:'15',bw:false,
++         equipment:['kurzhantel'],movementPattern:'lateral-raise',
++         tip:'Daumen leicht nach unten, Ellbogen minimal gebeugt.'},
++        {id:'ge5',name:'Trizeps Pushdown',muscle:'Trizeps',sets:3,reps:'15',bw:false,
++         equipment:['kabelzug-hoch','funktionsturm'],movementPattern:'tricep-extension',
++         tip:'Ellbogen bleiben nah am Körper, volle Streckung.'},
++        {id:'ge5b',name:'Trizeps Maschine',muscle:'Trizeps',sets:3,reps:'15',bw:false,
++         equipment:['trizeps-maschine'],movementPattern:'tricep-extension',
++         tip:'Volle Streckung im unteren Bereich, langsam zurück.'},
++       ]},
++      {id:'gd2',label:'Tag 2',name:'Pull — Rücken & Bizeps',tag:'DI',color:'#10B981',
++       muscles:['Rücken','Bizeps','Hinten Schultern'],exercises:[
++        {id:'ge6',name:'Latzug',muscle:'Rücken',sets:3,reps:'10–12',bw:false,
++         equipment:['latzug-maschine'],movementPattern:'vertical-pull',
++         tip:'Brust nach vorne, Schulterblätter am Ende zusammendrücken.'},
++        {id:'ge6b',name:'Klimmzüge',muscle:'Rücken',sets:3,reps:'6–10',bw:true,
++         equipment:['klimmzugstange'],movementPattern:'vertical-pull',
++         tip:'Schulterblätter zuerst aktivieren, Ellbogen zur Hüfte ziehen.'},
++        {id:'ge6c',name:'Assisted Pull-Up',muscle:'Rücken',sets:3,reps:'10',bw:false,
++         equipment:['assisted-pullup-maschine'],movementPattern:'vertical-pull',
++         tip:'Gewicht reduziert Körpergewicht — Schulterblätter aktiv.'},
++        {id:'ge7',name:'Seated Row Maschine',muscle:'Rücken',sets:3,reps:'12',bw:false,
++         equipment:['seated-row-maschine'],movementPattern:'horizontal-pull',
++         tip:'Rücken gerade, Ellbogen nah am Körper, Schulterblätter zusammen.'},
++        {id:'ge7b',name:'KH Rudern',muscle:'Rücken',sets:3,reps:'10',bw:false,
++         equipment:['kurzhantel','verstellbare-bank'],movementPattern:'horizontal-pull',
++         tip:'Stützhand auf Bank, Rücken parallel zum Boden.'},
++        {id:'ge8',name:'Face Pull',muscle:'Schultern hinten',sets:3,reps:'15',bw:false,
++         equipment:['kabelzug-hoch','funktionsturm'],movementPattern:'rear-delt-pull',
++         tip:'Seil zur Stirn ziehen, Ellbogen hoch, externe Rotation.'},
++        {id:'ge8b',name:'Reverse Pec Deck',muscle:'Schultern hinten',sets:3,reps:'15',bw:false,
++         equipment:['reverse-pec-deck'],movementPattern:'rear-delt-pull',
++         tip:'Arme leicht gebeugt, Bewegung aus den hinteren Schultern.'},
++        {id:'ge9',name:'EZ-Bar Curl',muscle:'Bizeps',sets:3,reps:'12',bw:false,
++         equipment:['ez-bar'],movementPattern:'bicep-curl',
++         tip:'Ellbogen fest, keine Ausweichbewegung im Oberkörper.'},
++        {id:'ge9b',name:'Bizeps Curl Maschine',muscle:'Bizeps',sets:3,reps:'12',bw:false,
++         equipment:['bizeps-maschine'],movementPattern:'bicep-curl',
++         tip:'Volle Bewegungsamplitude, langsam ablassen.'},
++        {id:'ge9c',name:'KH Curl',muscle:'Bizeps',sets:3,reps:'12',bw:false,
++         equipment:['kurzhantel'],movementPattern:'bicep-curl',
++         tip:'Abwechselnd oder gleichzeitig, Ellbogen fixiert.'},
++       ]},
++      {id:'gd3',label:'Tag 3',name:'Legs & Core',tag:'DO',color:'#F59E0B',
++       muscles:['Beine','Gesäss','Core'],exercises:[
++        {id:'ge10',name:'Kniebeuge',muscle:'Beine',sets:3,reps:'10',bw:false,
++         equipment:['squat-rack','langhantel'],movementPattern:'squat',
++         tip:'Knie über Zehen, Rücken gerade, Blick gerade aus.'},
++        {id:'ge10b',name:'Leg Press',muscle:'Beine',sets:4,reps:'12',bw:false,
++         equipment:['leg-press'],movementPattern:'squat',
++         tip:'Füsse schulterbreit, Knie nicht über Zehen hinausschiessen.'},
++        {id:'ge10c',name:'Hack Squat',muscle:'Beine',sets:3,reps:'10',bw:false,
++         equipment:['hack-squat'],movementPattern:'squat',
++         tip:'Rücken an Lehne, kontrollierte Bewegung.'},
++        {id:'ge11',name:'Leg Curl',muscle:'Oberschenkel hinten',sets:3,reps:'12',bw:false,
++         equipment:['leg-curl'],movementPattern:'leg-curl',
++         tip:'Volle Bewegungsamplitude, langsam ablassen.'},
++        {id:'ge12',name:'Leg Extension',muscle:'Oberschenkel vorne',sets:3,reps:'12',bw:false,
++         equipment:['leg-extension'],movementPattern:'leg-extension',
++         tip:'Keine Ausweichbewegung, volle Streckung.'},
++        {id:'ge13',name:'Hip Thrust Maschine',muscle:'Gesäss',sets:3,reps:'12',bw:false,
++         equipment:['hip-thrust-maschine'],movementPattern:'hip-hinge',
++         tip:'Kinn zur Brust, Gesäss maximal anspannen oben.'},
++        {id:'ge14',name:'Calf Raise Maschine',muscle:'Wade',sets:4,reps:'15',bw:false,
++         equipment:['calf-raise-maschine'],movementPattern:'calf-raise',
++         tip:'Volle Bewegungsamplitude, im oberen Punkt 1s halten.'},
++        {id:'ge15',name:'Planke',muscle:'Core',sets:3,reps:'45s',bw:true,
++         equipment:['bodyweight'],movementPattern:'core-plank',
++         tip:'Körper gerade wie ein Brett, Gesäss nicht hochschieben.'},
++       ]},
++      {id:'gd4',label:'Tag 4',name:'Upper Body Mix',tag:'FR',color:'#3B82F6',
++       muscles:['Rücken','Brust','Schultern','Arme'],exercises:[
++        {id:'ge16',name:'Klimmzüge / Assisted Pull-Up',muscle:'Rücken',sets:3,reps:'8–10',bw:true,
++         equipment:['klimmzugstange','assisted-pullup-maschine'],movementPattern:'weighted-vertical-pull',
++         tip:'Schulterblätter aktiv, Ellbogen zum Boden ziehen.'},
++        {id:'ge17',name:'Dips / Assisted Dips',muscle:'Trizeps',sets:3,reps:'10',bw:true,
++         equipment:['dip-station','assisted-pullup-maschine'],movementPattern:'dip',
++         tip:'Leicht nach vorne lehnen für mehr Brust, aufrecht für Trizeps.'},
++        {id:'ge18',name:'Pec Deck',muscle:'Brust',sets:3,reps:'12–15',bw:false,
++         equipment:['pec-deck'],movementPattern:'chest-fly',
++         tip:'Volle Streckung am Anfang, Squeeze am Ende.'},
++        {id:'ge18b',name:'Kabelzug Fliegende',muscle:'Brust',sets:3,reps:'12–15',bw:false,
++         equipment:['kabelzug-hoch','funktionsturm'],movementPattern:'chest-fly',
++         tip:'Leicht vorgebeugt, Arme leicht gebeugt, Squeeze in der Mitte.'},
++        {id:'ge19',name:'Reverse Pec Deck',muscle:'Schultern hinten',sets:3,reps:'15',bw:false,
++         equipment:['reverse-pec-deck'],movementPattern:'rear-delt-pull',
++         tip:'Arme leicht gebeugt, Bewegung aus den hinteren Schultern.'},
++        {id:'ge19b',name:'Face Pull',muscle:'Schultern hinten',sets:3,reps:'15',bw:false,
++         equipment:['kabelzug-hoch','funktionsturm'],movementPattern:'rear-delt-pull',
++         tip:'Seil zur Stirn, Ellbogen hoch.'},
++        {id:'ge20',name:'Hammer Curl',muscle:'Bizeps',sets:3,reps:'12',bw:false,
++         equipment:['kurzhantel'],movementPattern:'neutral-curl',
++         tip:'Neutral grip (Daumen oben), Ellbogen bleiben fest.'},
++       ]},
++      {id:'gd5',label:'Tag 5',name:'Cardio',tag:'SA',color:'#10B981',
++       muscles:['Ausdauer','Ganzkörper'],exercises:[
++        {id:'ge21',name:'Laufband Warm-up',muscle:'Ausdauer',sets:1,reps:'5 Min',bw:true,
++         equipment:['laufband'],movementPattern:'cardio',tip:'Flottes Gehen oder leichtes Joggen.'},
++        {id:'ge22',name:'Ruder Intervalle',muscle:'Ganzkörper',sets:5,reps:'2 Min / 1 Min Pause',bw:true,
++         equipment:['ruderergometer'],movementPattern:'cardio',tip:'Beine zuerst, dann Rücken, dann Arme.'},
++        {id:'ge23',name:'Crosstrainer',muscle:'Ausdauer',sets:1,reps:'15 Min',bw:true,
++         equipment:['crosstrainer','fahrradergometer','liegefahrrad'],movementPattern:'cardio',
++         tip:'Moderate Intensität, Herzfrequenz 130–150.'},
++       ]},
++    ]
++  },
++  p2:{label:'Gym Phase 2',subtitle:'Volumen & Intensität',weeks:4,restTimer:80,color:'#8B5CF6',days:[]},
++  p3:{label:'Gym Phase 3',subtitle:'Intensität & Peak',weeks:4,restTimer:70,color:'#8B5CF6',days:[]},
++};
++
+ // ── Aktive Phase Helpers ──────────────────────────────────────────────────────
+-function getActivePlan(){ return WORKOUT_PLANS[settings.activePhase||'p1']; }
++function getActivePlan(){ return (settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS)[settings.activePhase||'p1']; }
+ function getActivePhaseId(){ return settings.activePhase||'p1'; }
+ let WORKOUT_DAYS = WORKOUT_PLANS.p1.days;
+ let PLAN_DOW    = WORKOUT_PLANS.p1.schedule;
+@@ -1137,6 +1355,7 @@ function loadSettings(){
+       streakPaused:false,
+       streakFrozenAt:0,
+       gymMode:false,
++      gymSetup:[],
+     };
+     needsSave=true;
+   }
+@@ -1673,10 +1892,10 @@ function suggestWeight(exName, lastWeight){
+ 
+ // ── PHASEN-MANAGEMENT ─────────────────────────────────────────────────────────
+ function switchPhase(phaseId){
+-  if(!WORKOUT_PLANS[phaseId]){showToast('Phase nicht gefunden');return;}
++  if(!(settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS)[phaseId]){showToast('Phase nicht gefunden');return;}
+   if(phaseId===settings.activePhase){closePhasePicker();return;}
+ 
+-  const plan=WORKOUT_PLANS[phaseId];
++  const plan=(settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS)[phaseId];
+   showConfirm(
+     `Zu ${plan.label} wechseln? — ${plan.subtitle}`,
+     ()=>{
+@@ -1719,9 +1938,9 @@ function openPhasePicker(){
+   const overlay=document.getElementById('phase-picker-overlay');
+   if(!overlay)return;
+   const body=document.getElementById('phase-picker-body');
+-  const phases=Object.keys(WORKOUT_PLANS);
++  const phases=Object.keys(settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS);
+   body.innerHTML=phases.map(phaseId=>{
+-    const plan=WORKOUT_PLANS[phaseId];
++    const plan=(settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS)[phaseId];
+     const isActive=phaseId===settings.activePhase;
+     const histCount=history.filter(h=>h.phaseId===phaseId).length;
+     return`<button onclick="switchPhase('${phaseId}')" style="width:100%;background:${isActive?plan.color+'20':'var(--cardElev)'};border:2px solid ${isActive?plan.color:'var(--border)'};border-radius:14px;padding:14px 16px;margin-bottom:10px;text-align:left;display:flex;align-items:center;gap:14px">
+@@ -2170,7 +2389,7 @@ function renderWeekStrip(){
+ function renderWorkoutSelect(){
+   // Gym mode placeholder
+   const gymBanner=document.getElementById('gym-mode-banner');
+-  if(gymBanner)gymBanner.style.display=settings.gymMode?'block':'none';
++  if(gymBanner)gymBanner.style.display='none';
+   const todayDayId=PLAN_DOW[new Date().getDay()];
+   const resumeEl=document.getElementById('workout-resume-banner');
+   if(resumeEl){
+@@ -2186,7 +2405,31 @@ function renderWorkoutSelect(){
+         <span class="bc" style="font-size:12px;font-weight:700;color:${activeWorkoutDay.color};text-transform:uppercase">Weiter →</span>
+       </button>`:'';
+   }
+-  document.getElementById('workout-select-list').innerHTML=['d1','d4','d2','d3','d5'].map(id=>{const d=WORKOUT_DAYS.find(x=>x.id===id);const isToday=d.id===todayDayId;return`<button onclick="openWorkoutPreview('${d.id}')" style="width:100%;background:var(--card);border:1px solid ${isToday?d.color+'80':'var(--border)'};border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;text-align:left;margin-bottom:10px;position:relative">${isToday?`<div style="position:absolute;top:10px;right:14px;background:${d.color};border-radius:4px;padding:1px 8px"><span class="bc" style="font-size:10px;font-weight:800;color:#fff">HEUTE</span></div>`:''}<div style="width:48px;height:48px;border-radius:12px;background:${d.color}20;border:1px solid ${d.color}40;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="bc" style="font-size:13px;font-weight:800;color:${d.color}">${d.tag}</span></div><div style="flex:1"><div class="bc" style="font-size:17px;font-weight:800;color:var(--tp)">${d.name}</div><div class="bc" style="font-size:12px;color:var(--tm);margin-top:2px">${d.exercises.length} Übungen · ${d.exercises.reduce((a,e)=>a+e.sets,0)} Sätze</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${d.muscles.map(m=>tagHTML(m)).join('')}</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>`;}).join('');
++  if(settings.gymMode){
++    const gymPlan=getActivePlan();
++    const gymDays=gymPlan?.days||[];
++    if(!gymDays.length){
++      document.getElementById('workout-select-list').innerHTML=`<div style="text-align:center;padding:40px 20px;background:var(--card);border:1px solid var(--border);border-radius:14px"><div style="font-size:32px;margin-bottom:12px">🏗️</div><div class="bc" style="font-size:16px;font-weight:800;color:var(--tp);margin-bottom:6px">${gymPlan?.label||'Gym Plan'} — Coming Soon</div><div class="bc" style="font-size:13px;color:var(--tm)">${gymPlan?.subtitle||''}</div></div>`;
++    }else{
++      const setup=settings.gymSetup||[];
++      document.getElementById('workout-select-list').innerHTML=gymDays.map(d=>{
++        const filteredCount=getFilteredExercises(d.exercises).length;
++        const totalSets=getFilteredExercises(d.exercises).reduce((a,e)=>a+e.sets,0);
++        const hasEquip=setup.length>0;
++        return`<button onclick="openWorkoutPreview('${d.id}')" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;text-align:left;margin-bottom:10px;position:relative">
++          <div style="width:48px;height:48px;border-radius:12px;background:${d.color}20;border:1px solid ${d.color}40;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="bc" style="font-size:13px;font-weight:800;color:${d.color}">${d.tag}</span></div>
++          <div style="flex:1">
++            <div class="bc" style="font-size:17px;font-weight:800;color:var(--tp)">${d.name}</div>
++            <div class="bc" style="font-size:12px;color:var(--tm);margin-top:2px">${hasEquip?`🏋️ ${filteredCount} Übungen verfügbar · ${totalSets} Sätze`:`${d.exercises.length} Übungen · ${d.exercises.reduce((a,e)=>a+e.sets,0)} Sätze`}</div>
++            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${d.muscles.map(m=>tagHTML(m)).join('')}</div>
++          </div>
++          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
++        </button>`;
++      }).join('');
++    }
++  }else{
++    document.getElementById('workout-select-list').innerHTML=['d1','d4','d2','d3','d5'].map(id=>{const d=WORKOUT_DAYS.find(x=>x.id===id);const isToday=d.id===todayDayId;return`<button onclick="openWorkoutPreview('${d.id}')" style="width:100%;background:var(--card);border:1px solid ${isToday?d.color+'80':'var(--border)'};border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;text-align:left;margin-bottom:10px;position:relative">${isToday?`<div style="position:absolute;top:10px;right:14px;background:${d.color};border-radius:4px;padding:1px 8px"><span class="bc" style="font-size:10px;font-weight:800;color:#fff">HEUTE</span></div>`:''}<div style="width:48px;height:48px;border-radius:12px;background:${d.color}20;border:1px solid ${d.color}40;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="bc" style="font-size:13px;font-weight:800;color:${d.color}">${d.tag}</span></div><div style="flex:1"><div class="bc" style="font-size:17px;font-weight:800;color:var(--tp)">${d.name}</div><div class="bc" style="font-size:12px;color:var(--tm);margin-top:2px">${d.exercises.length} Übungen · ${d.exercises.reduce((a,e)=>a+e.sets,0)} Sätze</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${d.muscles.map(m=>tagHTML(m)).join('')}</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>`;}).join('');
++  }
+ }
+ function getMuscleMapSVG(muscles,color){
+   const active=new Set(muscles);
+@@ -2242,8 +2485,12 @@ function getMuscleMapSVG(muscles,color){
+     <ellipse cx="172" cy="143" rx="5" ry="8" ${ma('Waden')}/>
+   </svg>`;
+ }
++function getAllPlanDays(){
++  if(settings.gymMode){const p=getActivePlan();return p?.days||[];}
++  return WORKOUT_DAYS;
++}
+ function openWorkoutPreview(dayId){
+-  const d=WORKOUT_DAYS.find(x=>x.id===dayId);
++  const d=getAllPlanDays().find(x=>x.id===dayId);
+   if(!d)return;
+   const overlay=document.getElementById('workout-preview-overlay');
+   const sheet=document.getElementById('workout-preview-sheet');
+@@ -2329,12 +2576,13 @@ function startWorkout(dayId){
+   doStartWorkout(dayId);
+ }
+ function doStartWorkout(dayId){
+-  activeWorkoutDay=WORKOUT_DAYS.find(d=>d.id===dayId);
++  activeWorkoutDay=getAllPlanDays().find(d=>d.id===dayId);
+   const scheduled=getScheduledTemplate(dayId);
+   if(scheduled){
+     workoutExercises=templateExercisesToWorkoutExercises(scheduled.exercises);
+   }else{
+-    workoutExercises=activeWorkoutDay.exercises.map(ex=>({...ex,setData:createSetDataForExercise(ex)}));
++    const exList=settings.gymMode?getFilteredExercises(activeWorkoutDay.exercises):activeWorkoutDay.exercises;
++    workoutExercises=(exList||activeWorkoutDay.exercises).map(ex=>({...ex,setData:createSetDataForExercise(ex)}));
+   }
+   workoutBaselineSignature=getWorkoutPlanSignature(workoutExercises);
+   workoutElapsed=0;timerRunning=true;
+@@ -2415,6 +2663,7 @@ function renderExerciseList(){
+         <div style="width:4px;height:20px;border-radius:2px;background:${MC[ex.muscle]||activeWorkoutDay.color};flex-shrink:0"></div>
+         <span class="bc" onclick="showExerciseInfo(this.dataset.name)" data-name="${escapeHTML(ex.name)}" style="font-size:16px;font-weight:800;color:var(--tp);flex:1;cursor:pointer;min-width:0">${escapeHTML(ex.name)}${EXERCISE_VIDEOS[ex.name]?'<span class="ex-video-badge"><svg width="9" height="9" viewBox="0 0 24 24" fill="#EF4444"><polygon points="5,3 19,12 5,21"/></svg><span style="font-size:8px;color:#EF4444;font-weight:700;font-family:Barlow Condensed,sans-serif">VIDEO</span></span>':''} <span style="font-size:10px;color:var(--blue);font-weight:400">ℹ</span></span>
+         ${EXERCISE_ALTERNATIVES[ex.name]?.length?`<button onclick="showAltMenu(${ei})" style="background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.3);border-radius:5px;padding:2px 7px;flex-shrink:0"><span class="bc" style="font-size:9px;color:var(--blue);font-weight:700">⇄ VARIANTE</span></button>`:''}
++        ${settings.gymMode&&ex.movementPattern?`<button onclick="openExerciseSwap(${ei})" style="background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.4);border-radius:6px;padding:3px 7px;flex-shrink:0"><span class="bc" style="font-size:10px;font-weight:700;color:#8B5CF6">⇄ Swap</span></button>`:''}
+         ${ex.note&&ex.note.toLowerCase().includes('superset')?`<span style="background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);border-radius:5px;padding:1px 6px;flex-shrink:0"><span class="bc" style="font-size:9px;font-weight:800;color:var(--amber);text-transform:uppercase">Superset</span></span>`:''}
+         ${ex.note&&ex.note.toLowerCase().includes('dropset')?`<span style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);border-radius:5px;padding:1px 6px;flex-shrink:0"><span class="bc" style="font-size:9px;font-weight:800;color:var(--red);text-transform:uppercase">Dropset</span></span>`:''}
+         ${tagHTML(ex.muscle)}
+@@ -5159,6 +5408,8 @@ function renderSettings(){
+   if(rtInp&&settings.reminderTime)rtInp.value=settings.reminderTime;
+     renderTemplatesInSettings();
+   const wgInp=document.getElementById('s-week-goal');if(wgInp)wgInp.value=settings.weekGoal||4;
++  const gsi=document.getElementById('gym-setup-info');
++  if(gsi){const n=settings.gymSetup?.length||0;gsi.textContent=n>0?`${n} Geräte konfiguriert`:'Noch keine Geräte ausgewählt';}
+   const modeBtn=document.getElementById('theme-toggle-btn');if(modeBtn)modeBtn.textContent=document.documentElement.getAttribute('data-theme')==='light'?'☀️ Hell':'🌙 Dunkel';
+   // Streak pause buttons
+   const kBtn=document.getElementById('streak-pause-krank');const uBtn=document.getElementById('streak-pause-urlaub');const pStatus=document.getElementById('streak-pause-status');
+@@ -5224,10 +5475,122 @@ function toggleGymMode(){
+   const label=document.getElementById('gym-toggle-label');
+   if(icon)icon.textContent=settings.gymMode?'🏋️':'🏠';
+   if(label)label.textContent=settings.gymMode?'GYM':'HOME';
++  if(settings.gymMode&&(!settings.gymSetup||settings.gymSetup.length===0)){
++    openGymSetup();
++  }
+   renderDashboard();
+   if(document.getElementById('screen-workout-select')?.classList.contains('active'))renderWorkoutSelect();
+   showToast(settings.gymMode?'Gym-Modus aktiv 🏋️':'Home-Modus aktiv 🏠');
+ }
++function openGymSetup(){
++  if(!settings.gymSetup)settings.gymSetup=[];
++  const scroll=document.getElementById('gym-setup-scroll');
++  if(scroll){
++    scroll.innerHTML=GYM_EQUIPMENT_CATEGORIES.map(cat=>`
++      <div style="margin-bottom:20px">
++        <div class="bc" style="font-size:11px;font-weight:700;color:#8B5CF6;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">${cat.icon} ${cat.label}</div>
++        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
++          ${cat.items.map(item=>{
++            const sel=settings.gymSetup.includes(item.id);
++            return`<button onclick="toggleGymEquipment('${item.id}')" id="geq-${item.id}" style="padding:10px 12px;border-radius:10px;border:${sel?'2px solid #8B5CF6':'1px solid var(--border)'};background:${sel?'rgba(139,92,246,.15)':'var(--cardElev)'};text-align:left;display:flex;align-items:center;gap:8px">
++              <div style="width:18px;height:18px;border-radius:4px;border:2px solid ${sel?'#8B5CF6':'var(--border)'};background:${sel?'#8B5CF6':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sel?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>':''}</div>
++              <span class="bc" style="font-size:12px;font-weight:600;color:var(--tp);line-height:1.2">${item.label}</span>
++            </button>`;
++          }).join('')}
++        </div>
++      </div>`).join('');
++  }
++  updateGymSetupCount();
++  const ov=document.getElementById('gym-setup-overlay');
++  if(ov)ov.style.display='flex';
++}
++function closeGymSetup(){
++  const ov=document.getElementById('gym-setup-overlay');
++  if(ov)ov.style.display='none';
++}
++function toggleGymEquipment(id){
++  if(!settings.gymSetup)settings.gymSetup=[];
++  const idx=settings.gymSetup.indexOf(id);
++  if(idx>=0)settings.gymSetup.splice(idx,1);else settings.gymSetup.push(id);
++  const btn=document.getElementById('geq-'+id);
++  if(btn){
++    const sel=settings.gymSetup.includes(id);
++    btn.style.border=sel?'2px solid #8B5CF6':'1px solid var(--border)';
++    btn.style.background=sel?'rgba(139,92,246,.15)':'var(--cardElev)';
++    const box=btn.querySelector('div');
++    if(box){box.style.borderColor=sel?'#8B5CF6':'var(--border)';box.style.background=sel?'#8B5CF6':'transparent';box.innerHTML=sel?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>':'';}
++  }
++  updateGymSetupCount();
++}
++function selectAllGymEquipment(){
++  const all=GYM_EQUIPMENT_CATEGORIES.flatMap(c=>c.items.map(i=>i.id));
++  settings.gymSetup=all;
++  openGymSetup();
++}
++function updateGymSetupCount(){
++  const el=document.getElementById('gym-setup-count');
++  if(el){const n=settings.gymSetup?.length||0;el.textContent=`${n} Gerät${n!==1?'e':''} ausgewählt`;}
++}
++function saveGymSetup(){
++  saveSettings();
++  closeGymSetup();
++  showToast(`${settings.gymSetup?.length||0} Geräte gespeichert ✓`);
++  if(document.getElementById('screen-workout-select')?.classList.contains('active'))renderWorkoutSelect();
++  renderDashboard();
++}
++function getFilteredExercises(exercises){
++  if(!settings.gymMode||!exercises)return exercises;
++  const setup=settings.gymSetup||[];
++  const patterns={};
++  exercises.forEach(ex=>{
++    const p=ex.movementPattern||'other';
++    if(!patterns[p])patterns[p]=[];
++    patterns[p].push(ex);
++  });
++  const result=[];
++  Object.values(patterns).forEach(group=>{
++    const match=group.find(ex=>ex.equipment&&ex.equipment.some(t=>t==='bodyweight'||setup.includes(t)));
++    if(match)result.push(match);
++    else if(group.length)result.push(group[0]);
++  });
++  return result;
++}
++let _swapTargetEi=null;
++function openExerciseSwap(ei){
++  _swapTargetEi=ei;
++  const ex=workoutExercises[ei];
++  const pattern=ex.movementPattern;
++  const setup=settings.gymSetup||[];
++  const plan=WORKOUT_PLANS_GYM[settings.activePhase||'p1'];
++  const allEx=plan?.days?.flatMap(d=>d.exercises)||[];
++  const alternatives=allEx.filter(e=>e.movementPattern===pattern&&e.id!==ex.id&&
++    e.equipment&&e.equipment.some(t=>t==='bodyweight'||setup.includes(t)));
++  const list=document.getElementById('exercise-swap-list');
++  if(list){
++    if(!alternatives.length){list.innerHTML=`<div style="text-align:center;padding:24px"><span class="bc" style="color:var(--tm)">Keine Alternativen mit deinem Equipment verfügbar.</span></div>`;
++    }else{
++      list.innerHTML=`<div class="bc" style="font-size:11px;color:var(--tm);margin-bottom:10px;text-transform:uppercase">Alternativen für: ${ex.name}</div>`+
++        alternatives.map(alt=>`<button onclick="swapGymExercise(${ei},'${alt.id}')" style="width:100%;text-align:left;background:var(--cardElev);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px">
++          <div class="bc" style="font-size:14px;font-weight:700;color:var(--tp)">${alt.name}</div>
++          <div class="bc" style="font-size:11px;color:var(--tm);margin-top:2px">${alt.tip||''}</div>
++          <div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap">${alt.equipment.map(t=>`<span style="background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);border-radius:4px;padding:1px 6px"><span class="bc" style="font-size:9px;color:#8B5CF6;font-weight:700">${t}</span></span>`).join('')}</div>
++        </button>`).join('');
++    }
++  }
++  document.getElementById('exercise-swap-overlay').style.display='flex';
++}
++function closeExerciseSwap(){document.getElementById('exercise-swap-overlay').style.display='none';}
++function swapGymExercise(ei,newExId){
++  const plan=WORKOUT_PLANS_GYM[settings.activePhase||'p1'];
++  const allEx=plan?.days?.flatMap(d=>d.exercises)||[];
++  const newEx=allEx.find(e=>e.id===newExId);
++  if(!newEx)return;
++  const old=workoutExercises[ei];
++  workoutExercises[ei]={...old,name:newEx.name,movementPattern:newEx.movementPattern,tip:newEx.tip,equipment:newEx.equipment};
++  closeExerciseSwap();
++  renderExerciseList();
++  showToast(`Getauscht: ${newEx.name}`);
++}
+ function exportAllData(){exportCSV();}
+ 
+ function initTheme(){const saved=localStorage.getItem('af_theme')||'dark';applyTheme(saved);}
+-- 
+2.52.0
+
+
+From 45717f634619bd0021169d99261ce5477621bdc5 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Fri, 18 Sep 2026 05:15:35 +0000
+Subject: [PATCH 2/3] =?UTF-8?q?Implement=20Gym=20Phase=201=20system=20?=
+ =?UTF-8?q?=E2=80=94=20equipment=20setup,=20plan,=20exercise=20swap?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Add GYM_EQUIPMENT_CATEGORIES (8 categories, 44 items) and WORKOUT_PLANS_GYM
+  (p1 with 5 days/42 exercises, p2/p3 as empty placeholders)
+- Add gymSetup:[] to settings defaults
+- Add #gym-setup-overlay (full-screen equipment picker with checkboxes,
+  select-all, count badge, and save CTA)
+- Add #exercise-swap-overlay (bottom sheet for same-pattern alternatives)
+- Implement openGymSetup/closeGymSetup/toggleGymEquipment/selectAllGymEquipment/
+  updateGymSetupCount/saveGymSetup
+- Implement getFilteredExercises() — groups by movementPattern and picks the
+  first exercise matching available equipment (fallback: show first anyway)
+- Update toggleGymMode() to auto-open gym setup when no equipment configured
+- Update getActivePlan/openPhasePicker/switchPhase/checkPhaseAdvance to use
+  gym or home plans based on settings.gymMode
+- Add getAllPlanDays() helper used by openWorkoutPreview + doStartWorkout
+- Update doStartWorkout to apply getFilteredExercises in gym mode
+- Update renderWorkoutSelect: hide old gym banner always; render gym day cards
+  with filtered exercise count badge ("🏋️ N Übungen verfügbar") or coming-soon
+  for empty phases
+- Add Gym-Setup section to settings HTML with gym-setup-info label
+- Update renderSettings() to populate gym-setup-info count
+- Add ⇄ Swap button in renderExerciseList for gym mode (calls openExerciseSwap)
+- Implement openExerciseSwap/closeExerciseSwap/swapGymExercise
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01DWBYuHZSZZDmMWmwZXX9Bx
+---
+ index.html | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/index.html b/index.html
+index 1e371d7..4af9775 100644
+--- a/index.html
++++ b/index.html
+@@ -1923,11 +1923,12 @@ function checkPhaseAdvance(){
+   const endDate=parseISODateLocal(settings.programEnd);
+   const today=new Date();today.setHours(0,0,0,0);
+   if(today>=endDate){
+-    const phases=Object.keys(WORKOUT_PLANS);
++    const activePlans=settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS;
++    const phases=Object.keys(activePlans);
+     const currentIdx=phases.indexOf(settings.activePhase);
+     const nextPhaseId=phases[currentIdx+1];
+     if(nextPhaseId){
+-      const nextPlan=WORKOUT_PLANS[nextPhaseId];
++      const nextPlan=activePlans[nextPhaseId];
+       return{ready:true,nextPhaseId,nextPlan};
+     }
+   }
+-- 
+2.52.0
+
+
+From d2111e3fb1ac430e47104fac0e63c8b060db6e2d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Fri, 18 Sep 2026 05:25:20 +0000
+Subject: [PATCH 3/3] Add EXERCISE_MUSCLES for gym exercises, Gym Phase 2, and
+ tip display in workout
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Add M.CARDIO was already present; added EXERCISE_MUSCLES entries for all 35+
+  gym Phase 1 exercises (Bankdrücken, Klimmzüge, Kniebeuge, etc.) with primary
+  and secondary muscle mappings
+- Add 6 new Phase 2-specific EXERCISE_MUSCLES entries (Skull Crushers,
+  Rumänisches Kreuzheben, Kabelzug Curl, KH Curl (Concentration), Cable Crunch,
+  Farmer's Walk)
+- Implement WORKOUT_PLANS_GYM.p2 with 5 active days: MO Brust/Trizeps (7 ex),
+  DI Beine/Core (9 ex), MI Rücken/Bizeps (8 ex), FR Schultern/Core (7 ex),
+  SA Cardio (3 ex); exercise IDs follow g2dXeY pattern
+- Show exercise tip in renderExerciseList as a blue accent info box after the
+  set table when ex.tip is present
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01DWBYuHZSZZDmMWmwZXX9Bx
+---
+ index.html | 164 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 162 insertions(+), 2 deletions(-)
+
+diff --git a/index.html b/index.html
+index 4af9775..f717629 100644
+--- a/index.html
++++ b/index.html
+@@ -1283,7 +1283,123 @@ const WORKOUT_PLANS_GYM={
+        ]},
+     ]
+   },
+-  p2:{label:'Gym Phase 2',subtitle:'Volumen & Intensität',weeks:4,restTimer:80,color:'#8B5CF6',days:[]},
++  p2:{label:'Gym Phase 2',subtitle:'Volumen & Intensität',weeks:4,restTimer:80,color:'#8B5CF6',days:[
++    {id:'gd2_1',label:'Tag 1',name:'Brust / Trizeps',tag:'MO',color:'#8B5CF6',
++     muscles:['Brust','Trizeps'],exercises:[
++      {id:'g2d1e1',name:'Schrägbank KH Drücken',muscle:'Brust oben',sets:4,reps:'8–10',bw:false,
++       equipment:['kurzhantel','schraegbank','verstellbare-bank'],movementPattern:'incline-chest-press',
++       tip:'Oberer Brustanteil — Bank 30–45°, Schulterblätter halten.'},
++      {id:'g2d1e2',name:'Bankdrücken',muscle:'Brust',sets:4,reps:'6–10',bw:false,
++       equipment:['langhantel','flachbank','squat-rack'],movementPattern:'chest-press',
++       tip:'Schulterblätter hinten unten fest, Ellbogen 45–75°.'},
++      {id:'g2d1e3',name:'Kabelzug Fliegende',muscle:'Brust',sets:3,reps:'12–15',bw:false,
++       equipment:['kabelzug-hoch','funktionsturm'],movementPattern:'chest-fly',
++       tip:'Leicht nach vorne gebeugt, Squeeze in der Mitte.'},
++      {id:'g2d1e4',name:'Pec Deck',muscle:'Brust',sets:3,reps:'12–15',bw:false,
++       equipment:['pec-deck'],movementPattern:'chest-fly',
++       tip:'Volle Streckung am Anfang, Squeeze am Ende.'},
++      {id:'g2d1e5',name:'Dips / Assisted Dips',muscle:'Trizeps',sets:4,reps:'8–12',bw:true,
++       equipment:['dip-station','assisted-pullup-maschine'],movementPattern:'dip',
++       tip:'Trizeps-Fokus: Körper aufrecht halten.'},
++      {id:'g2d1e6',name:'Skull Crushers',muscle:'Trizeps',sets:3,reps:'10–12',bw:false,
++       equipment:['ez-bar','flachbank','verstellbare-bank'],movementPattern:'skull-crusher',
++       tip:'Ellbogen zeigen zur Decke, Stange knapp über Stirn absenken.'},
++      {id:'g2d1e7',name:'Trizeps Pushdown',muscle:'Trizeps',sets:3,reps:'12–15',bw:false,
++       equipment:['kabelzug-hoch','funktionsturm'],movementPattern:'tricep-extension',
++       tip:'Ellbogen bleiben nah am Körper.'},
++    ]},
++    {id:'gd2_2',label:'Tag 2',name:'Beine / Core',tag:'DI',color:'#F59E0B',
++     muscles:['Beine','Gesäss','Core'],exercises:[
++      {id:'g2d2e1',name:'Kniebeuge',muscle:'Beine',sets:4,reps:'6–10',bw:false,
++       equipment:['squat-rack','langhantel'],movementPattern:'squat',
++       tip:'Brust hoch, Knie über Zehen, tief wie möglich.'},
++      {id:'g2d2e2',name:'Hack Squat',muscle:'Beine',sets:3,reps:'10–12',bw:false,
++       equipment:['hack-squat'],movementPattern:'hack-squat-machine',
++       tip:'Enge Fußstellung für mehr Quads.'},
++      {id:'g2d2e3',name:'Bulgarian Split Squat',muscle:'Beine',sets:3,reps:'8–10',bw:false,
++       equipment:['kurzhantel','verstellbare-bank','flachbank'],movementPattern:'split-squat',
++       tip:'Hinterer Fuß auf Bank, Oberkörper aufrecht.'},
++      {id:'g2d2e4',name:'Rumänisches Kreuzheben',muscle:'Oberschenkel hinten',sets:4,reps:'8–10',bw:false,
++       equipment:['langhantel','kurzhantel'],movementPattern:'rdl',
++       tip:'Rücken gerade, Gewicht nah am Körper, Dehnung in Hams spüren.'},
++      {id:'g2d2e5',name:'Leg Curl',muscle:'Oberschenkel hinten',sets:3,reps:'12–15',bw:false,
++       equipment:['leg-curl'],movementPattern:'leg-curl',
++       tip:'Volle Bewegungsamplitude.'},
++      {id:'g2d2e6',name:'Hip Thrust Maschine',muscle:'Gesäss',sets:4,reps:'10–12',bw:false,
++       equipment:['hip-thrust-maschine','langhantel','flachbank'],movementPattern:'hip-hinge',
++       tip:'Kinn zur Brust, Gesäß oben maximal anspannen.'},
++      {id:'g2d2e7',name:'Calf Raise Maschine',muscle:'Wade',sets:4,reps:'15–20',bw:false,
++       equipment:['calf-raise-maschine'],movementPattern:'calf-raise',
++       tip:'Im oberen Punkt 1s halten.'},
++      {id:'g2d2e8',name:'Cable Crunch',muscle:'Core',sets:3,reps:'12–15',bw:false,
++       equipment:['kabelzug-hoch','funktionsturm'],movementPattern:'core-crunch',
++       tip:'Ellbogen zu den Knien, nicht Kopf nach unten ziehen.'},
++      {id:'g2d2e9',name:'Planke',muscle:'Core',sets:3,reps:'45–60s',bw:true,
++       equipment:['bodyweight'],movementPattern:'core-plank',
++       tip:'Körper Brett-gerade, Gesäß nicht hochschieben.'},
++    ]},
++    {id:'gd2_3',label:'Tag 3',name:'Rücken / Bizeps',tag:'MI',color:'#10B981',
++     muscles:['Rücken','Bizeps','Hinten Schultern'],exercises:[
++      {id:'g2d3e1',name:'Klimmzüge',muscle:'Rücken',sets:4,reps:'6–10',bw:true,
++       equipment:['klimmzugstange'],movementPattern:'vertical-pull',
++       tip:'Schulterblätter erst aktivieren, dann hochziehen.'},
++      {id:'g2d3e2',name:'KH Rudern',muscle:'Rücken',sets:4,reps:'10–12',bw:false,
++       equipment:['kurzhantel','verstellbare-bank'],movementPattern:'horizontal-pull',
++       tip:'Rücken parallel, Lat zieht — nicht der Arm.'},
++      {id:'g2d3e3',name:'Latzug',muscle:'Rücken',sets:4,reps:'10–12',bw:false,
++       equipment:['latzug-maschine'],movementPattern:'lat-pull-alt',
++       tip:'Brust zur Stange, Schulterblätter am Ende zusammen.'},
++      {id:'g2d3e4',name:'Seated Row Maschine',muscle:'Rücken',sets:3,reps:'10–12',bw:false,
++       equipment:['seated-row-maschine','kabelzug-tief','funktionsturm'],movementPattern:'seated-row',
++       tip:'Rücken gerade, Ellbogen nah am Körper.'},
++      {id:'g2d3e5',name:'Face Pull',muscle:'Schultern hinten',sets:3,reps:'15–20',bw:false,
++       equipment:['kabelzug-hoch','funktionsturm'],movementPattern:'rear-delt-pull',
++       tip:'Seil zur Stirn, Ellbogen hoch, externe Rotation.'},
++      {id:'g2d3e6',name:'EZ-Bar Curl',muscle:'Bizeps',sets:4,reps:'8–10',bw:false,
++       equipment:['ez-bar'],movementPattern:'bicep-curl',
++       tip:'Ellbogen fest, keine Ausweichbewegung.'},
++      {id:'g2d3e7',name:'Kabelzug Curl',muscle:'Bizeps',sets:3,reps:'12–15',bw:false,
++       equipment:['kabelzug-tief','funktionsturm'],movementPattern:'cable-curl',
++       tip:'Volle Bewegungsamplitude, langsam ablassen.'},
++      {id:'g2d3e8',name:'KH Curl (Concentration)',muscle:'Bizeps',sets:3,reps:'10–12',bw:false,
++       equipment:['kurzhantel'],movementPattern:'concentration-curl',
++       tip:'Ellbogen auf Oberschenkel, volle Streckung unten.'},
++    ]},
++    {id:'gd2_4',label:'Tag 4',name:'Schultern / Core',tag:'FR',color:'#3B82F6',
++     muscles:['Schultern','Core','Bizeps'],exercises:[
++      {id:'g2d5e1',name:'KH Schulterdrücken',muscle:'Schultern',sets:4,reps:'6–10',bw:false,
++       equipment:['kurzhantel','verstellbare-bank'],movementPattern:'overhead-press',
++       tip:'Handflächen nach vorne, volle Streckung oben.'},
++      {id:'g2d5e2',name:'KH Seitheben',muscle:'Schultern seitl.',sets:4,reps:'12–15',bw:false,
++       equipment:['kurzhantel'],movementPattern:'lateral-raise',
++       tip:'Daumen leicht nach unten, Ellbogen minimal gebeugt.'},
++      {id:'g2d5e3',name:'Kabelzug Seitheben',muscle:'Schultern seitl.',sets:3,reps:'12–15',bw:false,
++       equipment:['kabelzug-tief','funktionsturm'],movementPattern:'cable-lateral-raise',
++       tip:'Kabel von hinten, gleichmäßige Spannung.'},
++      {id:'g2d5e4',name:'Reverse Pec Deck',muscle:'Schultern hinten',sets:3,reps:'15–20',bw:false,
++       equipment:['reverse-pec-deck'],movementPattern:'rear-delt-pull',
++       tip:'Arme leicht gebeugt, aus hinteren Schultern bewegen.'},
++      {id:'g2d5e5',name:'Hammer Curl',muscle:'Bizeps',sets:3,reps:'12',bw:false,
++       equipment:['kurzhantel'],movementPattern:'neutral-curl',
++       tip:'Neutral Grip (Daumen oben), Ellbogen bleibt fixiert.'},
++      {id:'g2d5e6',name:'Planke',muscle:'Core',sets:3,reps:'45–60s',bw:true,
++       equipment:['bodyweight'],movementPattern:'core-plank',
++       tip:'Brett-gerade, gleichmäßig atmen.'},
++      {id:'g2d5e7',name:'Cable Crunch',muscle:'Core',sets:3,reps:'12–15',bw:false,
++       equipment:['kabelzug-hoch','funktionsturm'],movementPattern:'core-crunch',
++       tip:'Ellbogen zu den Knien, nicht Kopf nach unten reißen.'},
++    ]},
++    {id:'gd2_5',label:'Tag 5',name:'Cardio',tag:'SA',color:'#10B981',
++     muscles:['Ausdauer','Ganzkörper'],exercises:[
++      {id:'g2d6e1',name:'Laufband Warm-up',muscle:'Ausdauer',sets:1,reps:'5–10 Min',bw:true,
++       equipment:['laufband'],movementPattern:'cardio',tip:'Flottes Gehen oder leichtes Joggen.'},
++      {id:'g2d6e2',name:'Ruder Intervalle',muscle:'Ganzkörper',sets:7,reps:'2 Min / 1 Min Pause',bw:true,
++       equipment:['ruderergometer'],movementPattern:'cardio',tip:'7 Runden — eine mehr als Phase 1.'},
++      {id:'g2d6e3',name:'Crosstrainer',muscle:'Ausdauer',sets:1,reps:'25 Min',bw:true,
++       equipment:['crosstrainer','fahrradergometer','liegefahrrad'],movementPattern:'cardio',
++       tip:'Steadystate bei Herzfrequenz 130–150.'},
++    ]},
++  ]},
+   p3:{label:'Gym Phase 3',subtitle:'Intensität & Peak',weeks:4,restTimer:70,color:'#8B5CF6',days:[]},
+ };
+ 
+@@ -2707,6 +2823,7 @@ function renderExerciseList(){
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg> Letzten Satz entfernen
+         </button>`:''}
+       </div>
++      ${ex.tip?`<div style="background:rgba(59,130,246,.08);border-left:3px solid rgba(59,130,246,.4);border-radius:0 8px 8px 0;padding:8px 10px;margin-top:8px"><span class="bc" style="font-size:11px;color:var(--tm);line-height:1.4">💡 ${ex.tip}</span></div>`:''}
+     </div>`).join('');
+ }
+ 
+@@ -4723,7 +4840,50 @@ const EXERCISE_MUSCLES={"Push-ups (Reebok Deck)":{pri:[M.CHEST],sec:[M.TRICEP,M.
+ "Dumbbell Squeeze Press":{pri:[M.CHEST],sec:[M.TRICEP]},
+ "Single-Arm Dumbbell Press":{pri:[M.CHEST],sec:[M.TRICEP,M.ABS]},
+ "Dumbbell Around the World":{pri:[M.CHEST],sec:[M.SHOULDER_FRONT]},
+-"Farmer's Walk (Dumbbells)":{pri:[M.TRAP,M.FOREARM],sec:[M.SHOULDER_MID,M.ABS,M.BACK_MID]}};
++"Farmer's Walk (Dumbbells)":{pri:[M.TRAP,M.FOREARM],sec:[M.SHOULDER_MID,M.ABS,M.BACK_MID]},
++// ── Gym exercises ─────────────────────────────────────────────────────────────
++"Bankdrücken":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
++"Kurzhantel Bankdrücken":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
++"Schrägbank KH Drücken":{pri:[M.CHEST],sec:[M.TRICEP,M.SHOULDER_FRONT]},
++"Shoulder Press Maschine":{pri:[M.SHOULDER_MID],sec:[M.TRICEP,M.TRAP]},
++"KH Schulterdrücken":{pri:[M.SHOULDER_MID],sec:[M.TRICEP,M.TRAP,M.SHOULDER_FRONT]},
++"Kabelzug Seitheben":{pri:[M.SHOULDER_MID],sec:[M.TRAP]},
++"KH Seitheben":{pri:[M.SHOULDER_MID],sec:[M.TRAP]},
++"Trizeps Pushdown":{pri:[M.TRICEP],sec:[]},
++"Trizeps Maschine":{pri:[M.TRICEP],sec:[]},
++"Latzug":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},
++"Klimmzüge":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},
++"Assisted Pull-Up":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},
++"Seated Row Maschine":{pri:[M.BACK_MID],sec:[M.BICEP,M.SHOULDER_REAR]},
++"KH Rudern":{pri:[M.BACK_LAT,M.BACK_MID],sec:[M.BICEP,M.SHOULDER_REAR]},
++"Face Pull":{pri:[M.SHOULDER_REAR],sec:[M.TRAP,M.BACK_MID]},
++"Reverse Pec Deck":{pri:[M.SHOULDER_REAR],sec:[M.TRAP,M.BACK_MID]},
++"EZ-Bar Curl":{pri:[M.BICEP],sec:[M.FOREARM]},
++"Bizeps Curl Maschine":{pri:[M.BICEP],sec:[]},
++"KH Curl":{pri:[M.BICEP],sec:[M.FOREARM]},
++"Kniebeuge":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF,M.ABS]},
++"Leg Press":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},
++"Hack Squat":{pri:[M.QUAD,M.GLUTE],sec:[M.HAMSTRING,M.CALF]},
++"Leg Curl":{pri:[M.HAMSTRING],sec:[]},
++"Leg Extension":{pri:[M.QUAD],sec:[]},
++"Hip Thrust Maschine":{pri:[M.GLUTE],sec:[M.HAMSTRING,M.ABS]},
++"Calf Raise Maschine":{pri:[M.CALF],sec:[]},
++"Planke":{pri:[M.ABS],sec:[M.OBLIQUE]},
++"Klimmzüge / Assisted Pull-Up":{pri:[M.BACK_LAT],sec:[M.BICEP,M.SHOULDER_REAR]},
++"Dips / Assisted Dips":{pri:[M.TRICEP],sec:[M.CHEST,M.SHOULDER_FRONT]},
++"Pec Deck":{pri:[M.CHEST],sec:[]},
++"Kabelzug Fliegende":{pri:[M.CHEST],sec:[M.SHOULDER_FRONT]},
++"Hammer Curl":{pri:[M.BICEP],sec:[M.FOREARM]},
++"Laufband Warm-up":{pri:[M.CARDIO],sec:[M.QUAD,M.CALF,M.HAMSTRING]},
++"Ruder Intervalle":{pri:[M.CARDIO,M.BACK_LAT],sec:[M.ABS,M.SHOULDER_MID]},
++"Crosstrainer":{pri:[M.CARDIO],sec:[M.QUAD,M.HAMSTRING,M.GLUTE]},
++// ── Gym Phase 2 new exercises ─────────────────────────────────────────────────
++"Skull Crushers":{pri:[M.TRICEP],sec:[]},
++"Rumänisches Kreuzheben":{pri:[M.HAMSTRING,M.GLUTE],sec:[M.BACK_LAT]},
++"Kabelzug Curl":{pri:[M.BICEP],sec:[M.FOREARM]},
++"KH Curl (Concentration)":{pri:[M.BICEP],sec:[]},
++"Cable Crunch":{pri:[M.ABS],sec:[M.OBLIQUE]},
++"Farmer's Walk":{pri:[M.TRAP],sec:[M.SHOULDER_MID,M.FOREARM,M.ABS]}};
+ 
+ const MUSCLE_LABELS={[M.CHEST]:'Brust',[M.TRICEP]:'Trizeps',[M.SHOULDER_FRONT]:'Vordere Schulter',[M.SHOULDER_MID]:'Mittlere Schulter',[M.SHOULDER_REAR]:'Hintere Schulter',[M.BICEP]:'Bizeps',[M.FOREARM]:'Unterarm',[M.BACK_LAT]:'Latissimus',[M.BACK_MID]:'Mittlerer Rücken',[M.BACK_LOW]:'Unterer Rücken',[M.TRAP]:'Trapezmuskel',[M.ABS]:'Bauch',[M.OBLIQUE]:'Schräge Bauch',[M.HIP_FLEXOR]:'Hüftbeuger',[M.QUAD]:'Quadrizeps',[M.HAMSTRING]:'Hamstrings',[M.GLUTE]:'Gesäß',[M.CALF]:'Waden',[M.CARDIO]:'Ausdauer'};
+ 
+-- 
+2.52.0
+
