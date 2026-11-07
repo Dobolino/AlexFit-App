@@ -1,5 +1,5 @@
-const CACHE_NAME='af-v19-training-tools-20261026';
-const APP_FILES=['./','./index.html','./coach-core.js','./training-plans.js','./coach.js','./coach-recipes.js','./coach-tools.js','./release.json','./coach.css','./recipe-library.json','./manifest.webmanifest','./icons/icon.svg'];
+const CACHE_NAME='af-v21-training-design-20261107';
+const APP_FILES=['./','./index.html','./exercise-videos.js','./coach-core.js','./training-plans.js','./coach.js','./coach-recipes.js','./coach-tools.js','./release.json','./coach.css','./app-ui.css','./ui-shell.js','./strength-ui.js','./strength-ui.css','./cardio-ui.js','./cardio-ui.css','./recipe-library.json','./manifest.webmanifest','./icons/icon.svg'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_FILES)).then(()=>self.skipWaiting()));
 });

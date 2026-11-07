@@ -1,0 +1,639 @@
+/* Flat, legible strength controls; the surrounding app supplies its section accent. */
+#screen-workout-active {
+  --strength-accent: var(--accent, #a879fa);
+}
+#screen-workout-active .af-strength-session,
+#screen-workout-active .af-strength-focus,
+#screen-workout-active .af-strength-flow {
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--tp);
+}
+#screen-workout-active .af-strength-session {
+  padding: 0 0 14px;
+}
+.af-strength-sessiontop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.af-strength-sessiontop > span {
+  flex: 1;
+  color: var(--strength-accent);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+}
+.af-strength-sessiontop .af-strength-open-hints {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--strength-accent);
+  font:
+    650 11px/1.4 Inter,
+    system-ui,
+    sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.af-strength-sessiontop time {
+  font-size: 23px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-shadow: none !important;
+}
+#screen-workout-active .af-strength-icon {
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: transparent;
+  color: var(--tm);
+  cursor: pointer;
+}
+.af-strength-session h1 {
+  font-size: clamp(28px, 7vw, 36px);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  margin: 12px 0 10px;
+}
+.af-strength-progressline {
+  display: flex;
+  justify-content: space-between;
+  color: var(--tm);
+  font-size: 14px;
+}
+.af-strength-progress {
+  height: 7px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 11px;
+  background: var(--border);
+}
+.af-strength-progress > div {
+  height: 100%;
+  background: var(--strength-accent);
+  transition: width 0.2s ease;
+}
+.af-strength-sessionoptions {
+  margin-top: 16px;
+  color: var(--tm);
+  font-size: 13px;
+}
+.af-strength-sessionoptions > summary {
+  padding: 8px 0;
+  cursor: pointer;
+}
+.af-strength-sessionoptions .af-toolbar {
+  align-items: end;
+}
+.af-strength-sessionoptions button {
+  min-height: 44px;
+}
+#screen-workout-active .af-strength-focus {
+  padding: 24px 0 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  scroll-margin-top: 86px;
+}
+.af-strength-eyebrow {
+  color: var(--strength-accent);
+  font-weight: 750;
+  font-size: 13px;
+  letter-spacing: 0.055em;
+  margin: 0 0 8px;
+}
+.af-strength-titleline {
+  display: flex;
+  align-items: start;
+  gap: 8px;
+}
+.af-strength-titleline h2 {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(27px, 7vw, 34px);
+  line-height: 1.14;
+  letter-spacing: -0.035em;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.af-strength-icons {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.af-strength-target {
+  color: var(--tm);
+  margin: 10px 0 12px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.af-strength-muscles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+.af-strength-muscles span {
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--tm);
+}
+.af-strength-muscles .af-strength-primary-muscle {
+  color: var(--tp);
+  background: var(--cardElev);
+}
+.af-strength-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.af-strength-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 7px;
+  color: var(--tm);
+  font-size: 12px;
+}
+#screen-workout-active .af-strength-field > select,
+#screen-workout-active .af-strength-field > input,
+#screen-workout-active .af-strength-custom input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  height: 66px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font:
+    750 25px/1.2 Inter,
+    system-ui,
+    sans-serif;
+  color: var(--tp);
+  background: var(--card);
+  font-variant-numeric: tabular-nums;
+}
+.af-strength-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.af-strength-custom[hidden] {
+  display: none;
+}
+.af-strength-custom > span {
+  font-size: 11px;
+}
+#screen-workout-active
+  .af-strength-field
+  > select:has(option[value=""]:checked),
+#screen-workout-active
+  .af-strength-field
+  > select:has(option[value="custom"]:checked) {
+  font-size: 17px;
+}
+.af-strength-bw {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 0 6px 0 0;
+  color: var(--tm);
+  font-size: 12px;
+}
+.af-strength-bw strong {
+  font-size: 18px;
+  color: var(--tp);
+  overflow-wrap: anywhere;
+}
+.af-strength-preset {
+  font-size: 12px;
+  color: var(--tm);
+  margin: 10px 0 18px;
+  line-height: 1.5;
+}
+.af-strength-rpe {
+  border-top: 1px solid var(--border);
+  margin-bottom: 16px;
+  color: var(--tm);
+  font-size: 14px;
+}
+.af-strength-rpe > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 48px;
+  cursor: pointer;
+}
+.af-strength-rpe > summary span {
+  font-size: 12px;
+}
+.af-strength-rpe label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.af-strength-rpe select {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--card);
+  color: var(--tp);
+  font-size: 15px;
+}
+.af-strength-rpe p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+#screen-workout-active .af-strength-submit {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 62px;
+  padding: 15px 12px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--accent-strong, #7c3aed);
+  color: white;
+  font:
+    750 18px/1.25 Inter,
+    system-ui,
+    sans-serif;
+  cursor: pointer;
+  box-shadow: none;
+}
+#screen-workout-active .af-strength-submit.af-strength-undo {
+  background: var(--cardElev);
+  border: 1px solid var(--border);
+  color: var(--tp);
+}
+.af-strength-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 0;
+}
+#screen-workout-active .af-strength-actions button {
+  flex: 1 1 120px;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--tm);
+  font:
+    600 13px/1.3 Inter,
+    system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+#screen-workout-active .af-strength-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 82px;
+  padding: 17px 0;
+  margin-top: 18px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  text-align: left;
+  background: transparent;
+  color: var(--tp);
+}
+.af-strength-next span {
+  min-width: 0;
+}
+.af-strength-next small {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  color: var(--tm);
+}
+.af-strength-next strong {
+  display: block;
+  font-size: 18px;
+  line-height: 1.3;
+}
+.af-strength-last {
+  color: var(--tm);
+  font-size: 13px;
+  padding: 12px 0;
+}
+#screen-workout-active .af-strength-flow {
+  margin: 24px 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+}
+.af-strength-flowhead h2 {
+  margin: 0 0 6px;
+  font-size: 23px;
+  letter-spacing: -0.025em;
+}
+.af-strength-flowhead p {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--tm);
+}
+#screen-workout-active .af-strength-flow ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#screen-workout-active .af-strength-flow li {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+.af-strength-exercise > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 75px;
+  padding: 12px 0;
+  cursor: pointer;
+  list-style: none;
+}
+.af-strength-exercise > summary::-webkit-details-marker {
+  display: none;
+}
+.af-strength-order {
+  align-self: start;
+  padding-top: 3px;
+  font-size: 12px;
+  color: var(--tm);
+  font-variant-numeric: tabular-nums;
+}
+.af-strength-exercise-name {
+  flex: 1;
+  min-width: 0;
+}
+.af-strength-exercise-name strong {
+  display: block;
+  color: var(--tp);
+  font-size: 17px;
+  line-height: 1.35;
+}
+.af-strength-exercise-name > span {
+  display: block;
+  padding-top: 5px;
+  color: var(--tm);
+  font-size: 12px;
+}
+.af-strength-exercise [aria-current="step"] .af-strength-exercise-name > span {
+  color: var(--strength-accent);
+}
+.af-strength-chevron {
+  font-size: 22px;
+  color: var(--tm);
+  transition: transform 0.15s;
+}
+.af-strength-exercise[open] > summary .af-strength-chevron {
+  transform: rotate(180deg);
+}
+#screen-workout-active .af-strength-set-jump {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 0 10px 26px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  color: var(--tp);
+  text-align: left;
+  font:
+    600 13px/1.35 Inter,
+    system-ui,
+    sans-serif;
+}
+.af-strength-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  border: 1.5px solid var(--tm);
+  border-radius: 50%;
+}
+.af-strength-status svg {
+  width: 14px;
+  height: 14px;
+}
+.is-done .af-strength-status {
+  color: var(--bg);
+  background: #4ade80;
+  border-color: #4ade80;
+}
+.is-selected:not(.is-done) .af-strength-status {
+  border-color: var(--strength-accent);
+  background: var(--strength-accent);
+}
+.af-strength-setvalue {
+  margin-left: auto;
+  text-align: right;
+  color: var(--tm);
+  font-size: 12px;
+  font-weight: 450;
+}
+.af-strength-editor {
+  margin: 5px 0 12px 26px;
+  min-width: 0;
+}
+.af-strength-editor > summary {
+  padding: 12px 0;
+  font-size: 12px;
+  color: var(--tm);
+  cursor: pointer;
+}
+#screen-workout-active .af-strength-editor .af-sethead,
+#screen-workout-active .af-strength-editor .af-setrow {
+  grid-template-columns:
+    20px minmax(0, 0.8fr) minmax(0, 1.2fr) minmax(0, 0.85fr)
+    minmax(0, 0.75fr) 44px;
+  gap: 5px;
+  padding: 8px 0;
+}
+#screen-workout-active .af-strength-editor .af-setrow > input,
+#screen-workout-active .af-strength-editor .af-setrow > select {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 8px 3px;
+  font-size: 13px;
+}
+#screen-workout-active .af-strength-editor .af-donebtn {
+  width: 44px;
+  height: 46px;
+  min-height: 46px;
+}
+.af-strength-editor .af-muscle-summary p {
+  font-size: 12px;
+}
+#screen-workout-active .af-strength-return {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 50px;
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--tp);
+  font:
+    650 14px Inter,
+    system-ui,
+    sans-serif;
+}
+.af-strength-timed {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  border: 1px solid var(--strength-accent);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--strength-accent);
+  font-size: 17px;
+  font-weight: 700;
+}
+.af-strength-complete h2 {
+  margin: 10px 0;
+  font-size: 30px;
+}
+.af-strength-complete p {
+  color: var(--tm);
+}
+#screen-workout-active button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+#screen-workout-active :is(button, select, input, summary):focus-visible {
+  outline: 2px solid var(--strength-accent);
+  outline-offset: 3px;
+}
+#rest-timer-bar.af-strength-rest {
+  padding: 13px 18px;
+  border-color: var(--border);
+  border-radius: 0;
+  background: var(--card);
+  box-shadow: none;
+}
+.af-strength-rest-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+.af-strength-rest-main > span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent, #a879fa);
+}
+.af-strength-rest-main small {
+  display: block;
+  font-size: 11px;
+  font-weight: 450;
+  letter-spacing: 0;
+  color: var(--tm);
+  margin-top: 5px;
+}
+.af-strength-rest-main strong {
+  font:
+    750 40px/1 Inter,
+    system-ui,
+    sans-serif;
+  color: var(--tp);
+  font-variant-numeric: tabular-nums;
+}
+.af-strength-rest-progress {
+  height: 3px;
+  margin: 10px 0;
+  background: var(--border);
+}
+.af-strength-rest-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--accent, #a879fa);
+}
+.af-strength-rest-actions {
+  display: flex;
+  gap: 10px;
+}
+.af-strength-rest-actions button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--tp);
+  font:
+    650 13px Inter,
+    system-ui,
+    sans-serif;
+}
+@media (max-width: 370px) {
+  .af-strength-titleline {
+    flex-wrap: wrap;
+  }
+  .af-strength-titleline h2 {
+    flex-basis: 100%;
+  }
+  .af-strength-icons {
+    margin-bottom: 4px;
+  }
+  .af-strength-sessiontop {
+    gap: 7px;
+  }
+  .af-strength-sessiontop > span {
+    font-size: 9px;
+  }
+  #screen-workout-active .af-strength-editor .af-setrow {
+    grid-template-columns:
+      18px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)
+      44px;
+  }
+  .af-strength-editor .af-setrow .af-previous,
+  .af-strength-editor .af-sethead > :nth-child(2) {
+    display: none;
+  }
+}

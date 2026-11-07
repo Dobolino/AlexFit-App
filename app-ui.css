@@ -1,0 +1,29 @@
+/* Shared visual language. Section colours communicate location, never status alone. */
+body { --accent:#3b82f6; --accent-strong:#2563eb; --blue:var(--accent); }
+body[data-section="workout"] { --accent:#a879fa; --accent-strong:#7c3aed; }
+body[data-section="cardio"] { --accent:#14b8a6; --accent-strong:#0f766e; }
+body[data-section="stats"] { --accent:#fb923c; --accent-strong:#c2410c; }
+#topbar { background:var(--bg); backdrop-filter:none; -webkit-backdrop-filter:none; border-color:var(--border); }
+#bottomnav { border:0; border-top:1px solid var(--border); border-radius:0; background:var(--bg); backdrop-filter:none; -webkit-backdrop-filter:none; box-shadow:none; padding:10px 0 4px; }
+#nav-container { padding-top:0; }
+#bottomnav .navbtn { min-height:58px; padding:3px 0 8px; gap:4px; border-radius:0; }
+#bottomnav .nicon { width:32px; height:28px; }
+#bottomnav .nicon svg { width:25px; height:25px; }
+#bottomnav .nlabel { font-size:11px; color:var(--ts); }
+#bottomnav .navbtn.active .nlabel, #bottomnav .navbtn.active .nicon { color:var(--accent) !important; }
+#bottomnav .navbtn.active::after { content:""; position:absolute; bottom:0; width:36px; height:3px; border-radius:3px; background:var(--accent); }
+#nav-glass-indicator { display:none; }
+#bottomnav .nav-badge { width:6px; height:6px; top:1px; right:calc(50% - 18px); animation:none; }
+.af-primary { background:var(--accent-strong); border-color:var(--accent-strong); }
+.af-btn:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.af-eyebrow { color:var(--accent); }
+.af-card { box-shadow:none; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { scroll-behavior:auto !important; } }
+
+/* Body-level values override legacy theme variables set inline on the root. */
+body { --tm:#a3adbf; --ts:#bbc5d6; }
+[data-theme="light"] body { --tm:#536073; --ts:#48566b; }
+body:not([data-section="workout"]) #rest-timer-bar { display:none !important; }
+
+.af-cardio-live, .af-cardio-live :is(button, input, select, textarea) { font-family:Inter, system-ui, sans-serif; }
+.af-cardio-timer-panel { background:transparent; border:0; border-radius:0; }

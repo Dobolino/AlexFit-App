@@ -86,6 +86,13 @@ test("offline install includes every local runtime dependency", async () => {
   for (const name of [
     "index.html",
     "coach-core.js",
+    "exercise-videos.js",
+    "ui-shell.js",
+    "app-ui.css",
+    "strength-ui.js",
+    "strength-ui.css",
+    "cardio-ui.js",
+    "cardio-ui.css",
     "training-plans.js",
     "coach.js",
     "coach-recipes.js",

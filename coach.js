@@ -159,7 +159,7 @@
     el.innerHTML = `<div class="af-pagehead"><div><p class="af-eyebrow">ALEXFIT COACH</p><h1>${title}</h1></div>${button("Zurück", "home")}</div>${html}`;
     showScreen(name);
     setNavActive(
-      name === "nutrition" || name === "cooking" ? "nutrition" : "dashboard",
+      name === "coach-checkin" ? "stats" : name === "coach-summary" ? "workout" : "dashboard",
     );
     document.getElementById("content").scrollTop = 0;
   }
@@ -233,7 +233,7 @@
           )
           .join("") +
         "</div></details></form>" +
-        '<details class="af-card"><summary>Ernährungsberechnung (optional)</summary>' +
+        '<details hidden class="af-card"><summary>Ernährungsberechnung (Archiv)</summary>' +
         note(
           "Nur für Kalorien- und Proteinberechnungen. Diese Angaben blockieren nie dein Training.",
         ) +
@@ -695,7 +695,7 @@
       "Fortschrittscheck",
       card(
         result.due ? "Check-in fällig" : "Aktueller Verlauf",
-        `<div class="af-metrics"><div><strong>${trend.current ?? "—"}</strong><span>kg · letzte 7 Tage</span></div><div><strong>${trend.previous ?? "—"}</strong><span>kg · vorherige 7 Tage</span></div><div><strong>${trend.ready ? (trend.change > 0 ? "+" : "") + trend.change : "—"}</strong><span>kg Veränderung</span></div></div>${note(`${trend.currentCount} / ${trend.previousCount} Gewichtstage · ${result.intakeDays}/14 Ernährungstage. Ø Aufnahme: ${result.intake ?? "—"} kcal.`)}<h3>${esc(result.recommendation)}</h3><p>${esc(result.reason)}</p>${result.adjustment ? `<p>Zur gemeinsamen Prüfung: ${result.adjustment > 0 ? "+" : ""}${result.adjustment} kcal/Tag.</p>` : ""}${result.ready ? button("Check-in dokumentieren", "complete-checkin") : ""}`,
+        `<div class="af-metrics"><div><strong>${trend.current ?? "—"}</strong><span>kg · letzte 7 Tage</span></div><div><strong>${trend.previous ?? "—"}</strong><span>kg · vorherige 7 Tage</span></div><div><strong>${trend.ready ? (trend.change > 0 ? "+" : "") + trend.change : "—"}</strong><span>kg Veränderung</span></div></div>${note(`${trend.currentCount} / ${trend.previousCount} Gewichtstage in den beiden Vergleichswochen.`)}<p>${trend.ready ? "Gewichtstrend gemeinsam mit Bauchumfang, Kraft und Erholung beurteilen. Einzelwerte sind keine Bewertung deines Trainings." : "Für einen belastbaren Trend mindestens drei Gewichtsmessungen pro Vergleichswoche erfassen."}</p>${trend.ready ? button("Check-in dokumentieren", "complete-checkin") : ""}`,
       ) +
         card(
           "Bauchumfang dokumentieren",
@@ -742,7 +742,7 @@
           .slice(-3)
           .map((m) => m.date + " " + m.waistCm + " cm")
           .join("; "),
-      "Ernährung: " + JSON.stringify(C.checkin(state, weightLog, date)),
+      "Ernährung wird separat in Yazio geführt.",
       "Training (letzte 21 Tage):",
       ...recent.map(
         (h) =>
@@ -1159,8 +1159,50 @@
       "</select>"
     );
   }
+  // Keep anatomy and video details available without leaving the active draft.
+  const originalExerciseInfo = showExerciseInfo;
+  showExerciseInfo = function (name, mode = "all") {
+    originalExerciseInfo(name);
+    const box = document.getElementById("ex-info-box");
+    if (!box || (!EXERCISE_MUSCLES[name] && !EXERCISE_INFO[name])) return;
+    if (mode === "muscles") {
+      box.querySelector("iframe")?.parentElement.remove();
+    } else if (EXERCISE_VIDEOS[name]) {
+      const meta = typeof EXERCISE_VIDEO_META === "undefined" ? null : EXERCISE_VIDEO_META[name];
+      const url = "https://www.youtube.com/watch?v=" + encodeURIComponent(EXERCISE_VIDEOS[name]);
+      const frame = box.querySelector("iframe");
+      frame?.setAttribute("title", "Technikvideo: " + name);
+      const links = `<div class="af-video-links"><a class="af-btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Video auf YouTube öffnen ↗</a>${meta ? note(esc(meta.publisher + " · " + meta.variantNote)) : ""}</div>`;
+      if (frame) frame.parentElement.insertAdjacentHTML("afterend", links);
+      else box.insertAdjacentHTML("afterbegin", links);
+    }
+  };
+  function exerciseMuscleSummary(name) {
+    const anatomy = EXERCISE_MUSCLES[name];
+    if (!anatomy) return "";
+    const labels = (keys) => keys.filter((k) => k !== M.CARDIO).map((k) => esc(MUSCLE_LABELS[k] || k)).join(" · ");
+    return `<div class="af-muscle-summary"><p><strong>Hauptmuskeln:</strong> ${labels(anatomy.pri)}</p>${anatomy.sec.length ? `<p><strong>Unterstützend / stabilisierend:</strong> ${labels(anatomy.sec)}</p>` : ""}</div>`;
+  }
+  function nextTrainingSet() {
+    for (let ei = 0; ei < workoutExercises.length; ei++) {
+      if (blocked(workoutExercises[ei].name)) continue;
+      const si = workoutExercises[ei].setData.findIndex((s) => !s.done);
+      if (si >= 0) return { ei, si };
+    }
+    return null;
+  }
+  function workoutFlow(next, open) {
+    return `<details class="af-workout-flow" ${open ? "open" : ""}><summary>Dein Ablauf · ${workoutExercises.length} Übungen</summary><p class="af-note">Alle Übungen bis zum Ende. Antippen springt direkt zum Satz.</p><ol>${workoutExercises.map((ex, ei) => {
+      const done = ex.setData.filter((s) => s.done).length;
+      const si = Math.max(0, ex.setData.findIndex((s) => !s.done));
+      const status = blocked(ex.name) ? "Gesperrt" : done === ex.setData.length ? "Erledigt" : next?.ei === ei ? `Jetzt: Satz ${next.si + 1}` : "Noch offen";
+      return `<li><button type="button" data-af-action="jump-set" data-ei="${ei}" data-si="${si}" ${next?.ei === ei ? 'aria-current="step"' : ""}><span>${ei + 1}. ${esc(ex.name)}</span><span>${done}/${ex.setData.length} · ${status}</span></button></li>`;
+    }).join("")}</ol></details>`;
+  }
   renderExerciseList = function () {
-    document.getElementById("exercise-list").innerHTML = workoutExercises
+    const next = nextTrainingSet();
+    const flowOpen = document.querySelector(".af-workout-flow")?.open || false;
+    document.getElementById("exercise-list").innerHTML = workoutFlow(next, flowOpen) + workoutExercises
       .map((raw, ei) => {
         const ex = C.definition(raw.name, raw),
           locked = blocked(ex.name),
@@ -1172,7 +1214,7 @@
             : ex.weightBasis === "perHand"
               ? "kg pro Hantel"
               : "kg Zusatzgewicht";
-        return `<section class="af-exercise ${locked ? "af-locked" : ""}"><div class="af-exhead"><button type="button" class="af-link" data-af-action="exercise-info" data-name="${esc(ex.name)}">${esc(ex.name)}</button>${button(EXERCISE_VIDEOS[ex.name] ? "▶ Video & Technik" : "ⓘ Technik", "exercise-info", `data-name="${esc(ex.name)}"`)}${button("Variante", "variant", `data-ei="${ei}"`)}</div><p class="af-note">${esc(ex.reps || "")} ${ex.perSide ? "· je Seite" : ""} · ${basis} · ${ex.restTimer || 120} s Pause${locked ? " · GESPERRT" : ""}</p><details class="af-ex-hints"><summary>Technik & Steigerung</summary>${ex.note ? note(esc(ex.note)) : ""}${locked ? note("Im Profil gesperrt. Eine individuell geeignete Variante wählen oder diese Übung auslassen.") : note(esc(p.reason))}</details><div class="af-sethead"><span>Satz</span><span>Letztes Mal</span><span>${ex.bw ? "BW" : "kg"}</span><span>${timed ? "Sek." : "Wdh"}</span><span>RPE</span><span>✓</span></div>${ex.setData
+        return `<section class="af-exercise ${locked ? "af-locked" : ""}" id="af-exercise-${ei}">${next?.ei === ei ? `<p class="af-eyebrow">JETZT · SATZ ${next.si + 1} VON ${ex.setData.length}</p>` : ""}<div class="af-exhead"><button type="button" class="af-link" data-af-action="exercise-info" data-name="${esc(ex.name)}">${esc(ex.name)}</button>${button(EXERCISE_VIDEOS[ex.name] ? "▶ Video & Technik" : "ⓘ Technik", "exercise-info", `data-name="${esc(ex.name)}"`)}${button("Muskelgrafik", "muscle-info", `data-name="${esc(ex.name)}"`)}${button("Übung wechseln", "variant", `data-ei="${ei}"`)}</div>${exerciseMuscleSummary(ex.name)}<p class="af-note">${esc(ex.reps || "")} ${ex.perSide ? "· je Seite" : ""} · ${basis} · ${ex.restTimer || 120} s Pause${locked ? " · GESPERRT" : ""}</p><details class="af-ex-hints"><summary>Technik & Steigerung</summary>${ex.note ? note(esc(ex.note)) : ""}${locked ? note("Im Profil gesperrt. Eine individuell geeignete Variante wählen oder diese Übung auslassen.") : note(esc(p.reason))}</details><div class="af-sethead"><span>Satz</span><span>Letztes Mal</span><span>${ex.bw ? "BW" : "kg"}</span><span>${timed ? "Sek." : "Wdh"}</span><span>RPE</span><span>✓</span></div>${ex.setData
           .map((s, si) => {
             const prev = getLastSetValues(ex.name, si),
               previous = prev
@@ -1187,6 +1229,40 @@
       .join("");
   };
   const originalToggle = toggleSet;
+  addSet = function (ei) {
+    const ex = workoutExercises[ei];
+    if (!ex || blocked(ex.name)) return;
+    const last = ex.setData.at(-1);
+    const fresh = createSetFromLast(ex.name, ex.setData.length);
+    ex.setData.push({
+      ...fresh,
+      weight: last?.weight || fresh.weight,
+      reps: last?.reps || fresh.reps,
+      done: false,
+    });
+    saveSession();
+    renderExerciseList();
+    updateProgress();
+    showToast(`Satz ${ex.setData.length} ergänzt · Anstrengung neu bewerten`);
+  };
+  removeSet = function (ei) {
+    const ex = workoutExercises[ei];
+    if (!ex || ex.setData.length <= 1) return;
+    const last = ex.setData.at(-1);
+    const remove = () => {
+      if (window.AF.interval?.ei === ei) {
+        window.AF.interval = null;
+        document.getElementById("af-interval")?.remove();
+      }
+      ex.setData.pop();
+      saveSession();
+      renderExerciseList();
+      updateProgress();
+    };
+    if (last.done || last.weight || last.reps || last.rpe)
+      showConfirm("Letzten Satz mit erfassten Werten entfernen?", remove, "Entfernen");
+    else remove();
+  };
   toggleSet = function (ei, si) {
     const e = workoutExercises[ei],
       s = e?.setData[si];
@@ -1218,6 +1294,10 @@
     if (!old) return;
     const apply = () => {
       const d = getExDef(name);
+      if (window.AF.interval?.ei === ei) {
+        window.AF.interval = null;
+        document.getElementById("af-interval")?.remove();
+      }
       workoutExercises[ei] = {
         ...d,
         id: old.id,
@@ -1236,16 +1316,26 @@
       );
     else apply();
   };
+  // Curated movement families for dumbbells, a flat bench, floor and Ab Wheel.
+  // A shared body-part label alone does not make two exercises interchangeable.
+  const equipmentAlternatives = [
+    ["Dumbbell Bench Press", "Neutral-Grip Dumbbell Bench Press", "Push-ups (Reebok Deck)", "Dumbbell Squeeze Press", "Single-Arm Dumbbell Press"],
+    ["Single-Arm Dumbbell Row", "Double-Arm Dumbbell Row"],
+    ["Goblet Squat", "Dumbbell Squats", "Reverse Dumbbell Lunges", "Stationary Dumbbell Split Squat", "Dumbbell Lunges", "Reverse Lunges", "Bulgarian Split Squat"],
+    ["Romanian Deadlift", "Single-Leg RDL", "Good Mornings (Dumbbell)"],
+    ["Weighted Glute Bridge", "Glute Bridge", "Single-Leg Glute Bridge", "Hip Thrust"],
+    ["Standing Calf Raises", "Single-Leg Calf Raises", "Seated Calf Raises"],
+    ["Dead Bug", "Plank", "Ab Wheel Rollouts", "Hollow Body Hold"],
+    ["Dumbbell Curls", "Hammer Curls", "Concentration Curls", "Zottman Curls"],
+    ["Close-Grip Dumbbell Floor Press", "Dumbbell Kickbacks", "Overhead Triceps Extension"],
+    ["Reverse Flyes (Dumbbells)", "Reverse Snow Angels"],
+    ["Dumbbell Shoulder Press", "Arnold Press", "Pike Push-ups"],
+    ["Lateral Raises"],
+  ];
   showAltMenu = function (ei) {
     const ex = workoutExercises[ei],
-      names = [
-        ...new Set([
-          ...(EXERCISE_ALTERNATIVES[ex.name] || []),
-          ...EXERCISE_LIBRARY.filter((e) => e.muscle === ex.muscle).map(
-            (e) => e.name,
-          ),
-        ]),
-      ].filter((n) => n !== ex.name && !blocked(n));
+      candidates = equipmentAlternatives.find((group) => group.includes(ex.name)) || [],
+      names = candidates.filter((n) => n !== ex.name && !blocked(n) && EXERCISE_LIBRARY.some((e) => e.name === n));
     let overlay = document.getElementById("af-variants");
     if (!overlay) {
       overlay = document.createElement("div");
@@ -1253,7 +1343,7 @@
       overlay.className = "af-modal";
       document.body.append(overlay);
     }
-    overlay.innerHTML = `<div class="af-modalcard"><h2>Variante wählen</h2>${note("Nur nicht gesperrte Varianten. Individuelle Verträglichkeit und verfügbare Ausrüstung prüfen.")}<div class="af-variantlist">${names.map((n) => button(esc(n), "swap", `data-ei="${ei}" data-name="${esc(n)}"`)).join("") || note("Keine passende freigegebene Variante hinterlegt. Profil prüfen oder die Übung auslassen.")}</div>${button("Schliessen", "close-variants")}</div>`;
+    overlay.innerHTML = `<div class="af-modalcard"><h2>Übung wechseln</h2>${note("Für Kurzhanteln, flache Bank, Boden und AbWheel. Varianten unterscheiden sich in Schwierigkeit und Schwerpunkt; Last und Wiederholungen neu wählen. Bestehende Übungssperren bleiben aktiv.")}${ex.muscle === "Core" ? note("AbWheel: mit kurzen Rollouts auf den Knien beginnen. Bei Verlust der Rumpfkontrolle den Dead Bug beibehalten.") : ""}<div class="af-variantlist">${names.map((n) => button(esc(n), "swap", `data-ei="${ei}" data-name="${esc(n)}"`)).join("") || note("Keine passende freigegebene Variante für diese Ausrüstung hinterlegt.")}</div>${button("Schliessen", "close-variants")}</div>`;
   };
   const originalLegacyAdd = addExercise;
   addExercise = function (id) {
@@ -1995,8 +2085,8 @@
         renderWeek();
       },
       "complete-checkin": () => {
-        const c = C.checkin(state, weightLog, todayISO());
-        if (!c.ready) return;
+        const c = { trend: C.weightTrend(weightLog, todayISO()), date: todayISO() };
+        if (!c.trend.ready) return;
         state.checkins = state.checkins.filter((e) => e.date !== todayISO());
         state.checkins.push({ id: todayISO(), date: todayISO(), summary: c });
         persist();
@@ -2026,6 +2116,8 @@
       },
       "close-variants": () => document.getElementById("af-variants")?.remove(),
       "exercise-info": () => showExerciseInfo(t.dataset.name),
+      "muscle-info": () => showExerciseInfo(t.dataset.name, "muscles"),
+      "jump-set": () => scrollToSetRow(ei, si),
       interval: () => startInterval(ei, si),
       "stop-interval": () => {
         window.AF.interval = null;
@@ -2039,7 +2131,7 @@
   document.getElementById("gym-toggle-btn")?.setAttribute("hidden", "");
   const nav = document.getElementById("bottomnav");
   if (nav) {
-    nav.innerHTML = `<div id="nav-glass-indicator" aria-hidden="true"></div><button class="navbtn active" id="nav-dashboard" data-af-action="home"><span class="nicon">⌂</span><span class="nlabel">Heute</span></button><button class="navbtn" id="nav-workout" onclick="switchTab('workout')"><span class="nicon">🏋</span><span class="nlabel">Training</span></button><button class="navbtn" id="nav-cardio" onclick="switchTab('cardio')"><span class="nicon">♡</span><span class="nlabel">Cardio</span></button><button class="navbtn" id="nav-nutrition" data-af-action="nutrition"><span class="nicon">◉</span><span class="nlabel">Ernährung</span></button><button class="navbtn" id="nav-stats" onclick="switchTab('stats')"><span class="nicon">↗</span><span class="nlabel">Fortschritt</span></button>`;
+    nav.innerHTML = `<div id="nav-glass-indicator" aria-hidden="true"></div><button class="navbtn active" id="nav-dashboard" data-af-action="home"><span class="nicon">⌂</span><span class="nlabel">Heute</span></button><button class="navbtn" id="nav-workout" onclick="switchTab('workout')"><span class="nicon">🏋</span><span class="nlabel">Training</span></button><button class="navbtn" id="nav-cardio" onclick="switchTab('cardio')"><span class="nicon">♡</span><span class="nlabel">Cardio</span></button><button class="navbtn" id="nav-stats" onclick="switchTab('stats')"><span class="nicon">↗</span><span class="nlabel">Fortschritt</span></button>`;
   }
   setInterval(tickInterval, 500);
   if (!workoutExercises.length) restoreSession();

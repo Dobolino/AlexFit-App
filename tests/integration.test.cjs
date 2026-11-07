@@ -29,7 +29,7 @@ test(
       a.document.getElementById("screen-nutrition").textContent,
       /Yazio/,
     );
-    assert.equal(a.document.querySelectorAll("#bottomnav .navbtn").length, 5);
+    assert.equal(a.document.querySelectorAll("#bottomnav .navbtn").length, 4);
   }),
 );
 test(
@@ -254,7 +254,7 @@ test(
 test(
   "cooking produces five total portions, coordinated steps and both JSON exports",
   withApp(async (a) => {
-    a.click("nutrition");
+    a.run("switchTab('nutrition')");
     a.click("cooking");
     await a.flush();
     a.set("af-portions-a", 5);
@@ -277,7 +277,7 @@ test(
 test(
   "finished cooking weight updates per-100g values and is included in export",
   withApp(async (a) => {
-    a.click("nutrition");
+    a.run("switchTab('nutrition')");
     a.click("cooking");
     await a.flush();
     a.submit("cook-plan");

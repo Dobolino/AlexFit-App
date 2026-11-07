@@ -118,7 +118,7 @@ test("repetitions have a native picker and video actions are explicit", () => {
     picker.value = "12";
     picker.dispatchEvent(new a.window.Event("change", { bubbles: true }));
     assert.equal(a.run("workoutExercises[0].setData[0].reps"), "12");
-    assert.match(a.document.querySelector('.af-exhead [data-af-action="exercise-info"].af-btn').textContent, /Video/);
+    assert.match(a.document.querySelector('.af-strength-icons [data-af-action="exercise-info"]').getAttribute('aria-label'), /Video/);
     assert.equal(a.document.querySelector('.af-ex-hints').open, false);
     assert.deepEqual(a.errors, []);
   } finally { a.close(); }

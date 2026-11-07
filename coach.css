@@ -771,3 +771,54 @@ input[type="date"]::-webkit-date-and-time-value {
     gap: 8px;
   }
 }
+
+/* Strength guidance and the full session outline. Cardio keeps its existing UI. */
+.af-muscle-summary {
+  margin: 12px 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--blue);
+  font-size: 13px;
+  color: var(--ts);
+  line-height: 1.5;
+}
+.af-muscle-summary p + p { margin-top: 4px; }
+.af-muscle-summary strong { color: var(--tp); font-weight: 600; }
+.af-exhead .af-btn { min-height: 48px; }
+.af-workout-flow {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+.af-workout-flow summary {
+  cursor: pointer;
+  min-height: 48px;
+  padding: 12px 0;
+  font-weight: 600;
+  font-size: 17px;
+}
+.af-workout-flow ol { list-style: none; }
+.af-workout-flow button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--tp);
+  text-align: left;
+  font: 600 14px/1.4 Barlow, system-ui, sans-serif;
+}
+.af-workout-flow button span:last-child { color: var(--ts); font-size: 12px; flex-shrink: 0; }
+.af-workout-flow button[aria-current="step"] span { color: #8cb4ff; }
+.af-video-links { margin: 0 0 18px; }
+.af-video-links a { display: inline-flex; align-items: center; min-height: 48px; text-decoration: none; }
+.af-sethead, .af-setrow {
+  grid-template-columns: 24px minmax(24px, 1fr) 64px 49px 50px 48px;
+}
+.af-setrow .af-donebtn { height: 48px; min-height: 48px; max-height: 48px; }
+@media (max-width: 380px) {
+  .af-sethead, .af-setrow { grid-template-columns: 20px minmax(20px, 1fr) 60px 42px 44px 48px; }
+  .af-workout-flow button { flex-wrap: wrap; gap: 4px 12px; }
+}
