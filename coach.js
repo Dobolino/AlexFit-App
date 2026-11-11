@@ -2128,7 +2128,7 @@
     if (actions[a]) actions[a]();
     else window.AF.handleAction?.(a, t);
   });
-  document.getElementById("gym-toggle-btn")?.setAttribute("hidden", "");
+  // gym-toggle-btn should remain visible
   const nav = document.getElementById("bottomnav");
   if (nav) {
     nav.innerHTML = `<div id="nav-glass-indicator" aria-hidden="true"></div><button class="navbtn active" id="nav-dashboard" data-af-action="home"><span class="nicon">⌂</span><span class="nlabel">Heute</span></button><button class="navbtn" id="nav-workout" onclick="switchTab('workout')"><span class="nicon">🏋</span><span class="nlabel">Training</span></button><button class="navbtn" id="nav-cardio" onclick="switchTab('cardio')"><span class="nicon">♡</span><span class="nlabel">Cardio</span></button><button class="navbtn" id="nav-stats" onclick="switchTab('stats')"><span class="nicon">↗</span><span class="nlabel">Fortschritt</span></button>`;
