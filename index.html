@@ -778,6 +778,23 @@
     </div>
   </div>
 </div>
+<div id="gym-setup-overlay" onclick="if(event.target===this)closeGymSetup()" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:none;flex-direction:column;overflow:hidden">
+  <div style="background:var(--card);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div>
+      <div class="bc" style="font-size:18px;font-weight:800;color:var(--tp)">Welche Geräte hat dein Gym?</div>
+      <div class="bc" style="font-size:12px;color:var(--tm);margin-top:2px">Alles auswählen was vorhanden ist.</div>
+    </div>
+    <button onclick="closeGymSetup()" style="background:var(--cardElev);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--tm);font-size:20px;line-height:1">×</button>
+  </div>
+  <div id="gym-setup-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 120px"></div>
+  <div style="position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom))">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span class="bc" id="gym-setup-count" style="font-size:13px;color:var(--tm)">0 Geräte</span>
+      <button onclick="selectAllGymEquipment()" style="background:var(--cardElev);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span class="bc" style="font-size:12px;font-weight:700;color:var(--ts)">Alle auswählen</span></button>
+    </div>
+    <button onclick="saveGymSetup()" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;font-size:15px;font-weight:800;letter-spacing:.05em">Fertig — Plan laden</button>
+  </div>
+</div>
 <div id="sick-start-overlay" onclick="if(event.target===this)closeSickStartDialog()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;display:none;align-items:center;justify-content:center;padding:24px">
   <div style="background:var(--card);border:1px solid rgba(245,158,11,.5);border-radius:20px;padding:24px;width:calc(100% - 16px);max-width:380px">
     <div style="text-align:center;margin-bottom:20px">
@@ -1255,7 +1272,7 @@ const todayISO=()=>dateToISO(new Date());
 const todayStr=()=>new Date().toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'});
 const fmtS=iso=>parseISODateLocal(iso).toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'2-digit'});
 const fmtL=iso=>parseISODateLocal(iso).toLocaleDateString('de-CH',{weekday:'long',day:'2-digit',month:'2-digit'});
-const getExDef=name=>AlexFitCore.definition(name,WORKOUT_DAYS.flatMap(d=>d.exercises).find(e=>e.name===name)||EXERCISE_LIBRARY.find(e=>e.name===name)||Object.values(WORKOUT_PLANS).flatMap(p=>p.days.flatMap(d=>d.exercises)).find(e=>e.name===name)||{});
+const getExDef=name=>AlexFitCore.definition(name,WORKOUT_DAYS.flatMap(d=>d.exercises).find(e=>e.name===name)||EXERCISE_LIBRARY.find(e=>e.name===name)||Object.values({...WORKOUT_PLANS,...WORKOUT_PLANS_GYM}).flatMap(p=>p.days.flatMap(d=>d.exercises)).find(e=>e.name===name)||{});
 const isBW=name=>getExDef(name)?.bw||false;
 
 function computePRs(){const m={};history.forEach(s=>s.exercises.forEach(ex=>{const bw=isBW(ex.name);ex.sets.forEach(s=>{const prev=m[ex.name];if(bw){if(!prev||s.reps>prev.reps)m[ex.name]={weight:0,reps:s.reps,isBW:true};}else{const w=parseFloat(s.weight)||0;if(!prev||w>prev.weight||(w===prev.weight&&s.reps>prev.reps))m[ex.name]={weight:w,reps:s.reps,isBW:false};}});}));return m;}
@@ -1688,10 +1705,10 @@ function suggestWeight(exName, lastWeight){
 
 // ── PHASEN-MANAGEMENT ─────────────────────────────────────────────────────────
 function switchPhase(phaseId){
-  if(!WORKOUT_PLANS[phaseId]){showToast('Phase nicht gefunden');return;}
+  if(!(settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS)[phaseId]){showToast('Phase nicht gefunden');return;}
   if(phaseId===settings.activePhase){closePhasePicker();return;}
 
-  const plan=WORKOUT_PLANS[phaseId];
+  const plan=(settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS)[phaseId];
   showConfirm(
     `Zu ${plan.label} wechseln? — ${plan.subtitle}`,
     ()=>{
@@ -1719,11 +1736,11 @@ function checkPhaseAdvance(){
   const endDate=parseISODateLocal(settings.programEnd);
   const today=new Date();today.setHours(0,0,0,0);
   if(today>=endDate){
-    const phases=Object.keys(WORKOUT_PLANS);
+    const phases=Object.keys(settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS);
     const currentIdx=phases.indexOf(settings.activePhase);
     const nextPhaseId=phases[currentIdx+1];
     if(nextPhaseId){
-      const nextPlan=WORKOUT_PLANS[nextPhaseId];
+      const nextPlan=(settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS)[nextPhaseId];
       return{ready:true,nextPhaseId,nextPlan};
     }
   }
@@ -1734,9 +1751,9 @@ function openPhasePicker(){
   const overlay=document.getElementById('phase-picker-overlay');
   if(!overlay)return;
   const body=document.getElementById('phase-picker-body');
-  const phases=Object.keys(WORKOUT_PLANS);
+  const phases=Object.keys(settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS);
   body.innerHTML=phases.map(phaseId=>{
-    const plan=WORKOUT_PLANS[phaseId];
+    const plan=(settings.gymMode?WORKOUT_PLANS_GYM:WORKOUT_PLANS)[phaseId];
     const isActive=phaseId===settings.activePhase;
     const histCount=history.filter(h=>h.phaseId===phaseId).length;
     return`<button onclick="switchPhase('${phaseId}')" style="width:100%;background:${isActive?plan.color+'20':'var(--cardElev)'};border:2px solid ${isActive?plan.color:'var(--border)'};border-radius:14px;padding:14px 16px;margin-bottom:10px;text-align:left;display:flex;align-items:center;gap:14px">
@@ -3290,7 +3307,7 @@ function exportCSV(){
   csv+='## KRAFTTRAINING\n';
   csv+='Datum,Phase,Training,Dauer(min),Sätze,Übung,Gewicht(kg),Wiederholungen,PR\n';
   history.forEach(h=>{
-    const pLabel=WORKOUT_PLANS[h.phaseId||'p1']?.label||'Phase 1';
+    const pLabel=({...WORKOUT_PLANS,...WORKOUT_PLANS_GYM})[h.phaseId||'p1']?.label||'Phase 1';
     if(!h.exercises.length){
       csv+=`${h.date},"${pLabel}","${h.name}",${h.duration},${h.sets},,,,\n`;
     } else {
@@ -3376,8 +3393,8 @@ function importCSV(file){
         const isPR=cols[8]?.replace(/"/g,'')==='PR';
         const key=date+'|'+trainName;
         if(!historyDrafts.has(key)){
-          const phaseId=Object.entries(WORKOUT_PLANS).find(([,p])=>p.label===phaseLabel)?.[0]||'p1';
-          const day=WORKOUT_PLANS[phaseId]?.days.find(d=>d.name===trainName);
+          const phaseId=Object.entries({...WORKOUT_PLANS,...WORKOUT_PLANS_GYM}).find(([,p])=>p.label===phaseLabel)?.[0]||'p1';
+          const day=({...WORKOUT_PLANS,...WORKOUT_PLANS_GYM})[phaseId]?.days.find(d=>d.name===trainName);
           historyDrafts.set(key,{date,phaseId,name:trainName,dayId:day?.id||'d1',duration,sets:totalSets,exercises:{}});
         }
         const draft=historyDrafts.get(key);
