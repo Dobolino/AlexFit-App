@@ -78,14 +78,11 @@
       [...a.pri, ...a.sec]
         .filter((key) => key !== M.CARDIO)
         .slice(0, 3)
-        .map(
-          (key, i) =>
-            "<span" +
-            (i < a.pri.length ? ' class="af-strength-primary-muscle"' : "") +
-            ">" +
-            esc(MUSCLE_LABELS[key] || key) +
-            "</span>",
-        )
+        .map((key) => {
+          const label = MUSCLE_LABELS[key] || key;
+          const c = (MC && MC[label]) || "#2563EB";
+          return `<span style="color:${c};background:${c}20;border:1px solid ${c}40;border-radius:7px;padding:5px 9px;font-size:11px;line-height:1.4">${esc(label)}</span>`;
+        })
         .join("") +
       "</div>"
     );
@@ -585,12 +582,7 @@
   };
   const originalAddSet = addSet;
   addSet = function (ei) {
-    const before = workoutExercises[ei]?.setData.length;
-    originalAddSet(ei);
-    if (workoutExercises[ei]?.setData.length > before) {
-      selected = { ei, si: workoutExercises[ei].setData.length - 1 };
-      renderExerciseList();
-    }
+    originalAddSet(ei); // keep selected as-is; new set appears as upcoming
   };
   scrollToSetRow = function (ei, si) {
     if (!workoutExercises[ei]?.setData[si] || isBlocked(workoutExercises[ei])) {
