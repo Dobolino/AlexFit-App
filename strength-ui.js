@@ -78,10 +78,11 @@
       [...a.pri, ...a.sec]
         .filter((key) => key !== M.CARDIO)
         .slice(0, 3)
-        .map((key) => {
-          const label = MUSCLE_LABELS[key] || key;
-          const c = (MC && MC[label]) || "#2563EB";
-          return `<span style="color:${c};background:${c}20;border:1px solid ${c}40;border-radius:7px;padding:5px 9px;font-size:11px;line-height:1.4">${esc(label)}</span>`;
+        .map((key, i) => {
+          const label = esc(MUSCLE_LABELS[key] || key);
+          if (i >= a.pri.length) return "<span>" + label + "</span>";
+          const c = activeWorkoutDay?.color || "#2563EB";
+          return `<span style="color:${c};background:${c}20;border-color:${c}40">${label}</span>`;
         })
         .join("") +
       "</div>"
@@ -122,7 +123,7 @@
           current +
           '" selected>' +
           current +
-          " kg (bisher)</option>"
+          " kg</option>"
         : "";
     return (
       '<label class="af-strength-field"><span>' +
@@ -486,6 +487,13 @@
   const originalActive = renderWorkoutActive;
   renderWorkoutActive = function () {
     selected = firstOpen();
+    const dayColor = activeWorkoutDay?.color || "";
+    for (const id of ["screen-workout-active", "rest-timer-bar"]) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      for (const v of ["--accent", "--accent-strong", "--strength-accent"])
+        el.style.setProperty(v, dayColor);
+    }
     originalActive();
     const header = document.getElementById("workout-header");
     if (!header || !activeWorkoutDay) return;
