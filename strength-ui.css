@@ -142,7 +142,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 24px;
+  margin-bottom: 10px;
 }
 .af-strength-muscles span {
   font-size: 11px;

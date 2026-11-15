@@ -832,7 +832,8 @@
   </div>
 </div>
 <div id="workout-preview-overlay" role="dialog" aria-modal="true" aria-labelledby="workout-preview-header" onclick="if(event.target===this)closeWorkoutPreview()" style="position:fixed;background:rgba(0,0,0,.75);z-index:9992;display:none;align-items:flex-end;justify-content:center;">
-  <div id="workout-preview-sheet" style="background:var(--card);border:1px solid var(--border);border-top:3px solid var(--blue);border-radius:20px 20px 16px 16px;max-width:440px;display:flex;flex-direction:column;overflow:hidden;">
+  <div id="workout-preview-sheet" style="background:var(--card);border:1px solid var(--border);border-radius:20px 20px 16px 16px;max-width:440px;display:flex;flex-direction:column;overflow:hidden;">
+    <div id="workout-preview-accent" style="height:4px;flex-shrink:0;border-radius:18px 18px 0 0;"></div>
     <div id="workout-preview-header" style="flex-shrink:0;padding:16px;border-bottom:1px solid var(--border);"></div>
     <div id="workout-preview-body" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px;"></div>
     <div id="workout-preview-footer" style="flex-shrink:0;padding:14px 16px;border-top:1px solid var(--border);"></div>
@@ -1257,10 +1258,11 @@ let activeCardioType='walking';
 let activeStatsTab='stats';
 let cardioRange='3m';
 
-function saveSettings(){localStorage.setItem('af_meta',JSON.stringify(settings));}
-function save(){localStorage.setItem('af_history',JSON.stringify(history));}
-function saveW(){localStorage.setItem('af_weights',JSON.stringify(weightLog));}
-function saveC(){localStorage.setItem('af_cardio',JSON.stringify(cardioLog));}
+function _lsSet(key,val){try{localStorage.setItem(key,JSON.stringify(val));return true;}catch(e){if(e&&e.name==='QuotaExceededError'){showToast('⚠️ Speicher voll – Daten konnten nicht gespeichert werden.');return false;}throw e;}}
+function saveSettings(){_lsSet('af_meta',settings);}
+function save(){_lsSet('af_history',history);}
+function saveW(){_lsSet('af_weights',weightLog);}
+function saveC(){_lsSet('af_cardio',cardioLog);}
 function updateWeightDisplay(){
 document.getElementById('weight-display').textContent=currentWeight?currentWeight+' kg':'Gewicht offen';
   const goalEl=document.getElementById('goal-weight-display');
@@ -2282,7 +2284,8 @@ function openWorkoutPreview(dayId){
   const overlay=document.getElementById('workout-preview-overlay');
   const sheet=document.getElementById('workout-preview-sheet');
   if(!overlay)return;
-  sheet.style.borderTopColor=d.color;
+  const accent=document.getElementById('workout-preview-accent');
+  if(accent)accent.style.background=d.color;
   const todayDayId=PLAN_DOW[new Date().getDay()];
   const isToday=d.id===todayDayId;
   document.getElementById('workout-preview-header').innerHTML=`
@@ -2368,7 +2371,9 @@ function doStartWorkout(dayId){
   if(scheduled){
     workoutExercises=templateExercisesToWorkoutExercises(scheduled.exercises);
   }else{
-    workoutExercises=activeWorkoutDay.exercises.map(ex=>({...ex,setData:createSetDataForExercise(ex)}));
+    let exs=activeWorkoutDay.exercises;
+    if(settings.gymMode&&typeof getFilteredGymExercises==='function')exs=getFilteredGymExercises(exs);
+    workoutExercises=exs.map(ex=>({...ex,setData:createSetDataForExercise(ex)}));
   }
   workoutBaselineSignature=getWorkoutPlanSignature(workoutExercises);
   workoutElapsed=0;timerRunning=true;
@@ -2718,8 +2723,8 @@ function discardWorkout(){showConfirm('Training verwerfen?',()=>{clearInterval(w
 function getLastPerf(name){
   const bw=isBW(name);
   for(let i=history.length-1;i>=0;i--){
-    const ex=history[i].exercises.find(e=>e.name===name);
-    if(ex&&ex.sets.length>0){
+    const ex=history[i].exercises?.find(e=>e.name===name);
+    if(ex&&ex.sets?.length>0){
       const best=bw
         ?ex.sets.reduce((a,s)=>(parseInt(s.reps)||0)>(parseInt(a.reps)||0)?s:a,ex.sets[0])
         :ex.sets.reduce((a,s)=>{const aw=parseFloat(a.weight)||0,sw=parseFloat(s.weight)||0;if(sw>aw)return s;if(sw===aw&&(parseInt(s.reps)||0)>(parseInt(a.reps)||0))return s;return a;},ex.sets[0]);
@@ -4807,7 +4812,7 @@ async function addProgressPhoto(file){
   photos.push({date:dateToISO(new Date()),data:b64,id:'p'+Date.now()});
   // Keep max 50 photos, remove oldest
   if(photos.length>50)photos.shift();
-  localStorage.setItem('af_photos',JSON.stringify(photos));
+  if(!_lsSet('af_photos',photos)){showToast('⚠️ Speicher voll – Foto nicht gespeichert. Lösche ältere Fotos.');return;}
   showToast('Foto gespeichert ✓');
   renderProgressPhotos();
 }
@@ -5035,7 +5040,7 @@ function closeWorkoutDetail(){
 
 // ── ERHOLUNGS-SCORE ────────────────────────────────────────────────────────────
 let recoveryLog = safeParse('af_recovery', []);
-function saveRecovery(){ localStorage.setItem('af_recovery', JSON.stringify(recoveryLog)); }
+function saveRecovery(){ _lsSet('af_recovery', recoveryLog); }
 
 function getTodayRecovery(){
   return recoveryLog.find(r=>r.date===dateToISO(new Date()))||null;
@@ -5385,7 +5390,7 @@ function exportAppleHealth(){
 
 // ── TRAINING-TEMPLATES ────────────────────────────────────────────────────────
 function getTemplates(){ return safeParse('af_templates',[]); }
-function saveTemplates(t){ localStorage.setItem('af_templates',JSON.stringify(t)); }
+function saveTemplates(t){ _lsSet('af_templates',t); }
 
 function getWorkoutPlanSignature(exercises){
   return (exercises||[]).map(ex=>`${ex.name}|${ex.setData?.length||ex.sets||0}|${ex.reps||''}|${ex.bw?'1':'0'}`).join(';;');
