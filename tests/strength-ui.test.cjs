@@ -161,19 +161,9 @@ test(
 );
 
 test(
-  "third set is focused and preserves the existing set-add and replacement rules",
+  "adding a set keeps the open set focused and preserves the replacement rules",
   appTest((a) => {
-    a.run(
-      "setVal(0,1,'weight','16');setVal(0,1,'reps','10');setVal(0,1,'rpe','8');addSet(0)",
-    );
-    assert.equal(a.window.AF.strength.selected.si, 2);
-    assert.match(
-      a.document.querySelector(".af-strength-eyebrow").textContent,
-      /SATZ 3 VON 3/,
-    );
-    assert.equal(focusField(a, "weight").value, "16");
-    assert.equal(focusField(a, "rpe").value, "");
-    a.run("swapExercise(0,'Neutral-Grip Dumbbell Bench Press')");
+    a.run("addSet(0);swapExercise(0,'Neutral-Grip Dumbbell Bench Press')");
     assert.match(
       a.document.getElementById("af-focus-title").textContent,
       /neutraler Griff/,
@@ -183,6 +173,23 @@ test(
       a.run("workoutExercises[0].name"),
       "Neutral-Grip Dumbbell Bench Press",
     );
+    a.run(
+      "setVal(0,0,'weight','16');setVal(0,0,'reps','10');toggleSet(0,0);setVal(0,1,'weight','16');setVal(0,1,'reps','10');setVal(0,1,'rpe','8');addSet(0)",
+    );
+    assert.equal(a.window.AF.strength.selected.si, 1);
+    assert.match(
+      a.document.querySelector(".af-strength-eyebrow").textContent,
+      /SATZ 2 VON 4/,
+    );
+    a.run("toggleSet(0,1)");
+    assert.equal(a.window.AF.strength.selected.ei, 0);
+    assert.equal(a.window.AF.strength.selected.si, 2);
+    assert.match(
+      a.document.querySelector(".af-strength-eyebrow").textContent,
+      /SATZ 3 VON 4/,
+    );
+    assert.equal(focusField(a, "weight").value, "16");
+    assert.equal(focusField(a, "rpe").value, "");
   }),
 );
 
