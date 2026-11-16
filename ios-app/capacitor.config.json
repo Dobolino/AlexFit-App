@@ -1,0 +1,12 @@
+{
+  "appId": "ch.dobolino.alexfit.sideload",
+  "appName": "AlexFit",
+  "webDir": "www",
+  "server": { "iosScheme": "capacitor", "hostname": "localhost" },
+  "ios": {
+    "backgroundColor": "#080B10",
+    "contentInset": "never",
+    "preferredContentMode": "mobile",
+    "scrollEnabled": false
+  }
+}

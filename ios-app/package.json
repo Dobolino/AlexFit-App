@@ -1,0 +1,27 @@
+{
+  "name": "alexfit-ios-sideload",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:web": "node scripts/prepare-web.mjs",
+    "test": "node --test tests/*.test.cjs",
+    "ios:add": "node scripts/create-ios.mjs",
+    "ios:sync": "cap sync ios",
+    "ipa": "bash scripts/build-ipa.sh"
+  },
+  "dependencies": {
+    "@capacitor/core": "7.6.10",
+    "@capacitor/filesystem": "7.1.9",
+    "@capacitor/haptics": "7.0.5",
+    "@capacitor/ios": "7.6.10",
+    "@capacitor/share": "7.0.4",
+    "@fontsource/barlow": "5.3.0",
+    "@fontsource/barlow-condensed": "5.3.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "7.6.10",
+    "esbuild": "0.28.2"
+  },
+  "engines": { "node": ">=24" }
+}

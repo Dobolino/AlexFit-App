@@ -1,0 +1,48 @@
+name: AlexFit iOS Sideload
+on:
+  push:
+    branches: [ios/sideload-20261116]
+    paths: [ios-app/**, .github/workflows/ios-sideload.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-ipa:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            ios-app/package-lock.json
+      - name: Validate web application and native adaptations
+        run: |
+          npm ci
+          npm test
+          npm ci --prefix ios-app
+          npm test --prefix ios-app
+      - name: Prepare bundled app
+        working-directory: ios-app
+        run: |
+          npm run prepare:web
+          npm run ios:add
+          node scripts/configure-ios.mjs
+          npm run ios:sync
+      - name: Build real arm64 iPhone app and package unsigned IPA
+        working-directory: ios-app
+        run: npm run ipa
+      - name: Upload sideload package
+        uses: actions/upload-artifact@v6
+        with:
+          name: AlexFit-iPhone-unsigned
+          path: |
+            ios-app/dist/*.ipa
+            ios-app/dist/SHA256SUMS.txt
+            ios-app/dist/binary-info.txt
+            ios-app/README.md
+          retention-days: 14
+          if-no-files-found: error

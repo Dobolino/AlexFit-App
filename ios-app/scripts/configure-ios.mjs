@@ -1,0 +1,15 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const app = path.join(dir, 'ios/App/App');
+const icon = path.join(app, 'Assets.xcassets/AppIcon.appiconset');
+await fs.mkdir(icon, { recursive: true });
+await fs.copyFile(path.join(dir, 'assets/AppIcon.png'), path.join(icon, 'AppIcon.png'));
+await fs.writeFile(path.join(icon, 'Contents.json'), JSON.stringify({ images: [{ filename: 'AppIcon.png', idiom: 'universal', platform: 'ios', size: '1024x1024' }], info: { author: 'xcode', version: 1 } }, null, 2));
+const plist = path.join(app, 'Info.plist');
+let text = await fs.readFile(plist, 'utf8');
+text = text.replace(/(<key>CFBundleDisplayName<\/key>\s*<string>)[^<]*(<\/string>)/, '$1AlexFit$2');
+text = text.replace(/<\/dict>\s*<\/plist>/, '<key>ITSAppUsesNonExemptEncryption</key><false/>\n<key>NSCameraUsageDescription</key><string>AlexFit kann auf deinen Wunsch ein Fortschrittsfoto aufnehmen.</string>\n<key>NSPhotoLibraryUsageDescription</key><string>AlexFit kann ein von dir ausgewähltes Fortschrittsfoto importieren.</string>\n</dict>\n</plist>');
+await fs.writeFile(plist, text);
+console.log('Configured AlexFit identity and opaque 1024px app icon.');
