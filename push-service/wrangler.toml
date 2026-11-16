@@ -1,0 +1,19 @@
+name = "alexfit-push"
+main = "src/worker.js"
+compatibility_date = "2026-11-16"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "https://dobolino.github.io"
+APP_URL = "https://dobolino.github.io/AlexFit-App/"
+VAPID_SUBJECT = "https://dobolino.github.io/AlexFit-App/"
+PAIRING_CODE_HASH = ""
+
+[[durable_objects.bindings]]
+name = "DEVICES"
+class_name = "PushDevice"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PushDevice"]

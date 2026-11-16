@@ -81,3 +81,11 @@ Die automatisierte DOM-Prüfung ersetzt keinen Gerätetest. Installation, Layout
 - Aktivitätswerte und MET-Definition: https://pacompendium.com/
 - Nackenbeschwerden und Warnzeichen: https://www.nhsinform.scot/illnesses-and-conditions/muscle-bone-and-joints/neck-and-back-problems-and-conditions/neck-problems/
 - Mobile Benachrichtigungen: https://developer.mozilla.org/en-US/docs/Web/API/Notification/Notification
+
+### Web Push auf dem iPhone · Version 2026.11.16.23
+
+Die PWA unterstützt echte Web-Push-Nachrichten mit einem separaten [Cloudflare-Dienst](push-service/README.md). Auf dem iPhone AlexFit ab iOS 16.4 zum Home-Bildschirm hinzufügen und von dort öffnen. Unter Einstellungen → Push-Benachrichtigungen den persönlichen Einrichtungscode eingeben, „Push aktivieren“ antippen und die iOS-Freigabe bestätigen. Anschliessend eine Testnachricht anfordern und die gewünschten Wochentage sowie die Uhrzeit speichern.
+
+Pausen- und Cardio-Hinweise sind separat einschaltbar. Der Server erhält nur Subscription, Erinnerungszeiten und Timertermine; Trainingswerte und Fotos bleiben lokal. Verlängern, Pausieren und Überspringen ersetzt bzw. löscht die geplanten Hinweise. Web Push braucht Internet und kann verspätet eintreffen; es ist kein sekundengenauer Offline-Wecker. Die separate IPA bleibt von dieser PWA-Erweiterung unberührt.
+
+Für Deployments wird ausschliesslich das GitHub-Secret `CLOUDFLARE_API_TOKEN` verwendet. Der Workflow erzeugt die privaten VAPID-Schlüssel einmalig in Cloudflare; `push-config.js` enthält nur die öffentliche Dienstadresse. Der persönliche Einrichtungscode gehört nicht ins Repository. Der öffentliche SHA-256-Hash in `push-service/pairing-code-hash.txt` dient zur Prüfung dieses zufälligen Codes.

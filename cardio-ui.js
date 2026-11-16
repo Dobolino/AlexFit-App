@@ -40,6 +40,7 @@
     session = null,
     view = "",
     lastPersistAt = 0;
+  let lastTimerState = "";
   let lastError = "";
 
   function persist(force = true) {
@@ -550,7 +551,15 @@
       .getElementById("af-cardio-live")
       ?.classList.toggle("is-paused", paused);
   }
+  function emitTimerState() {
+    const signature = session ? JSON.stringify([session.id, session.status, session.phase,
+      session.round, session.deadlineAt, session.workSeconds, session.restSeconds, session.rounds]) : 'none';
+    if (signature === lastTimerState) return;
+    lastTimerState = signature;
+    document.dispatchEvent(new CustomEvent('af:cardio-state', { detail: copy(session) }));
+  }
   function render() {
+    emitTimerState();
     const host = ensureHost();
     if (!host) return;
     document

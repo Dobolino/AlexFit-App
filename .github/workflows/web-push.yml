@@ -1,0 +1,58 @@
+name: AlexFit Web Push
+on:
+  push:
+    branches: [main, webpush/pwa-20261116]
+    paths: [push-service/**, push-ui.js, push-timers.js, sw.js, scripts/deploy-push.mjs, .github/workflows/web-push.yml]
+  pull_request:
+    paths: [push-service/**, push-ui.js, push-timers.js, sw.js, scripts/deploy-push.mjs, .github/workflows/web-push.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: alexfit-push-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            push-service/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm ci --prefix push-service
+      - run: npm test --prefix push-service
+      - name: Validate Cloudflare Worker bundle
+        working-directory: push-service
+        run: npx wrangler deploy --dry-run
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    concurrency:
+      group: alexfit-push-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: push-service/package-lock.json
+      - run: npm ci --prefix push-service
+      - name: Publish push service
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/deploy-push.mjs
+      - uses: actions/upload-artifact@v6
+        with:
+          name: AlexFit-push-service
+          path: push-service/deployment-info.json
+          retention-days: 14
+          if-no-files-found: error

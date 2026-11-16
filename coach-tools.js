@@ -3,7 +3,7 @@
   const A = window.AF,
     C = A.C,
     esc = A.esc;
-  const VERSION = "2026.11.07.21";
+  const VERSION = "2026.11.16.23";
   const strength = (p) => /^d[1-4]$/.test(p.type);
   const primary = (date) =>
     A.state.weekPlans.find((p) => p.date === date && p.slot === "primary");

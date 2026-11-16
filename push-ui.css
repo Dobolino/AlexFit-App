@@ -1,0 +1,20 @@
+.af-push-legacy { display: none !important; }
+.af-push-settings { font-family: Inter, system-ui, sans-serif; }
+.af-push-settings [hidden] { display: none !important; }
+.af-push-settings h2 { margin-top: 0; }
+#af-push-status, #af-push-result { font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.af-push-settings[data-state="active"] #af-push-status { color: var(--green); }
+.af-push-settings[data-state="error"] #af-push-status { color: var(--amber); }
+.af-push-connect, .af-push-controls { display: grid; gap: 12px; margin: 14px 0; }
+.af-push-connect > label, .af-push-time { display: grid; gap: 6px; color: var(--ts); font-size: 13px; }
+.af-push-settings input[type="password"], .af-push-settings input[type="time"] { box-sizing: border-box; min-height: 48px; width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--tp); background: var(--cardElev); font: 16px Inter, system-ui, sans-serif; }
+.af-push-settings button { min-height: 48px; }
+.af-push-check { display: flex; align-items: center; min-height: 44px; gap: 10px; color: var(--tp); font-size: 14px; line-height: 1.5; }
+.af-push-settings input[type="checkbox"] { width: 21px; height: 21px; flex-shrink: 0; accent-color: var(--accent, var(--blue)); }
+.af-push-days { display: grid; grid-template-columns: repeat(auto-fit, minmax(44px, 1fr)); gap: 6px; }
+.af-push-days label { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; min-height: 58px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; cursor: pointer; }
+.af-push-days label:has(input:checked) { color: var(--accent, var(--blue)); border-color: currentColor; }
+.af-push-settings .af-toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.af-push-settings .af-toolbar button { flex: 1 1 140px; }
+.af-push-settings .af-note { margin: 0; font-size: 12px; line-height: 1.5; }
+.af-push-connected { margin: 14px 0; }
