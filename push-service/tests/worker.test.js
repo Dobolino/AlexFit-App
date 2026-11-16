@@ -121,10 +121,10 @@ test('alarm sends encrypted Web Push once; retries cannot repeat a claimed timer
   assert.equal(f.calls.length, 1);
   const sent = f.calls[0];
   assert.equal(sent.url, subscription.endpoint);
-  assert.equal(sent.options.redirect, 'error');
+  assert.equal(sent.options.redirect, 'manual');
   assert.equal(sent.options.headers['Content-Encoding'], 'aes128gcm');
   assert.match(sent.options.headers.Authorization, /^vapid /);
-  assert.ok(Buffer.isBuffer(sent.options.body));
+  assert.ok(sent.options.body instanceof Uint8Array);
   assert.equal(sent.options.body.includes(Buffer.from('Deine Satzpause')), false);
   assert.equal(f.alarm, null);
 });

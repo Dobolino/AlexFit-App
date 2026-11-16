@@ -119,7 +119,8 @@ export default {
 
 function publicState(record) {
   return { ok: true, registered: !!record.subscription, reminder: record.reminder, timersEnabled: record.timersEnabled,
-    nextReminderAt: record.nextReminderAt, lastDeliveryStatus: record.lastDeliveryStatus || null };
+    nextReminderAt: record.nextReminderAt, lastDeliveryStatus: record.lastDeliveryStatus ?? null,
+    lastDeliveryError: record.lastDeliveryError || null };
 }
 function checkedEvents(input, kind, now) {
   if (!Number.isSafeInteger(input.revision) || input.revision < 1 || !Array.isArray(input.events) || input.events.length > 200)
@@ -143,14 +144,23 @@ function payload(env, type, id, at, expiresAt) {
     url: env.APP_URL + '?push=' + (type.startsWith('cardio-') ? 'cardio' : 'training') };
 }
 export async function sendPush(subscription, notification, env, fetcher = fetch) {
-  const ttl = Math.max(1, Math.min(900, Math.ceil((notification.expiresAt - Date.now()) / 1000)));
-  const request = webPush.generateRequestDetails(subscription, JSON.stringify(notification), {
-    TTL: ttl, urgency: 'high', contentEncoding: 'aes128gcm',
-    vapidDetails: { subject: env.VAPID_SUBJECT, publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY },
+  let request;
+  const failure = (stage, error) => Object.assign(new Error('Push delivery failed'), {
+    deliveryCode: stage + ':' + String(error?.code || error?.name || 'Error').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64),
   });
-  const result = await fetcher(request.endpoint, { method: request.method, headers: request.headers,
-    body: request.body, redirect: 'error', signal: AbortSignal.timeout(8000) });
-  return result.status;
+  try {
+    const ttl = Math.max(1, Math.min(900, Math.ceil((notification.expiresAt - Date.now()) / 1000)));
+    request = webPush.generateRequestDetails(subscription, JSON.stringify(notification), {
+      TTL: ttl, urgency: 'high', contentEncoding: 'aes128gcm',
+      vapidDetails: { subject: env.VAPID_SUBJECT, publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY },
+    });
+  }
+  catch (error) { throw failure('encryption', error); }
+  try {
+    const result = await fetcher(request.endpoint, { method: request.method, headers: request.headers,
+      body: request.body, redirect: 'manual', signal: AbortSignal.timeout(8000) });
+    return result.status;
+  } catch (error) { throw failure('transport', error); }
 }
 
 export class PushDevice {
@@ -167,8 +177,12 @@ export class PushDevice {
   }
   async fetch(request) {
     await this.ready;
-    try { return await this.ctx.blockConcurrencyWhile(() => this.handle(request)); }
-    catch (error) { return errorResponse(error); }
+    // Catch expected API errors inside the gate: throwing out of this callback
+    // resets a real Durable Object and loses its structured error/status data.
+    return await this.ctx.blockConcurrencyWhile(async () => {
+      try { return await this.handle(request); }
+      catch (error) { return errorResponse(error); }
+    });
   }
   async handle(request) {
     const r = route(new URL(request.url));
@@ -236,8 +250,13 @@ export class PushDevice {
   }
   async deliver(notification) {
     let status;
-    try { status = await sendPush(this.record.subscription, notification, this.env, this.env.PUSH_FETCH || fetch); }
-    catch { status = 0; }
+    try {
+      status = await sendPush(this.record.subscription, notification, this.env, this.env.PUSH_FETCH || fetch);
+      this.record.lastDeliveryError = null;
+    } catch (error) {
+      status = 0;
+      this.record.lastDeliveryError = error.deliveryCode || 'delivery:Error';
+    }
     this.record.lastDeliveryStatus = status;
     if (status === 404 || status === 410) {
       this.record.subscription = null; this.record.nextReminderAt = null;

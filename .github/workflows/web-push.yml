@@ -29,7 +29,9 @@ jobs:
       - run: npm test --prefix push-service
       - name: Validate Cloudflare Worker bundle
         working-directory: push-service
-        run: npx wrangler deploy --dry-run
+        run: npx wrangler deploy --dry-run --outdir .wrangler/runtime-check
+      - name: Verify actual Workers runtime and encrypted delivery
+        run: node push-service/scripts/check-runtime.mjs
   deploy:
     if: github.event_name != 'pull_request'
     needs: validate

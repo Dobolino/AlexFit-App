@@ -1,2 +1,2 @@
-/* Public service URL only. VAPID private keys and account tokens stay on the server. */
-window.AlexFitPushConfig = { serviceUrl: "" };
+/* Public service URL only. Private keys stay on Cloudflare. */
+window.AlexFitPushConfig = {"serviceUrl": "https://alexfit-push.alexfit-fe443829fb44.workers.dev"};
