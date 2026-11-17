@@ -14,14 +14,22 @@
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
 }
-/* Installed iOS apps can report a dynamic viewport shorter by the status-bar
-   inset. Keep the standalone shell on the stable viewport, not that reduced
-   dvh value. Safari tabs still use dvh to follow their browser controls. */
+/* Installed iOS apps with an opaque status bar start below it, so 100vh is
+   taller than the visible web view and pushes the bottom nav off screen.
+   Pin the shell to the real viewport edges instead of any vh unit. */
 @media (display-mode: standalone), (display-mode: fullscreen) {
   html,
-  body,
+  body {
+    height: 100%;
+  }
   #app {
-    height: 100vh;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: auto;
+    margin: 0 auto;
   }
 }
 body {

@@ -1,4 +1,4 @@
-const CACHE_NAME='af-v24-ios-shell-20261117';
+const CACHE_NAME='af-v25-ios-nav-20261117';
 const APP_FILES=['./','./index.html','./exercise-videos.js','./coach-core.js','./training-plans.js','./coach.js','./coach-recipes.js','./coach-tools.js','./release.json','./coach.css','./app-ui.css','./training-plans-gym.js','./gym-setup-ui.js','./push-config.js','./push-ui.js','./push-ui.css','./push-timers.js','./ui-shell.js','./strength-ui.js','./strength-ui.css','./cardio-ui.js','./cardio-ui.css','./recipe-library.json','./manifest.webmanifest','./icons/icon.svg','./icons/apple-touch-icon.png','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_FILES)).then(()=>self.skipWaiting()));
