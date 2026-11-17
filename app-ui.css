@@ -27,3 +27,9 @@ body:not([data-section="workout"]) #rest-timer-bar { display:none !important; }
 
 .af-cardio-live, .af-cardio-live :is(button, input, select, textarea) { font-family:Inter, system-ui, sans-serif; }
 .af-cardio-timer-panel { background:transparent; border:0; border-radius:0; }
+
+/* iOS Safari zooms into any form field below 16px; keep fields at 16px on WebKit touch devices. */
+@supports (-webkit-touch-callout:none) {
+  input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size:max(16px,1em) !important; }
+}
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
