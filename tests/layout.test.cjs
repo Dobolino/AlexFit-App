@@ -80,7 +80,11 @@ test("installed shell uses stable viewport height and reserves the bottom safe a
   const css = fs.readFileSync(path.join(root, "coach.css"), "utf8");
   assert.match(
     css,
-    /@media \(display-mode: standalone\), \(display-mode: fullscreen\)\s*\{\s*html,\s*body,\s*#app\s*\{\s*height: 100vh;/,
+    /@media \(display-mode: standalone\), \(display-mode: fullscreen\)\s*\{\s*html,\s*body\s*\{\s*height: 100%;\s*\}\s*#app\s*\{\s*position: fixed;\s*top: 0;\s*bottom: 0;/,
+  );
+  assert.doesNotMatch(
+    css.slice(css.indexOf("@media (display-mode: standalone)")),
+    /^[^@]*height: 100vh/,
   );
   assert.match(
     css,
