@@ -4,6 +4,8 @@ body[data-section="workout"] { --accent:#a879fa; --accent-strong:#7c3aed; }
 body[data-section="cardio"] { --accent:#14b8a6; --accent-strong:#0f766e; }
 body[data-section="stats"] { --accent:#fb923c; --accent-strong:#c2410c; }
 #topbar { background:var(--bg); backdrop-filter:none; -webkit-backdrop-filter:none; border-color:var(--border); }
+/* The bar is opaque, so a backdrop blur adds nothing but makes iOS rasterize the chip text softly. */
+#topbar .glass-chip { backdrop-filter:none; -webkit-backdrop-filter:none; }
 #bottomnav { border:0; border-top:1px solid var(--border); border-radius:0; background:var(--bg); backdrop-filter:none; -webkit-backdrop-filter:none; box-shadow:none; padding:10px 0 4px; }
 #nav-container { padding-top:0; }
 #bottomnav .navbtn { min-height:58px; padding:3px 0 8px; gap:4px; border-radius:0; }
