@@ -1,5 +1,5 @@
-const CACHE_NAME='af-v23-web-push-20261116';
-const APP_FILES=['./','./index.html','./exercise-videos.js','./coach-core.js','./training-plans.js','./coach.js','./coach-recipes.js','./coach-tools.js','./release.json','./coach.css','./app-ui.css','./training-plans-gym.js','./gym-setup-ui.js','./push-config.js','./push-ui.js','./push-ui.css','./push-timers.js','./ui-shell.js','./strength-ui.js','./strength-ui.css','./cardio-ui.js','./cardio-ui.css','./recipe-library.json','./manifest.webmanifest','./icons/icon.svg'];
+const CACHE_NAME='af-v24-ios-shell-20261117';
+const APP_FILES=['./','./index.html','./exercise-videos.js','./coach-core.js','./training-plans.js','./coach.js','./coach-recipes.js','./coach-tools.js','./release.json','./coach.css','./app-ui.css','./training-plans-gym.js','./gym-setup-ui.js','./push-config.js','./push-ui.js','./push-ui.css','./push-timers.js','./ui-shell.js','./strength-ui.js','./strength-ui.css','./cardio-ui.js','./cardio-ui.css','./recipe-library.json','./manifest.webmanifest','./icons/icon.svg','./icons/apple-touch-icon.png','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_FILES)).then(()=>self.skipWaiting()));
 });
@@ -14,10 +14,11 @@ self.addEventListener('fetch',event=>{
  });
  event.waitUntil(network.catch(()=>{}));
  event.respondWith((async()=>{
-  let timeout;
+  let timeout,timedOut=false;
+  const offline=()=>new Response('Offline: Diese Datei wurde noch nicht gespeichert.',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}});
   try{
-   if(event.request.mode!=='navigate')return await network;
-   return await Promise.race([network,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('offline timeout')),3000);})]);
+   // Slow gym Wi-Fi must not stall the app start: every request falls back to the offline copy after 3 s.
+   return await Promise.race([network,new Promise((_,reject)=>{timeout=setTimeout(()=>{timedOut=true;reject(Error('offline timeout'));},3000);})]);
   }catch(error){
    const cache=await caches.open(CACHE_NAME);
    const cached=await cache.match(event.request,{ignoreSearch:true});
@@ -25,7 +26,8 @@ self.addEventListener('fetch',event=>{
    if(event.request.mode==='navigate'){
     const index=await cache.match('./index.html');if(index)return index;
    }
-   return new Response('Offline: Diese Datei wurde noch nicht gespeichert.',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}});
+   if(timedOut)return network.catch(offline);
+   return offline();
   }finally{if(timeout)clearTimeout(timeout);}
  })());
 });

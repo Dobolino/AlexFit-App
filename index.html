@@ -9,7 +9,20 @@
 <meta name="theme-color" content="#080B10">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-1320x2868.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-1206x2622.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-1260x2736.png" media="(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="icons/splash/splash-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
 <title>AlexFit</title>
 <script src="coach-core.js"></script>
 <script src="training-plans.js"></script>
@@ -24,27 +37,6 @@
 <script src="push-ui.js" defer></script>
 <script src="push-timers.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<script>(function(){try{
-  function drawIcon(sz){
-    const c=document.createElement('canvas');c.width=c.height=sz;
-    const ctx=c.getContext('2d');
-    const r=sz*0.22;
-    ctx.fillStyle='#080B10';
-    ctx.beginPath();ctx.moveTo(r,0);ctx.lineTo(sz-r,0);ctx.arcTo(sz,0,sz,r,r);ctx.lineTo(sz,sz-r);ctx.arcTo(sz,sz,sz-r,sz,r);ctx.lineTo(r,sz);ctx.arcTo(0,sz,0,sz-r,r);ctx.lineTo(0,r);ctx.arcTo(0,0,r,0,r);ctx.closePath();ctx.fill();
-    ctx.font=Math.round(sz*0.62)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText('💪',sz/2,sz*0.53);
-    return c.toDataURL('image/png');
-  }
-  const png192=drawIcon(192);
-  const png512=drawIcon(512);
-  const svgFav=encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#080B10"/><text x="50" y="76" text-anchor="middle" font-size="72" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">💪</text></svg>');
-  const fi=document.createElement('link');fi.rel='icon';fi.type='image/svg+xml';fi.href='data:image/svg+xml,'+svgFav;document.head.appendChild(fi);
-  const ai=document.createElement('link');ai.rel='apple-touch-icon';ai.sizes='192x192';ai.href=png192;document.head.appendChild(ai);
-  const mf={name:'AlexFit',short_name:'AlexFit',description:'Persönlicher Trainings-Tracker',start_url:'.',display:'standalone',background_color:'#080B10',theme_color:'#080B10',orientation:'portrait',icons:[{src:png192,sizes:'192x192',type:'image/png',purpose:'any'},{src:png512,sizes:'512x512',type:'image/png',purpose:'maskable'}]};
-  const mb=new Blob([JSON.stringify(mf)],{type:'application/json'});
-  const ml=document.createElement('link');ml.rel='manifest';ml.href=URL.createObjectURL(mb);document.head.appendChild(ml);
-}catch(e){}}())</script>
 <style>
   :root{--bg:#080B10;--card:#0F1219;--cardElev:#151B27;--border:#1E2535;--blue:#2563EB;--green:#10B981;--amber:#F59E0B;--red:#EF4444;--tp:#F0F2F5;--tm:#5A6478;--ts:#8A95A8;--safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);--glass-bg:rgba(255,255,255,.07);--glass-border:rgba(255,255,255,.14);--glass-highlight:rgba(255,255,255,.18);--glass-shadow:rgba(0,0,0,.45);--nav-indicator:rgba(37,99,235,.42);--nav-indicator-border:rgba(147,197,253,.35);}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;}
@@ -1121,7 +1113,7 @@ const COOLDOWN=["Brust dehnen 30s je Seite","Schulter Stretch 30s","Nackenmobili
 const GOAL_KG=null;
 const BF_MIN=12,BF_MAX=18;
 const SCHEMA_VERSION=4;
-const APP_BUILD='2026.11.16.23';
+const APP_BUILD='2026.11.17.24';
 const BACKUP_FORMAT_VERSION=2;
 const SESSION_KEY='af_active_session';
 const PROGRAM_WEEKS=12;
@@ -2554,14 +2546,19 @@ function setVal(ei,si,field,val){
 
 // ── HAPTIC FEEDBACK ───────────────────────────────────────────────────────────
 function haptic(pattern='light'){
-  if(!navigator.vibrate) return;
   const patterns = {
     light:   [10],
     medium:  [20],
     success: [10, 50, 10],
     done:    [15, 30, 15, 30, 40],
   };
-  navigator.vibrate(patterns[pattern]||[10]);
+  const p=patterns[pattern]||[10];
+  if(navigator.vibrate){navigator.vibrate(p);return;}
+  // iOS Safari has no Vibration API; toggling a native switch (Safari 18+) plays the system haptic.
+  const tick=()=>{try{const l=document.createElement('label');l.ariaHidden='true';l.style.display='none';const i=document.createElement('input');i.type='checkbox';i.setAttribute('switch','');l.appendChild(i);document.head.appendChild(l);l.click();l.remove();}catch(_){}};
+  const pulses=Math.ceil(p.length/2);
+  tick();
+  for(let k=1;k<pulses;k++)setTimeout(tick,k*90);
 }
 
 // ── 1RM RECHNER (Epley-Formel: w*(1 + r/30)) ────────────────────────────────
