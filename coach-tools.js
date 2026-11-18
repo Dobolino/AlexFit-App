@@ -3,7 +3,6 @@
   const A = window.AF,
     C = A.C,
     esc = A.esc;
-  const VERSION = "2026.11.16.23";
   const strength = (p) => /^d[1-4]$/.test(p.type);
   const primary = (date) =>
     A.state.weekPlans.find((p) => p.date === date && p.slot === "primary");
@@ -360,12 +359,13 @@
   const oldSettings = renderSettings;
   renderSettings = function () {
     oldSettings();
+    if (document.getElementById("tools-update-status")) return;
     document
       .getElementById("screen-settings")
       .insertAdjacentHTML(
         "afterbegin",
         A.card(
-          "App-Version " + VERSION,
+          "App-Version " + APP_BUILD,
           A.button("Nach Updates suchen", "tools-update") +
             '<p id="tools-update-status" role="status">Trainingsdaten werden bei Updates nicht gelöscht.</p>',
         ),
@@ -382,19 +382,16 @@
       });
       if (!response.ok) throw Error("network");
       const release = await response.json();
-      if (el)
-        el.textContent =
-          "Installiert: " +
-          VERSION +
-          " · Server/letzte erreichbare Version: " +
-          release.version +
-          ". Bei Offlinebetrieb kann diese Auskunft aus dem Cache stammen.";
-      if (reg?.installing || reg?.waiting || release.version !== VERSION)
-        if (el)
-          el.insertAdjacentHTML(
-            "beforeend",
-            "<br>" + A.button("Gespeichert neu laden", "tools-reload"),
-          );
+      if (!el) return;
+      el.textContent = "Installiert: " + APP_BUILD + " · Server: " + release.version + ". ";
+      if (release.version === APP_BUILD) {
+        el.append("Deine App ist aktuell.");
+      } else {
+        el.insertAdjacentHTML(
+          "beforeend",
+          "<br>" + A.button("Gespeichert neu laden", "tools-reload"),
+        );
+      }
     } catch (e) {
       if (el)
         el.textContent =
@@ -472,5 +469,5 @@
       renderWeek();
     }
   });
-  A.tools = { shift, ensureWeek, copySet, review, version: VERSION };
+  A.tools = { shift, ensureWeek, copySet, review, version: APP_BUILD };
 })();

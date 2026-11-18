@@ -12,7 +12,10 @@ function worker() {
   const key = (r) => new URL(typeof r === "string" ? r : r.url, base).href;
   const cache = {
     addAll: async (files) => {
-      for (const f of files) cacheMap.set(key(f), new Response("install:" + f));
+      for (const f of files) {
+        assert.equal(f.cache, "reload");
+        cacheMap.set(key(f), new Response("install:" + key(f)));
+      }
     },
     put: async (r, response) => cacheMap.set(key(r), response),
     match: async (r, options = {}) => {
@@ -27,6 +30,7 @@ function worker() {
   const context = {
     self: {
       location: { origin: "https://example.test" },
+      registration: { scope: base },
       clients: { claim: async () => {} },
       skipWaiting: async () => {},
       addEventListener: (name, cb) => (events[name] = cb),
@@ -41,7 +45,7 @@ function worker() {
       if (offline) throw Error("offline");
       return new Response("fresh");
     },
-    Response,
+    Request, Response,
     URL,
     setTimeout,
     clearTimeout,
@@ -136,6 +140,13 @@ test("online responses refresh the offline copy", async () => {
   assert.equal(await (await w.fetch("coach.js")).text(), "fresh");
   w.setOffline();
   assert.equal(await (await w.fetch("coach.js")).text(), "fresh");
+});
+test("explicit version checks bypass the offline copy of the release manifest", async () => {
+  const w = worker();
+  await w.install();
+  w.setOffline();
+  assert.ok(await w.fetch("release.json"));
+  assert.equal(await w.fetch("release.json?check=123"), undefined);
 });
 test("offline navigation falls back to the app shell", async () => {
   const w = worker();

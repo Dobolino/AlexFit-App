@@ -1,14 +1,19 @@
-const CACHE_NAME='af-v27-training-history-20261118';
+const CACHE_NAME='af-v28-version-check-20261118';
 const APP_FILES=['./','./index.html','./exercise-videos.js','./coach-core.js','./training-plans.js','./coach.js','./coach-recipes.js','./coach-tools.js','./release.json','./coach.css','./app-ui.css','./training-plans-gym.js','./gym-setup-ui.js','./push-config.js','./push-ui.js','./push-ui.css','./push-timers.js','./ui-shell.js','./strength-ui.js','./strength-ui.css','./cardio-ui.js','./cardio-ui.css','./progress-history.js','./progress-history.css','./muscle-map.js','./muscle-map.css','./fonts/barlow.css','./fonts/barlow-latin-400-normal.woff2','./fonts/barlow-latin-500-normal.woff2','./fonts/barlow-latin-600-normal.woff2','./fonts/barlow-latin-700-normal.woff2','./fonts/barlow-condensed-latin-400-normal.woff2','./fonts/barlow-condensed-latin-500-normal.woff2','./fonts/barlow-condensed-latin-600-normal.woff2','./fonts/barlow-condensed-latin-700-normal.woff2','./fonts/barlow-condensed-latin-800-normal.woff2','./fonts/barlow-condensed-latin-900-normal.woff2','./recipe-library.json','./manifest.webmanifest','./icons/icon.svg','./icons/apple-touch-icon.png','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png'];
 self.addEventListener('install',event=>{
- event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_FILES)).then(()=>self.skipWaiting()));
+ const files=APP_FILES.map(file=>new Request(new URL(file,self.registration.scope),{cache:'reload'}));
+ event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(files)).then(()=>self.skipWaiting()));
 });
 self.addEventListener('activate',event=>{
  event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('af-')&&key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
 });
 self.addEventListener('fetch',event=>{
- if(event.request.method!=='GET'||new URL(event.request.url).origin!==self.location.origin)return;
- const network=fetch(event.request).then(async response=>{
+ const url=new URL(event.request.url);
+ if(event.request.method!=='GET'||url.origin!==self.location.origin)return;
+ // An explicit version check must reach the server, even when the app shell is available offline.
+ if(url.pathname.endsWith('/release.json')&&url.searchParams.has('check'))return;
+ const revalidate=event.request.mode==='navigate'||/\.(html|js|css)$/.test(url.pathname);
+ const network=fetch(event.request,revalidate?{cache:'no-cache'}:undefined).then(async response=>{
   if(response.ok){const cache=await caches.open(CACHE_NAME);await cache.put(event.request,response.clone());}
   return response;
  });

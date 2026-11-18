@@ -2,10 +2,18 @@ const test = require("node:test"),
   assert = require("node:assert/strict");
 const { boot } = require("./helpers.cjs");
 
-test("update check reports versions without reloading or deleting storage", async () => {
+test("update checks use the installed build and offer a reload for a different release", async () => {
   const a = boot();
   try {
-    a.run("renderSettings()");
+    const installed = a.run("APP_BUILD");
+    assert.equal(installed, require("../release.json").version);
+    a.run("switchTab('settings'); switchTab('dashboard'); switchTab('settings')");
+    const buttons = a.document.querySelectorAll('[data-af-action="tools-update"]');
+    assert.equal(buttons.length, 1);
+    assert.equal(
+      buttons[0].closest("section").querySelector("h2").textContent,
+      "App-Version " + installed,
+    );
     let updates = 0;
     Object.defineProperty(a.window.navigator, "serviceWorker", {
       value: {
@@ -13,17 +21,22 @@ test("update check reports versions without reloading or deleting storage", asyn
       },
       configurable: true,
     });
+    let serverVersion = installed;
     a.window.fetch = async () => ({
       ok: true,
-      json: async () => ({ version: "next-test-version" }),
+      json: async () => ({ version: serverVersion }),
     });
     const before = a.window.localStorage.getItem("af_coach");
     await a.window.AF.handleAction("tools-update", {});
     assert.equal(updates, 1);
-    assert.match(
-      a.document.getElementById("tools-update-status").textContent,
-      /next-test-version/,
-    );
+    const status = a.document.getElementById("tools-update-status");
+    assert.ok(status.textContent.includes(installed));
+    assert.equal(a.document.querySelector('[data-af-action="tools-reload"]'), null);
+    serverVersion = "next-test-version";
+    await a.window.AF.handleAction("tools-update", {});
+    assert.equal(updates, 2);
+    assert.ok(status.textContent.includes(installed));
+    assert.ok(status.textContent.includes(serverVersion));
     assert.ok(a.document.querySelector('[data-af-action="tools-reload"]'));
     assert.equal(a.window.localStorage.getItem("af_coach"), before);
     assert.deepEqual(a.errors, []);
