@@ -776,37 +776,78 @@
       "Bitte Kalorienbedarf, Trainingslast und nächste Schritte anhand dieser Daten prüfen.",
     ].join("\n");
   }
-  function homeCard() {
-    const date = todayISO(),
-      trend = C.weightTrend(weightLog, date),
-      check = C.checkin(state, weightLog, date),
-      planned = state.weekPlans.filter((e) => e.date === date),
-      rec = getTodayRecovery(),
-      prs = getProgressionSuggestions();
-    const goal = document.getElementById("goal-banner");
-    if (goal)
-      goal.innerHTML = card(
-        "Deine Rekomposition",
-        `<div class="af-metrics"><div><strong>${trend.current ?? latestWeight() ?? "—"}</strong><span>${trend.current !== null ? "kg · 7-Tage-Mittel" : "kg zuletzt"}</span></div><div><strong>${state.measurements.at(-1)?.waistCm ?? "—"}</strong><span>cm Bauchumfang</span></div><div><strong>${prs.length}</strong><span>mögliche Steigerungen</span></div></div>${note(trend.ready ? `Gewichtsänderung zum vorherigen Wochenmittel: ${trend.change > 0 ? "+" : ""}${trend.change} kg.` : "Für den Trend mindestens drei Messungen je Vergleichswoche erfassen.")}`,
-      );
-    let el = document.getElementById("af-home");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "af-home";
-      goal?.before(el);
+  function homeTraining(date) {
+    const strength = activeWorkoutDay && workoutExercises.length > 0;
+    if (strength) {
+      const sets = workoutExercises.filter(ex => !blocked(ex.name)).flatMap(ex => ex.setData);
+      return {
+        title: activeWorkoutDay.name, color: activeWorkoutDay.color,
+        detail: sets.filter(set => set.done).length + ' von ' + sets.length + ' Sätzen erledigt',
+        action: button('Training fortsetzen', 'home-resume')
+      };
     }
-    if (el)
-      el.innerHTML = card(
-        "Heute für dich",
-        `<p>${planned.length ? planned.map((p) => esc(WORKOUT_DAYS.find((d) => d.id === p.type)?.name || CARDIO_TYPES[p.type]?.label || (p.type === "rest" ? "Erholung" : p.type))).join(" + ") : "Deine Woche individuell planen."}</p>${rec && calcRecoveryScore(rec) < 3 ? note("Erholung heute niedrig: Intensität und Umfang vor dem Training prüfen.") : ""}${prs[0] ? `<p>${esc(prs[0].name)}: ${prs[0].currentW} → ${prs[0].suggestedW} kg möglich.</p>` : note("Last steigern, wenn Wiederholungsziel und Anstrengung es bestätigen.")}<div class="af-toolbar">${button("Training & Bike", "week")}${button("Nacken-Check", "pain")}${button("Körperdaten", "profile")}${button("Cardio", "cardio")}</div>${check.due ? button("Fortschrittscheck ansehen", "checkin") : ""}`,
-      );
-    document.getElementById("grace-skip-banner")?.setAttribute("hidden", "");
-    const topGoal = document.getElementById("goal-weight-display");
-    if (topGoal)
-      topGoal.textContent =
-        state.profile.goalMode === "recomp"
-          ? "Rekomposition"
-          : "→ " + settings.goalKg + " kg";
+    const cardio = window.AF?.cardioSession?.getState();
+    if (cardio && ['running', 'paused', 'finished'].includes(cardio.status)) {
+      return {
+        title: CARDIO_TYPES[cardio.type].label, color: CARDIO_TYPES[cardio.type].color,
+        detail: cardio.status === 'finished' ? 'Einheit beendet' : 'Aktive Cardioeinheit',
+        action: button(cardio.status === 'finished' ? 'Zur Auswertung' : 'Zur Cardioeinheit', 'cardio')
+      };
+    }
+
+    const bike = state.weekPlans.find(p => p.date === date && p.slot === 'bike');
+    const plannedType = homePlanType(date);
+    const done = (type) => history.some(h => h.date === date && h.dayId === type && isCompletedWorkoutEntry(h))
+      || cardioLog.some(e => e.date === date && (e.type === type || WORKOUT_DAYS.some(day => day.id === type && day.flexibleCardio)));
+    const type = bike && done(plannedType) && !done(bike.type) ? bike.type : plannedType;
+    const day = WORKOUT_DAYS.find(d => d.id === type);
+    if (!day && !Object.hasOwn(CARDIO_TYPES, type)) {
+      return { title: 'Ruhetag', color: '#14b8a6', detail: 'Heute ist Erholung eingeplant.', action: button('Wochenplan ansehen', 'week') };
+    }
+    const title = day?.name || CARDIO_TYPES[type].label;
+    const color = day?.color || CARDIO_TYPES[type].color;
+    if (done(type)) {
+      return { title, color, detail: 'Training heute abgeschlossen', action: button('Trainingsverlauf ansehen', 'history') };
+    }
+    if (!day || day.flexibleCardio) {
+      return { title, color, detail: 'Cardio eingeplant', action: button('Cardio öffnen', 'cardio') };
+    }
+    const template = getScheduledTemplate(type);
+    const exercises = template?.exercises || (settings.gymMode && typeof getFilteredGymExercises === 'function' ? getFilteredGymExercises(day.exercises) : day.exercises);
+    return {
+      title, color, detail: [settings.gymMode ? 'Gym' : 'Zuhause', exercises.length + ' Übungen', bike && !done(bike.type) ? 'zusätzlich Bike' : ''].filter(Boolean).join(' · '),
+      action: button('Training starten', 'home-start', 'data-day="' + esc(day.id) + '"')
+    };
+  }
+  function homeCard() {
+    const date = todayISO();
+    const focus = homeTraining(date);
+    const safeColor = /^#[0-9a-f]{6}$/i.test(focus.color) ? focus.color : '#3b82f6';
+    const recovery = getTodayRecovery();
+    const dayLabel = parseISODateLocal(date).toLocaleDateString('de-CH', {weekday:'long', day:'numeric', month:'long'});
+    document.getElementById('af-home').innerHTML =
+      '<section class="af-home-focus" style="--day-color:' + safeColor + ';--on-day-color:' + dayTextColor(safeColor) + '">' +
+      '<p class="af-home-date">' + esc(dayLabel) + '</p><h2>' + esc(focus.title) + '</h2><p>' + esc(focus.detail) + '</p>' +
+      (recovery && calcRecoveryScore(recovery) < 3 ? note('Erholung heute niedrig. Prüfe den geplanten Umfang vor dem Start.') : '') +
+      focus.action + '</section>';
+
+    const start = C.monday(date);
+    const inWeek = e => e.date >= start && e.date <= date;
+    const completed = history.filter(h => inWeek(h) && isCompletedWorkoutEntry(h)).length + cardioLog.filter(inWeek).length;
+    const target = Math.max(1, Math.min(7, Number(settings.weekGoal) || 4));
+    const streak = computeStreak();
+    document.getElementById('af-home-week').innerHTML =
+      '<div class="af-home-week"><div><span>Wochenziel</span><strong>' + completed + ' / ' + target + '</strong>' +
+      '<span>Einheiten · Kraft &amp; Cardio</span><progress aria-label="Wochenziel" max="' + Number(target) + '" value="' + Math.min(target,completed) + '"></progress></div>' +
+      '<div><span>Planserie</span><strong>' + streak + (streak === 1 ? ' Tag' : ' Tage') + '</strong><span>' +
+      (settings.streakPaused ? 'Serie pausiert' : 'Ruhetage unterbrechen die Serie nicht.') + '</span></div></div>';
+
+    document.getElementById('af-home-tools').innerHTML =
+      button('Wochenplan', 'week') + button('Nacken-Check', 'pain') + button('Körperdaten', 'profile') + button('Cardio', 'cardio') +
+      (C.checkin(state, weightLog, date).due ? button('Fortschrittscheck', 'checkin') : '');
+    document.getElementById('grace-skip-banner')?.setAttribute('hidden', '');
+    const topGoal = document.getElementById('goal-weight-display');
+    if (topGoal) topGoal.textContent = state.profile.goalMode === 'recomp' ? 'Rekomposition' : '→ ' + settings.goalKg + ' kg';
   }
   function applyPersonalTemplates() {
     const templates = getTemplates();
@@ -852,20 +893,13 @@
   }
   function applyWeekSchedule() {
     applyPersonalTemplates();
-    const start = C.monday(todayISO()),
-      days = state.weekPlans.filter(
-        (p) =>
-          p.slot === "primary" &&
-          p.date >= start &&
-          p.date <= C.addDays(start, 6),
-      );
-    PLAN_DOW = days.length
-      ? Object.fromEntries(
-          days
-            .filter((p) => /^d[1-5]$/.test(p.type))
-            .map((p) => [parseISODateLocal(p.date).getDay(), p.type]),
-        )
-      : getActivePlan().schedule;
+    const start = C.monday(todayISO());
+    PLAN_DOW = {};
+    for (let i = 0; i < 7; i++) {
+      const date = C.addDays(start, i);
+      const type = homePlanType(date);
+      if (WORKOUT_DAYS.some(day => day.id === type)) PLAN_DOW[parseISODateLocal(date).getDay()] = type;
+    }
     for (const day of WORKOUT_DAYS) {
       const labels = Object.entries(PLAN_DOW)
         .filter(([, id]) => id === day.id)
@@ -901,7 +935,14 @@
     el.className = "af-card";
     el.innerHTML = `<h2>Dein 12-Wochen-Plan</h2><p>Mo Oberkörper A · Di Unterkörper A · Mi Oberkörper B · Fr Unterkörper B · Sa Cardio nach Wahl. Donnerstag und Sonntag frei.</p>${note("Vier Krafttage, je etwa 45–60 Minuten inklusive Aufwärmen. Vorher fünf Minuten locker gehen und 1–2 leichte Aufwärmsätze der ersten Übungen; diese zählen nicht als Arbeitssätze.")}<h3>${esc(plan.label)} · ${esc(plan.subtitle)}</h3><p>${esc(plan.guidance)}</p>${note(`Reserve: ${plan.rir} saubere Wiederholungen. Pausen je Übung: ${plan.restLabel}. Bei zwei erfolgreichen Einheiten am oberen Wiederholungsziel und RPE höchstens 8 die nächstkleine passende Hantelstufe prüfen.`)}${note("Samstag: Bike, WaterRower oder WalkingPad frei wählen und im Cardio-Tab erfassen. Nach viel Bike unter der Woche ist keine weitere harte Einheit nötig. Vor einer harten Samstagstour am Freitag je Übung einen Satz weniger; bei stark müden Beinen verschieben.")}${note("Der neue Plan beginnt einmalig mit Phase 1. Vorherige Programm-Einstellungen und zukünftige Kraft-Zuordnungen sind im JSON-Backup unter coach.trainingPlanArchives archiviert. Vorlagen selbst, Trainingshistorie und laufende Einheiten bleiben erhalten.")}${button("Cardio erfassen", "cardio")}`;
     document.getElementById("screen-workout-select").prepend(el);
-    if (settings.personalTemplatesRestored)
+    if (settings.gymMode) {
+      const rows = Object.entries(PLAN_DOW).sort(([a], [b]) => (Number(a)+6)%7 - (Number(b)+6)%7)
+        .map(([dow, id]) => {
+          const day = WORKOUT_DAYS.find(d => d.id === id);
+          return ["So","Mo","Di","Mi","Do","Fr","Sa"][Number(dow)] + " " + esc(day.name);
+        });
+      el.innerHTML = `<h2>${esc(plan.label)}</h2><p>${rows.join(" · ") || "Keine Einheit eingeplant."}</p><div class="af-toolbar">${button("Wochenplan", "week")}${button("Cardio erfassen", "cardio")}</div>`;
+    } else if (settings.personalTemplatesRestored)
       el.innerHTML =
         "<h2>Deine eigenen Templates</h2><p>Mo Brust / Trizeps · Di Beine / Core · Mi Rücken / Bizeps · Fr Schulter / Core · Sa Cardio nach Wahl.</p><p>Deine gespeicherten Vorlagen sind wieder zugeordnet und bleiben unverändert erhalten.</p><details><summary>Coaching-Hinweise</summary><p>Wiedereinstieg: In den ersten zwei Wochen werden pro Übung höchstens zwei Arbeitssätze geladen. Anschliessend den Umfang nach Erholung beurteilen, nicht automatisch mehr Intensitätstechniken ergänzen.</p><p>Core bleibt an zwei Tagen integriert. Bei 60 Minuten zuerst optionale Isolationen kürzen, nicht alle Core-Übungen zusätzlich stapeln. Beim Beintag können Glute Bridge oder Russian Twist entfallen; beim Schultertag eine Crunch-Variante statt beider wählen.</p><p>Überkopf-Trizepsstrecken und Schulterdrücken bleiben bei aktiver Übungssperre gesperrt. Nicht gesperrt bedeutet nicht automatisch beschwerdefrei. Ab Wheel nur kontrolliert, mit kurzem Bewegungsweg; sonst Dead Bug wählen.</p><p>Alte Trainingslasten sind Referenzen, keine Einstiegsvorgabe nach der Pause. Etwa drei Wiederholungen Reserve lassen; grosse Übungen 120 Sekunden, Isolationen/Core 60–90 Sekunden pausieren.</p></details>";
   };
@@ -979,12 +1020,16 @@
         sessionStorage.removeItem(SESSION_KEY);
         return;
       }
+      if (!workoutSessionId) ensureWorkoutIdentity();
       localStorage.setItem(
         SESSION_KEY,
         JSON.stringify({
           dayId: activeWorkoutDay.id,
           customDay: activeWorkoutDay,
           phaseId: activeWorkoutDay.phaseId || getActivePhaseId(),
+          workoutSessionId,
+          workoutStartedAt,
+          workoutMode,
           workoutExercises,
           workoutElapsed,
           timerRunning,
@@ -1013,6 +1058,10 @@
     if (!raw) return false;
     try {
       const s = JSON.parse(raw);
+      if (savedWorkoutSession(s.workoutSessionId)) {
+        clearSession();
+        return false;
+      }
       if (
         !Array.isArray(s.workoutExercises) ||
         !s.workoutExercises.length ||
@@ -1023,6 +1072,7 @@
         s.customDay || WORKOUT_DAYS.find((d) => d.id === s.dayId);
       if (!activeWorkoutDay) return false;
       activeWorkoutDay.phaseId = s.phaseId || getActivePhaseId();
+      ensureWorkoutIdentity(s);
       workoutExercises = s.workoutExercises.map((e) => ({
         ...C.definition(e.name, e),
         setData: e.setData,
@@ -1161,13 +1211,11 @@
   }
   // Keep anatomy and video details available without leaving the active draft.
   const originalExerciseInfo = showExerciseInfo;
-  showExerciseInfo = function (name, mode = "all") {
-    originalExerciseInfo(name);
+  showExerciseInfo = function (name, mode = "all", color) {
+    originalExerciseInfo(name, mode, color);
     const box = document.getElementById("ex-info-box");
     if (!box || (!EXERCISE_MUSCLES[name] && !EXERCISE_INFO[name])) return;
-    if (mode === "muscles") {
-      box.querySelector("iframe")?.parentElement.remove();
-    } else if (EXERCISE_VIDEOS[name]) {
+    if (mode !== "muscles" && EXERCISE_VIDEOS[name]) {
       const meta = typeof EXERCISE_VIDEO_META === "undefined" ? null : EXERCISE_VIDEO_META[name];
       const url = "https://www.youtube.com/watch?v=" + encodeURIComponent(EXERCISE_VIDEOS[name]);
       const frame = box.querySelector("iframe");
@@ -1379,45 +1427,7 @@
     }
     oldToggleTimer();
   };
-  const oldSummary = showWorkoutSummary;
-  showWorkoutSummary = function (entry) {
-    if (!entry.exercises.some((e) => e.unit === "seconds"))
-      return oldSummary(entry);
-    screen(
-      "coach-summary",
-      "Training gespeichert",
-      card(
-        esc(entry.name),
-        "<p>" + entry.duration + " Minuten · " + entry.sets + " Sätze</p>",
-      ) +
-        entry.exercises
-          .map((ex) =>
-            card(
-              esc(ex.name),
-              ex.sets
-                .map(
-                  (s) =>
-                    "<p>" +
-                    (s.weight ? s.weight + " kg × " : "") +
-                    (ex.unit === "seconds"
-                      ? (s.seconds ?? s.reps) + " Sekunden"
-                      : s.reps + " Wiederholungen") +
-                    (s.rpe ? " · RPE " + s.rpe : "") +
-                    "</p>",
-                )
-                .join(""),
-            ),
-          )
-          .join("") +
-        '<div class="af-toolbar">' +
-        button("Trainingshistorie", "history") +
-        (_pendingPlanSave
-          ? button("Geänderten Plan speichern", "save-plan")
-          : "") +
-        "</div>",
-    );
-    return true;
-  };
+  // The shared result renders repetitions and timed sets with the same completion status.
   const originalFinish = doFinishWorkout;
   doFinishWorkout = function () {
     if (
@@ -1431,13 +1441,9 @@
     }
     if (activeWorkoutDay)
       activeWorkoutDay.intensity = val("session-intensity") || undefined;
-    originalFinish();
-    if (history.at(-1)) {
-      history.at(-1).intensity =
-        activeWorkoutDay?.intensity || history.at(-1).intensity;
-      save();
-    }
-    persist();
+    const entry = originalFinish();
+    if (entry) persist();
+    return entry;
   };
   const originalSwitch = switchTab;
   switchTab = function (tab) {
@@ -2060,6 +2066,10 @@
       },
       "save-plan": confirmSaveWorkoutPlanFromSummary,
       home: () => switchTab("dashboard"),
+      "home-resume": resumeWorkout,
+      "home-start": () => {
+        if (WORKOUT_DAYS.some(day => day.id === t.dataset.day)) startWorkout(t.dataset.day);
+      },
       profile: renderProfile,
       pain: renderPain,
       week: renderWeek,

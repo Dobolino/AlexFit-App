@@ -1,0 +1,41 @@
+.af-anatomy {
+  --anatomy-ink: #e0edfb;
+  --anatomy-base: #182538;
+  --anatomy-neutral: #48596c;
+  margin-block: 8px 16px;
+  color: var(--tp);
+}
+[data-theme="light"] .af-anatomy {
+  --anatomy-ink: #1b3048;
+  --anatomy-base: #eef2f6;
+  --anatomy-neutral: #c5ced8;
+}
+.af-anatomy-figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.af-anatomy-figure {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  padding: 10px 4px 6px;
+  background: var(--cardElev);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.af-anatomy-figure svg { display: block; width: 100%; height: clamp(150px, 30dvh, 260px); }
+.af-anatomy-figure figcaption, .af-anatomy-key { font: 500 14px/1.45 Barlow, system-ui, sans-serif; }
+.af-anatomy-figure figcaption { color: var(--ts); }
+.af-anatomy-key { display: flex; align-items: baseline; gap: 8px; margin-top: 8px; }
+.af-anatomy-key i { flex: 0 0 15px; height: 15px; align-self: flex-start; margin-top: 2px; border-radius: 4px; border: 1px solid var(--anatomy-ink); }
+.af-key-primary { background: var(--anatomy-accent); }
+.af-key-secondary { background: repeating-linear-gradient(135deg, var(--anatomy-base) 0 3px, var(--anatomy-ink) 3px 4px); }
+.af-region-primary { fill: var(--anatomy-accent); stroke: var(--anatomy-ink); }
+.af-region-secondary { stroke: var(--anatomy-ink); }
+.af-region-neutral { fill: var(--anatomy-neutral); stroke: var(--cardElev); }
+.af-hatch-ground { fill: var(--anatomy-base); }
+.af-hatch-line { stroke: var(--anatomy-ink); }
+.af-preview-ex-details { min-height: 44px; display: flex; align-items: center; gap: 6px; text-align: left; background: transparent; border: 0; padding: 0; color: var(--tp); font-size: 16px; font-weight: 700; line-height: 1.25; }
+.af-preview-ex-details > span { color: var(--ts); }
+#ex-info-close { min-width: 44px; min-height: 44px; }

@@ -193,6 +193,7 @@
       .map((h, i) => ({ ...h, _i: i }))
       .filter(
         (h) =>
+          h.status !== "partial" &&
           isoDate(h.date) &&
           Array.isArray(h.exercises) &&
           h.exercises.some((e) => e.name === name),

@@ -55,7 +55,7 @@
     );
   };
   let selected = null;
-  const customReps = new Set();
+  const customReps = new WeakSet();
   function isBlocked(ex) {
     return !!window.AF.blocked(ex.name);
   }
@@ -100,63 +100,94 @@
       (ex.unit === "seconds" ? " s" : ex.bw ? " Wdh" : "")
     );
   }
+  function isGymLoad(ex) {
+    return Array.isArray(ex.equipment) || workoutMode === "gym";
+  }
+  function nextValue(ex, set, field, direction) {
+    const current = Number(set[field]) || 0;
+    if (field === "weight") {
+      if (isGymLoad(ex)) {
+        const value = Math.round((current + direction * 2.5) * 100) / 100;
+        return value > 0 ? value : null;
+      }
+      const weights = window.AF.state.profile.dumbbellWeights;
+      return direction > 0
+        ? (weights.find((weight) => weight > current) ?? null)
+        : (weights.findLast((weight) => weight < current) ?? null);
+    }
+    // On a blank field the first tap offers the plan target without logging a set.
+    if (!current) {
+      if (direction < 0) return null;
+      const lower = parseInt(ex.reps, 10);
+      return ex.unit === "seconds"
+        ? ex.targetSeconds || 30
+        : lower > 0
+          ? lower
+          : 1;
+    }
+    const next = current + direction;
+    return Number.isSafeInteger(next) && next > 0 ? next : null;
+  }
+  function stepper(ex, set, ei, si, field, locked) {
+    const unit =
+      field === "weight"
+        ? "Gewicht"
+        : ex.unit === "seconds"
+          ? "Sekunden"
+          : "Wiederholungen";
+    const buttons = [-1, 1].map((direction) => {
+      const label = unit + (direction > 0 ? " erhöhen" : " verringern");
+      const disabled = locked || nextValue(ex, set, field, direction) === null;
+      return `<button type="button" data-af-strength="step" data-field="${field}" data-direction="${direction}" data-ei="${ei}" data-si="${si}" aria-label="${label}" ${disabled ? "disabled" : ""}>${direction > 0 ? "+" : "−"}</button>`;
+    });
+    return '<div class="af-set-stepper">' + buttons.join("") + "</div>";
+  }
   function weightControl(ex, s, ei, si, locked) {
     if (ex.bw)
       return '<div class="af-strength-bw"><span>Last</span><strong>Körpergewicht</strong></div>';
-    const weights = window.AF.state.profile.dumbbellWeights;
-    const current = Number(s.weight);
-    const options = weights
-      .map(
-        (w) =>
-          '<option value="' +
-          w +
-          '" ' +
-          (w === current ? "selected" : "") +
-          ">" +
-          w +
-          " kg</option>",
-      )
-      .join("");
-    const legacy =
-      current > 0 && !weights.includes(current)
-        ? '<option value="' +
-          current +
-          '" selected>' +
-          current +
-          " kg</option>"
-        : "";
-    return (
-      '<label class="af-strength-field"><span>' +
-      (ex.weightBasis === "perHand" ? "kg pro Hantel" : "kg Zusatzgewicht") +
-      '</span><select data-af-focus-set="weight" data-ei="' +
-      ei +
-      '" data-si="' +
-      si +
-      '" aria-label="' +
-      esc(ex.name) +
-      " · Gewicht für Satz " +
-      (si + 1) +
-      '" ' +
-      locked +
-      '><option value="">kg wählen</option>' +
-      legacy +
-      options +
-      "</select></label>"
-    );
+    const gym = isGymLoad(ex);
+    const perHand =
+      ex.weightBasis === "perHand" ||
+      (ex.equipment?.length === 1 && ex.equipment[0] === "kurzhantel") ||
+      /^(?:KH |Kurzhantel )/.test(ex.name);
+    const label = perHand
+      ? "kg pro Hantel"
+      : gym
+        ? "Last in kg"
+        : "kg Zusatzgewicht";
+    const attrs = `id="af-focus-weight" data-af-focus-set="weight" data-ei="${ei}" data-si="${si}" aria-label="${esc(ex.name)} · Gewicht für Satz ${si + 1}" ${locked}`;
+    let input;
+    if (gym) {
+      input = `<input type="number" inputmode="decimal" min="0" step="any" value="${esc(s.weight || "")}" ${attrs}>`;
+    } else {
+      const weights = window.AF.state.profile.dumbbellWeights.slice();
+      const current = Number(s.weight);
+      if (current > 0 && !weights.includes(current)) weights.push(current);
+      const options = weights
+        .sort((a, b) => a - b)
+        .map(
+          (weight) =>
+            `<option value="${weight}" ${weight === current ? "selected" : ""}>${String(weight).replace(".", ",")} kg</option>`,
+        );
+      input = `<select ${attrs}><option value="">kg wählen</option>${options.join("")}</select>`;
+    }
+    return `<div class="af-strength-field"><label for="af-focus-weight">${label}</label>${input}${stepper(ex, s, ei, si, "weight", locked)}</div>`;
   }
   function repsControl(ex, s, ei, si, locked) {
     const data = ' data-ei="' + ei + '" data-si="' + si + '" ' + locked;
     if (ex.unit === "seconds")
       return (
-        '<label class="af-strength-field"><span>Sekunden</span><input data-af-focus-set="reps" type="number" inputmode="numeric" min="1" step="1" aria-label="Sekunden für Satz ' +
+        '<div class="af-strength-field"><label for="af-focus-seconds">Sekunden</label><input id="af-focus-seconds" data-af-focus-set="reps" type="number" inputmode="numeric" min="1" step="1" aria-label="Sekunden für Satz ' +
         (si + 1) +
         '" value="' +
         esc(s.reps || "") +
         '"' +
         data +
-        "></label>"
+        ">" +
+        stepper(ex, s, ei, si, "reps", locked) +
+        "</div>"
       );
-    const manual = Number(s.reps) > 50 || customReps.has(ei + ":" + si);
+    const manual = Number(s.reps) > 50 || customReps.has(s);
     const options = Array.from({ length: 50 }, (_, i) => i + 1)
       .map(
         (n) =>
@@ -184,8 +215,32 @@
       esc(s.reps || "") +
       '"' +
       data +
-      "></label></div>"
+      "></label>" +
+      stepper(ex, s, ei, si, "reps", locked) +
+      "</div>"
     );
+  }
+  function exerciseSetStrip(ex, ei, si, next) {
+    const buttons = ex.setData.map((set, index) => {
+      const isNext = same(next, { ei, si: index });
+      const status = set.done
+        ? setSummary(ex, set)
+        : isNext
+          ? "Jetzt"
+          : "Offen";
+      return `<button type="button" data-af-strength="focus" data-ei="${ei}" data-si="${index}" aria-pressed="${index === si}" class="${set.done ? "is-done" : ""}"><span>${set.done ? "✓ " : ""}Satz ${index + 1}</span><small data-af-chip-value>${esc(status)}</small></button>`;
+    });
+    return (
+      '<div class="af-exercise-setstrip" role="group" aria-label="Sätze dieser Übung">' +
+      buttons.join("") +
+      "</div>"
+    );
+  }
+  function previousSet(ex, si) {
+    const last = getLastSetValues(ex.name, si);
+    if (!last) return "";
+    const value = setSummary(ex, { ...last, reps: last.seconds ?? last.reps });
+    return `<p class="af-strength-reference">Letztes Mal · Satz ${si + 1}: <strong>${esc(value)}</strong></p>`;
   }
   function focusMarkup() {
     const next = firstOpen();
@@ -267,14 +322,12 @@
       (ex.restTimer || 120) +
       " s Pause</span></p>" +
       muscleChips(ex.name) +
+      exerciseSetStrip(ex, ei, si, next) +
+      previousSet(ex, si) +
       '<div class="af-strength-fields">' +
       weightControl(ex, s, ei, si, locked) +
       repsControl(ex, s, ei, si, locked) +
-      '</div><p class="af-strength-preset">' +
-      (ex.bw
-        ? "Kontrollierte Ausführung vor Tempo."
-        : "Deine Hantelstufen · Last je Hantel beachten.") +
-      '</p><details class="af-strength-rpe" ' +
+      '</div><details class="af-strength-rpe" ' +
       (s.rpe ? "open" : "") +
       "><summary>Anstrengung <span>" +
       (s.rpe ? "RPE " + esc(s.rpe) : "optional") +
@@ -315,10 +368,11 @@
           ">" +
           icon("play") +
           " " +
+          "<span data-af-timed-label>" +
           (Number(s.reps) || ex.targetSeconds || 30) +
-          " s starten</button>"
+          " s starten</span></button>"
         : "") +
-      '<button type="button" class="af-strength-submit ' +
+      '<div class="af-strength-dock"><button type="button" class="af-strength-submit ' +
       (s.done ? "af-strength-undo" : "") +
       '" data-af-action="set-done" data-ei="' +
       ei +
@@ -335,7 +389,7 @@
       locked +
       '>+ Satz</button><button type="button" data-af-action="variant" data-ei="' +
       ei +
-      '">Übung wechseln</button></div>' +
+      '">Übung wechseln</button></div></div>' +
       (upcoming
         ? '<button type="button" class="af-strength-next" data-af-strength="focus" data-ei="' +
           upcoming.ei +
@@ -426,6 +480,27 @@
             )
             .join("");
           const old = legacy[ei];
+          if (old && isGymLoad(ex) && !ex.bw) {
+            for (const select of old.querySelectorAll(
+              'select[data-af-set="weight"]',
+            )) {
+              const input = document.createElement("input");
+              input.type = "number";
+              input.min = "0";
+              input.step = "any";
+              input.inputMode = "decimal";
+              input.dataset.afSet = "weight";
+              input.dataset.ei = select.dataset.ei;
+              input.dataset.si = select.dataset.si;
+              input.setAttribute(
+                "aria-label",
+                select.getAttribute("aria-label") || "Last in kg",
+              );
+              input.disabled = select.disabled;
+              input.setAttribute("value", select.value);
+              select.replaceWith(input);
+            }
+          }
           const controls = old
             ? [...old.children]
                 .filter(
@@ -483,11 +558,15 @@
       '</ol><button type="button" class="af-strength-return" data-af-strength="current">Zum aktuellen Satz ' +
       icon("arrow") +
       "</button></section>";
+    syncSubmit();
   };
   const originalActive = renderWorkoutActive;
   renderWorkoutActive = function () {
     selected = firstOpen();
-    const dayColor = activeWorkoutDay?.color || "";
+    const dayColor = activeWorkoutDay?.color || "#a879fa";
+    document
+      .getElementById("screen-workout-active")
+      ?.style.setProperty("--on-strength-accent", dayTextColor(dayColor));
     for (const id of ["screen-workout-active", "rest-timer-bar"]) {
       const el = document.getElementById(id);
       if (!el) continue;
@@ -504,7 +583,7 @@
     header.innerHTML =
       '<div class="af-strength-session"><div class="af-strength-sessiontop"><button type="button" class="af-strength-icon" data-af-strength="back" aria-label="Zurück zur Trainingsauswahl">' +
       icon("back") +
-      '</button><button type="button" class="af-strength-open-hints" data-af-strength="hints">Aufwärmen & Hinweise</button><time id="workout-timer">' +
+      '</button><button type="button" class="af-strength-open-hints" data-af-strength="end" aria-label="Training beenden">Training beenden</button><button type="button" class="af-strength-icon" data-af-strength="hints" aria-label="Aufwärmen und Trainingshinweise"><span aria-hidden="true">?</span></button><time id="workout-timer">' +
       fmt(workoutElapsed) +
       '</time><button type="button" class="af-strength-icon" id="timer-toggle-btn" data-af-strength="timer" aria-label="Trainingstimer pausieren oder fortsetzen">' +
       icon(timerRunning ? "pause" : "play") +
@@ -547,30 +626,80 @@
       )
       .forEach((el) => {
         if (
-          field === "reps" &&
+          (field === "weight" || (field === "reps" && Number(value) > 50)) &&
+          Number(value) > 0 &&
           el.tagName === "SELECT" &&
-          Number(value) > 50 &&
           !el.querySelector('option[value="' + Number(value) + '"]') &&
           el.dataset.afSet
         )
-          el.add(new Option(value, value));
+          el.add(new Option(field === "weight" ? value + " kg" : value, value));
         if (
           el.dataset.afFocusSet === "reps" &&
           el.tagName === "SELECT" &&
-          (Number(value) > 50 || customReps.has(ei + ":" + si))
+          (Number(value) > 50 || customReps.has(s))
         )
           el.value = "custom";
-        else el.value = value;
+        else if (el.value !== value) el.value = value;
       });
     document
       .querySelectorAll(".af-strength-setvalue" + selector)
       .forEach((el) => {
         el.textContent = setSummary(workoutExercises[ei], s);
       });
+    const ex = workoutExercises[ei];
+    document
+      .querySelectorAll(
+        '.af-set-stepper [data-field="' + field + '"]' + selector,
+      )
+      .forEach((button) => {
+        button.disabled =
+          isBlocked(ex) ||
+          nextValue(ex, s, field, Number(button.dataset.direction)) === null;
+      });
+    if (ex.unit === "seconds" && field === "reps") {
+      const timedLabel = document.querySelector(
+        ".af-strength-timed" + selector + " [data-af-timed-label]",
+      );
+      if (timedLabel)
+        timedLabel.textContent =
+          (Number(s.reps) || ex.targetSeconds || 30) + " s starten";
+    }
+    const chip = document.querySelector(
+      ".af-exercise-setstrip button" + selector + " [data-af-chip-value]",
+    );
+    if (s.done && chip) chip.textContent = setSummary(ex, s);
+    syncSubmit();
     const custom = document.querySelector("[data-af-focus-custom]" + selector);
     if (field === "reps" && custom && document.activeElement !== custom)
       custom.value = value;
   };
+  function syncSubmit() {
+    const button = document.querySelector(
+      '.af-strength-focus [data-af-action="set-done"]',
+    );
+    if (!button) return;
+    const ex = workoutExercises[Number(button.dataset.ei)],
+      set = ex?.setData[Number(button.dataset.si)];
+    if (!set) return;
+    const resting = !set.done && restTimerSec > 0;
+    const disabled =
+      isBlocked(ex) ||
+      (!set.done &&
+        (resting ||
+          !Number.isSafeInteger(Number(set.reps)) ||
+          Number(set.reps) < 1 ||
+          (!ex.bw && !(Number(set.weight) > 0))));
+    button.disabled = disabled;
+    const last = button.lastChild;
+    if (last?.nodeType === 3) {
+      const label = resting
+        ? "Satz nach der Pause abschliessen"
+        : set.done
+          ? "Satz wieder öffnen"
+          : "Satz abschliessen";
+      if (last.nodeValue !== label) last.nodeValue = label;
+    }
+  }
   const originalToggle = toggleSet;
   toggleSet = function (ei, si) {
     const before = workoutExercises[ei]?.setData[si]?.done;
@@ -578,6 +707,7 @@
     const after = workoutExercises[ei]?.setData[si]?.done;
     if (before !== after) {
       selected = after ? firstOpen() : { ei, si };
+      if (after && !selected) dismissRestTimer();
       if (after && selected?.ei === ei && selected.si > si) {
         const completed = workoutExercises[ei].setData[si];
         const following = workoutExercises[ei].setData[selected.si];
@@ -586,11 +716,19 @@
             setVal(ei, selected.si, field, completed[field]);
       }
       renderExerciseList();
+      document
+        .querySelector(".af-strength-focus")
+        ?.scrollIntoView({ block: "start", behavior: "instant" });
     }
   };
   const originalAddSet = addSet;
   addSet = function (ei) {
-    originalAddSet(ei); // keep selected as-is; new set appears as upcoming
+    const ex = workoutExercises[ei];
+    if (!ex || isBlocked(ex)) return;
+    const index = ex.setData.length;
+    if (selected?.ei === ei && ex.setData.every((set) => set.done))
+      selected = { ei, si: index };
+    originalAddSet(ei);
   };
   scrollToSetRow = function (ei, si) {
     if (!workoutExercises[ei]?.setData[si] || isBlocked(workoutExercises[ei])) {
@@ -611,7 +749,7 @@
       si = Number(el.dataset.si),
       field = el.dataset.afFocusSet || el.dataset.afFocusCustom;
     if (field === "reps" && el.value === "custom") {
-      customReps.add(ei + ":" + si);
+      customReps.add(workoutExercises[ei].setData[si]);
       const label = document.querySelector(".af-strength-custom");
       if (label) {
         label.hidden = false;
@@ -620,13 +758,15 @@
       return;
     }
     if (field === "reps" && el.tagName === "SELECT") {
-      customReps.delete(ei + ":" + si);
+      customReps.delete(workoutExercises[ei].setData[si]);
       const label = document.querySelector(".af-strength-custom");
       if (label) label.hidden = true;
     }
     const valid =
-      field !== "reps" ||
-      (Number.isSafeInteger(Number(el.value)) && Number(el.value) > 0);
+      field === "reps"
+        ? Number.isSafeInteger(Number(el.value)) && Number(el.value) > 0
+        : field !== "weight" ||
+          (Number.isFinite(Number(el.value)) && Number(el.value) > 0);
     if (field === "reps" && el.tagName === "INPUT")
       el.setCustomValidity(
         el.value && !valid ? "Bitte eine positive ganze Zahl eingeben." : "",
@@ -644,6 +784,23 @@
     const button = e.target.closest("[data-af-strength]");
     if (!button) return;
     const action = button.dataset.afStrength;
+    if (action === "step") {
+      const ei = Number(button.dataset.ei),
+        si = Number(button.dataset.si);
+      const ex = workoutExercises[ei],
+        set = ex?.setData[si],
+        field = button.dataset.field;
+      if (!set || isBlocked(ex) || !["weight", "reps"].includes(field)) return;
+      const value = nextValue(ex, set, field, Number(button.dataset.direction));
+      if (value === null) return;
+      if (field === "reps" && ex.unit !== "seconds") {
+        if (value > 50) customReps.add(set);
+        else customReps.delete(set);
+        const label = document.querySelector(".af-strength-custom");
+        if (label) label.hidden = value <= 50;
+      }
+      setVal(ei, si, field, String(value));
+    }
     if (action === "focus")
       scrollToSetRow(Number(button.dataset.ei), Number(button.dataset.si));
     if (action === "current") {
@@ -668,6 +825,7 @@
       }
     }
     if (action === "finish") finishWorkout();
+    if (action === "end") requestWorkoutEnd();
     if (action === "rest-add") {
       restTimerMax += 30;
       restTimerSec = Math.max(
@@ -678,7 +836,13 @@
     }
     if (action === "rest-skip") dismissRestTimer();
   });
+  const originalDismiss = dismissRestTimer;
+  dismissRestTimer = function () {
+    originalDismiss();
+    syncSubmit();
+  };
   updateRestTimerUI = function () {
+    syncSubmit();
     const bar = document.getElementById("rest-timer-bar");
     if (!bar) return;
     if (restTimerSec <= 0) {
@@ -691,6 +855,12 @@
         '<div class="af-strength-rest-main"><span>ERHOLUNG<small>Nächster Satz nach der Pause</small></span><strong role="timer" aria-label="Verbleibende Pause"></strong></div><div class="af-strength-rest-progress"><span></span></div><div class="af-strength-rest-actions"><button type="button" data-af-strength="rest-add">+30 s</button><button type="button" data-af-strength="rest-skip">Überspringen ' +
         icon("arrow") +
         "</button></div>";
+    const next = firstOpen();
+    const nextLabel = next
+      ? displayName(workoutExercises[next.ei].name) + " · Satz " + (next.si + 1)
+      : "Alle freigegebenen Sätze erledigt";
+    const hint = bar.querySelector(".af-strength-rest-main small");
+    if (hint.textContent !== nextLabel) hint.textContent = nextLabel;
     bar.querySelector('[role="timer"]').textContent = fmt(restTimerSec);
     bar.querySelector(".af-strength-rest-progress > span").style.width =
       Math.max(0, Math.min(100, (restTimerSec / restTimerMax) * 100)) + "%";

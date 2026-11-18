@@ -95,6 +95,10 @@ test("offline install includes every local runtime dependency", async () => {
     "push-ui.js",
     "push-ui.css",
     "push-timers.js",
+    "progress-history.js",
+    "progress-history.css",
+    "muscle-map.js",
+    "muscle-map.css",
     "strength-ui.js",
     "strength-ui.css",
     "cardio-ui.js",
@@ -111,6 +115,19 @@ test("offline install includes every local runtime dependency", async () => {
   ]) {
     assert.ok(w.cacheMap.has("https://example.test/app/" + name));
     assert.ok(fs.existsSync(path.join(__dirname, "..", name)));
+  }
+});
+test("the mobile header and training typography are available offline", async () => {
+  const w = worker();
+  await w.install();
+  const stylesheet = "fonts/barlow.css";
+  assert.ok(w.cacheMap.has("https://example.test/app/" + stylesheet));
+  const css = fs.readFileSync(path.join(__dirname, "..", stylesheet), "utf8");
+  const faces = [...css.matchAll(/url\('\.\/([^']+\.woff2)'\)/g)];
+  assert.ok(faces.length > 0);
+  for (const [, font] of faces) {
+    assert.ok(fs.existsSync(path.join(__dirname, "../fonts", font)));
+    assert.ok(w.cacheMap.has("https://example.test/app/fonts/" + font));
   }
 });
 test("online responses refresh the offline copy", async () => {

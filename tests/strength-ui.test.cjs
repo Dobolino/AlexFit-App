@@ -294,3 +294,67 @@ test(
     assert.ok(a.document.querySelector(".af-locked select:disabled"));
   }),
 );
+
+test(
+  "live steppers use available dumbbells, synchronize custom reps and correct completed sets in place",
+  appTest((a) => {
+    const step = (field, direction) =>
+      a.document.querySelector(
+        `[data-af-strength="step"][data-field="${field}"][data-direction="${direction}"]`,
+      );
+    change(a, focusField(a, "weight"), "11.5");
+    step("weight", 1).click();
+    assert.equal(focusField(a, "weight").value, "13.5");
+    change(a, focusField(a, "reps"), "50");
+    step("reps", 1).click();
+    assert.equal(focusField(a, "reps").value, "custom");
+    assert.equal(
+      a.document.querySelector("[data-af-focus-custom]").value,
+      "51",
+    );
+    step("reps", -1).click();
+    assert.equal(focusField(a, "reps").value, "50");
+    assert.equal(a.document.querySelector(".af-strength-custom").hidden, true);
+    a.document.querySelector(".af-strength-submit").click();
+    assert.equal(
+      a.document.querySelector(".af-strength-submit").disabled,
+      true,
+    );
+    const chip = () =>
+      a.document.querySelector('.af-exercise-setstrip [data-si="0"]');
+    chip().click();
+    step("reps", -1).click();
+    assert.match(chip().textContent, /13.5 kg × 49/);
+    assert.equal(a.run("workoutExercises[0].setData[0].done"), true);
+    a.document.querySelector('[data-af-strength="rest-skip"]').click();
+    a.document.querySelector('.af-exercise-setstrip [data-si="1"]').click();
+    assert.equal(
+      a.document.querySelector(".af-strength-submit").disabled,
+      false,
+    );
+  }),
+);
+
+test(
+  "gym machines accept device-specific loads and timed sets step seconds independently",
+  appTest((a) => {
+    a.run(
+      "settings.gymMode=true;workoutExercises=[{name:'Leg Press',equipment:['beinpresse'],reps:'10–12',setData:[{weight:'73.75',reps:'10'}]},{...getExDef('Plank'),setData:[{weight:'',reps:'30'}]}];renderWorkoutActive()",
+    );
+    assert.equal(focusField(a, "weight").tagName, "INPUT");
+    a.document.querySelector('[aria-label="Gewicht erhöhen"]').click();
+    assert.equal(focusField(a, "weight").value, "76.25");
+    assert.equal(
+      a.document.querySelector('[data-af-set="weight"][data-ei="0"]').value,
+      "76.25",
+    );
+    a.window.AF.strength.select(1, 0);
+    assert.equal(focusField(a, "weight"), null);
+    a.document.querySelector('[aria-label="Sekunden verringern"]').click();
+    assert.equal(focusField(a, "reps").value, "29");
+    assert.match(
+      a.document.querySelector(".af-strength-timed").textContent,
+      /29 s starten/,
+    );
+  }),
+);

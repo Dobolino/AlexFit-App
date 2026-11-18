@@ -830,3 +830,24 @@ input[type="date"]::-webkit-date-and-time-value {
   .af-sethead, .af-setrow { grid-template-columns: 20px minmax(20px, 1fr) 60px 42px 44px 48px; }
   .af-workout-flow button { flex-wrap: wrap; gap: 4px 12px; }
 }
+
+/* Heute: Die laufende oder geplante Einheit steht vor dem Wochenverlauf. */
+.af-home-focus {
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--day-color);
+  border-radius: 18px;
+  background: var(--card);
+  padding: clamp(16px, 4vw, 22px);
+}
+.af-home-focus h2, .af-home-week strong { font-family: 'Barlow Condensed', system-ui, sans-serif; color: var(--tp); line-height: 1.1; }
+.af-home-focus h2 { margin: 6px 0; font-size: clamp(30px, 7vw, 38px); overflow-wrap: anywhere; }
+.af-home-focus p { color: var(--ts); margin: 0 0 12px; }
+.af-home-focus .af-home-date { margin: 0; font-size: 14px; font-weight: 700; }
+.af-home-focus .af-btn { width: 100%; min-height: 50px; margin: 4px 0 0; color: var(--on-day-color); background: var(--day-color); border-color: var(--day-color); font-size: 17px; font-weight: 700; }
+.af-home-week { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.af-home-week > div { display: grid; align-content: start; gap: 5px; border: 1px solid var(--border); border-radius: 14px; padding: 12px; background: var(--card); min-width: 0; }
+.af-home-week span { color: var(--ts); font-size: 13px; line-height: 1.3; }
+.af-home-week strong { font-size: 28px; }
+.af-home-week progress { width: 100%; height: 6px; accent-color: var(--accent); }
+#screen-dashboard #af-home-tools { margin-bottom: 16px; }

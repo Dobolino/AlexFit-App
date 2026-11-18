@@ -683,5 +683,6 @@
     },
   };
   render();
+  if (session && session.status !== 'saved' && document.querySelector('#screen-dashboard.active')) renderDashboard();
   setInterval(tick, 250);
 })();

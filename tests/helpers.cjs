@@ -57,9 +57,11 @@ function boot(stored = {}) {
       new vm.Script(code).runInContext(context, { timeout: 5000 });
   run(fs.readFileSync(path.join(root, "coach-core.js"), "utf8"));
   run(fs.readFileSync(path.join(root, "training-plans.js"), "utf8"));
+  run(fs.readFileSync(path.join(root, "training-plans-gym.js"), "utf8"));
+  run(fs.readFileSync(path.join(root, "muscle-map.js"), "utf8"));
   for (const s of [...w.document.scripts].filter((s) => !s.src))
     run(s.textContent);
-  for (const name of ["exercise-videos.js", "coach.js", "coach-recipes.js", "coach-tools.js", "ui-shell.js", "strength-ui.js", "cardio-ui.js"])
+  for (const name of ["exercise-videos.js", "coach.js", "coach-recipes.js", "coach-tools.js", "ui-shell.js", "strength-ui.js", "cardio-ui.js", "progress-history.js"])
     run(fs.readFileSync(path.join(root, name), "utf8"));
   return {
     window: w,
